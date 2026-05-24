@@ -153,18 +153,6 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
   display: none;
 }
 #results.on { display: block; }
-#drag-handle {
-  display: flex;
-  justify-content: center;
-  padding: 10px 0 6px;
-  cursor: pointer;
-}
-#drag-handle::before {
-  content: '';
-  width: 36px; height: 4px;
-  background: #d1d5db;
-  border-radius: 2px;
-}
 
 /* ── Tabs ── */
 #tabs {
