@@ -17,7 +17,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
 #header h1 { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; }
 #header h1 .meri { color: #f97316; }
 #header h1 .way  { color: #1a3a6b; }
-#sun-info { margin-left: auto; font-size: 0.82rem; font-weight: 600; display: none; }
+#header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; }
+#sun-info { font-size: 0.82rem; font-weight: 600; display: none; }
 
 /* ── Search panel ── */
 #search-panel {
@@ -199,10 +200,175 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
   border-top: 1px solid #f3f4f6;
 }
 
+/* ── About button in header ── */
+#about-btn {
+  margin-left: 8px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+#about-btn:hover { border-color: #f97316; color: #f97316; }
+
+/* ── About overlay ── */
+#about-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 3999;
+  backdrop-filter: blur(2px);
+}
+#about-overlay.on { display: block; }
+
+/* ── About drawer ── */
+#about-drawer {
+  position: fixed;
+  top: 0; right: 0;
+  width: 340px;
+  max-width: 100vw;
+  height: 100%;
+  background: white;
+  z-index: 4000;
+  box-shadow: -4px 0 32px rgba(0,0,0,0.16);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+#about-drawer.open { transform: translateX(0); }
+
+#about-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+#about-lang { display: flex; gap: 4px; }
+.lang-btn {
+  padding: 4px 10px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.lang-btn:hover { border-color: #f97316; color: #f97316; }
+.lang-btn.active { background: #f97316; border-color: #f97316; color: white; }
+
+#about-close {
+  width: 30px; height: 30px;
+  border: none;
+  background: none;
+  font-size: 1.3rem;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+#about-close:hover { background: #f3f4f6; color: #374151; }
+
+#about-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+}
+
+.about-pane { display: none; }
+.about-pane.active { display: block; }
+
+.about-pane h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.about-pane h2 .meri { color: #f97316; }
+.about-pane h2 .way  { color: #1a3a6b; }
+
+.about-tagline {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 18px;
+}
+
+.about-pane p {
+  font-size: 0.88rem;
+  color: #4b5563;
+  line-height: 1.65;
+  margin-bottom: 14px;
+}
+
+.about-opensource {
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: #4b5563;
+  line-height: 1.6;
+}
+p.opensource-badge {
+  background: #1a3a6b;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  width: fit-content;
+}
+
+#about-links {
+  padding: 16px 20px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  gap: 10px;
+}
+
+.about-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.about-link:hover { opacity: 0.8; }
+.github-link { background: #1a1a2e; color: white; }
+.kofi-link   { background: #ff5e5b; color: white; }
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
   #search-panel input[type="text"] {
     flex: 0 0 100%;
     min-width: 0;
   }
+  #about-drawer { width: 100vw; }
 }
