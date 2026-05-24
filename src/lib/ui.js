@@ -50,12 +50,3 @@ export function renderTab(id, rt, isSunny) {
       <div class="pct ${cls}">${pct}% ensoleillé</div>
     </div>`;
 }
-
-export function showResults(sunny, shady, all) {
-  renderTab('tab-sunny', sunny, true);
-  renderTab('tab-shady', shady, false);
-  const sorted = [...all].sort((a, b) => b.sunScore - a.sunScore);
-  document.getElementById('summary').textContent =
-    `${all.length} routes analysées — scores : ${sorted.map(r => Math.round(r.sunScore * 100) + '%').join(', ')}`;
-  document.getElementById('results').classList.add('on');
-}

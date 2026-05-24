@@ -44,7 +44,6 @@ import '../styles/main.css';
   </div>
   <div id="tab-sunny" class="tab-pane active"></div>
   <div id="tab-shady" class="tab-pane"></div>
-  <div id="summary"></div>
 </div>
 
 <script>
@@ -55,7 +54,7 @@ import '../styles/main.css';
   import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { drawCompass }                 from '../lib/compass.js';
-  import { setStatus, initTabs, showResults, setActiveTab } from '../lib/ui.js';
+  import { setStatus, initTabs, setActiveTab } from '../lib/ui.js';
   import { initAutocomplete }                from '../lib/autocomplete.js';
 
   initMap();
@@ -136,7 +135,6 @@ import '../styles/main.css';
       const shady = routes[routes.length - 1];
 
       displayRoutes(startC, endC, sunny, shady, routes);
-      showResults(sunny, shady, routes);
 
       // High sun (>40°) → shade is useful; low sun → warmth is useful
       const preselect = sun.altDeg > 40 ? 'shady' : 'sunny';
