@@ -16,7 +16,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
 }
 #header h1 { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; }
 #header h1 .meri { color: #f97316; }
-#header h1 .dian { color: #1a3a6b; }
+#header h1 .way  { color: #1a3a6b; }
 #sun-info { margin-left: auto; font-size: 0.82rem; font-weight: 600; display: none; }
 
 /* ── Search panel ── */

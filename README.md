@@ -1,4 +1,4 @@
-# Meridian
+# MeridianWay
 
 Pedestrian navigation app that finds the **sunniest** and **shadiest** walking routes between two addresses, based on real-time sun position and building shadows.
 
