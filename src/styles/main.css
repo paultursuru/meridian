@@ -3,6 +3,14 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
 
 #app { display: flex; flex-direction: column; height: 100vh; }
 
+@font-face {
+  font-family: 'BricolageGrotesqueMedium';
+  src: url('/fonts/BricolageGrotesque-Medium.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ── Header ── */
 #header {
   background: white;
@@ -14,9 +22,9 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
   z-index: 1000;
   flex-shrink: 0;
 }
-#header h1 { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; }
+#header h1 { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; font-family: 'BricolageGrotesqueMedium'; }
 #header h1 .meri { color: #f97316; }
-#header h1 .way  { color: #1a3a6b; }
+#header h1 .way  { color: #4682df; }
 #header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; }
 #sun-info { font-size: 0.82rem; font-weight: 600; display: none; }
 
@@ -302,7 +310,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
   margin-bottom: 6px;
 }
 .about-pane h2 .meri { color: #f97316; }
-.about-pane h2 .way  { color: #1a3a6b; }
+.about-pane h2 .way  { color: #4682df; }
 
 .about-tagline {
   font-size: 0.9rem;
@@ -329,7 +337,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
   line-height: 1.6;
 }
 p.opensource-badge {
-  background: #1a3a6b;
+  background: #4682df;
   color: white;
   font-size: 0.7rem;
   font-weight: 700;
