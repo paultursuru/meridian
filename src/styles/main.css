@@ -3,6 +3,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; overflow: 
 
 #app { display: flex; flex-direction: column; height: 100vh; }
 
+/* ── Fonts ── */
+/* ── Bricolage Grotesque - https://ateliertriay.github.io/bricolage/ ── */
 @font-face {
   font-family: 'BricolageGrotesqueMedium';
   src: url('/fonts/BricolageGrotesque-Medium.woff2') format('woff2');
