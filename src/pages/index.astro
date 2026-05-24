@@ -1,0 +1,164 @@
+---
+import '../styles/main.css';
+---
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meridian — Navigation solaire</title>
+</head>
+<body>
+
+<div id="app">
+  <div id="header">
+    <h1><span class="meri">Meri</span><span class="dian">dian</span></h1>
+    <div id="sun-info"></div>
+  </div>
+  <div id="search-panel">
+    <input type="text" id="inp-start" placeholder="📍 Départ — ex: Place de la Riponne, Lausanne" />
+    <input type="text" id="inp-end"   placeholder="🏁 Arrivée — ex: Gare de Lausanne" />
+    <div class="dt-group">
+      <input type="date" id="inp-date" />
+      <input type="time" id="inp-time" />
+    </div>
+    <button id="search-btn">Calculer</button>
+  </div>
+  <div id="map"></div>
+</div>
+
+<div id="status"></div>
+
+<div id="compass-wrap">
+  <div id="compass-box">
+    <canvas id="compass-cv" width="60" height="60"></canvas>
+  </div>
+  <div id="compass-label">Soleil</div>
+</div>
+
+<div id="results">
+  <div id="drag-handle"></div>
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="sunny">☀️ Ensoleillé</button>
+    <button class="tab-btn shady"  data-tab="shady">🌑 Ombragé</button>
+  </div>
+  <div id="tab-sunny" class="tab-pane active"></div>
+  <div id="tab-shady" class="tab-pane"></div>
+  <div id="summary"></div>
+</div>
+
+<script>
+  import { initMap, displayRoutes, setActiveRoute } from '../lib/map.js';
+  import { getSun }                      from '../lib/sun.js';
+  import { geocode }                     from '../lib/geocode.js';
+  import { buildRoutes }                 from '../lib/routing.js';
+  import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
+  import { scoreRoute }                  from '../lib/shadow.js';
+  import { drawCompass }                 from '../lib/compass.js';
+  import { setStatus, initTabs, showResults, setActiveTab } from '../lib/ui.js';
+  import { initAutocomplete }                from '../lib/autocomplete.js';
+
+  initMap();
+  initTabs((type: string) => setActiveRoute(type));
+
+  // Helpers to query typed DOM elements without null checks scattered everywhere
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const input  = (id: string) => el<HTMLInputElement>(id);
+  const button = (id: string) => el<HTMLButtonElement>(id);
+
+  // Defaults
+  const now = new Date();
+  input('inp-date').value  = now.toISOString().split('T')[0];
+  input('inp-time').value  = now.toTimeString().slice(0, 5);
+  // input('inp-start').value = 'Place de la Riponne, Lausanne';
+  // input('inp-end').value   = 'Gare de Lausanne';
+
+  const startAC = initAutocomplete(input('inp-start'));
+  const endAC   = initAutocomplete(input('inp-end'));
+
+  async function handleSearch() {
+    const startQ = input('inp-start').value.trim();
+    const endQ   = input('inp-end').value.trim();
+    const dateV  = input('inp-date').value;
+    const timeV  = input('inp-time').value;
+
+    if (!startQ || !endQ) { alert('Veuillez saisir un départ et une arrivée.'); return; }
+
+    const btn = button('search-btn');
+    btn.disabled = true;
+    el('results').classList.remove('on');
+    el('compass-wrap').classList.remove('on');
+
+    try {
+      // Use pre-resolved coords if the user picked from autocomplete, otherwise geocode
+      setStatus('📍 Géocodage des adresses…');
+      const [startC, endC] = await Promise.all([
+        startAC.getPlace() ?? geocode(startQ),
+        endAC.getPlace()   ?? geocode(endQ),
+      ]);
+
+      let tDate = new Date();
+      if (dateV && timeV) tDate = new Date(`${dateV}T${timeV}`);
+      else if (dateV)     tDate = new Date(`${dateV}T12:00:00`);
+
+      const midLat = (startC.lat + endC.lat) / 2;
+      const midLng = (startC.lng + endC.lng) / 2;
+      const sun = getSun(tDate, midLat, midLng);
+
+      const infoEl = el('sun-info');
+      infoEl.style.display = 'block';
+      if (sun.altDeg <= 0) {
+        infoEl.textContent = `🌙 Nuit (${sun.altDeg.toFixed(1)}° sous l'horizon)`;
+        infoEl.style.color = '#6366f1';
+      } else {
+        infoEl.textContent = `☀️ Altitude ${sun.altDeg.toFixed(1)}° · Azimut ${sun.azDeg.toFixed(0)}°`;
+        infoEl.style.color = '#f97316';
+      }
+
+      drawCompass(sun.azDeg, sun.altDeg);
+      el('compass-wrap').classList.add('on');
+
+      const routes = await buildRoutes(startC, endC, setStatus);
+      if (!routes.length) throw new Error('Aucun itinéraire trouvé.');
+
+      setStatus('📦 Récupération des bâtiments…');
+      const buildings = await fetchBuildings(routesBbox(routes));
+
+      setStatus(`🧮 Calcul des ombres (${buildings.length} bâtiments, ${routes.length} routes)…`);
+      routes.forEach(rt => {
+        const { score, segShade } = scoreRoute(rt, buildings, sun);
+        rt.sunScore = score;
+        rt.segShade = segShade;
+      });
+      routes.sort((a, b) => b.sunScore - a.sunScore);
+
+      const sunny = routes[0];
+      const shady = routes[routes.length - 1];
+
+      displayRoutes(startC, endC, sunny, shady, routes);
+      showResults(sunny, shady, routes);
+
+      // High sun (>40°) → shade is useful; low sun → warmth is useful
+      const preselect = sun.altDeg > 40 ? 'shady' : 'sunny';
+      setActiveTab(preselect);
+      setActiveRoute(preselect);
+
+      setStatus(null);
+
+    } catch (err) {
+      setStatus(null);
+      alert('Erreur : ' + (err instanceof Error ? err.message : String(err)));
+      console.error(err);
+    } finally {
+      button('search-btn').disabled = false;
+    }
+  }
+
+  button('search-btn').addEventListener('click', handleSearch);
+  ['inp-start', 'inp-end'].forEach(id =>
+    input(id).addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') handleSearch(); })
+  );
+</script>
+
+</body>
+</html>
