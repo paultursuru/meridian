@@ -50,3 +50,9 @@ export function renderTab(id, rt, isSunny) {
       <div class="pct ${cls}">${pct}% ensoleillé</div>
     </div>`;
 }
+
+export function showResults(sunny, shady, all) {
+  renderTab('tab-sunny', sunny, true);
+  renderTab('tab-shady', shady, false);
+  document.getElementById('results').classList.add('on');
+}
