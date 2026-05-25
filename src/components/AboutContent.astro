@@ -1,0 +1,67 @@
+---
+import type { Lang } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  allLangs?: boolean; // true = render all 4 panes (for the drawer), false = only current lang (for the page)
+}
+
+const { lang, allLangs = false } = Astro.props;
+const show = (l: Lang) => allLangs || l === lang;
+---
+
+{show('fr') && (
+  <div class:list={['about-pane', { active: lang === 'fr' }]} data-lang="fr">
+    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <p class="about-tagline">Trouver le bon trajet selon le soleil.</p>
+    <p>L'application calcule deux itinéraires entre un point de départ et une destination. Le premier cherche à maximiser le temps passé au soleil. Le second reste le plus longtemps possible à l'ombre.</p>
+    <p>Pour chaque calcul, la position du soleil à l'heure choisie est prise en compte, ainsi que les bâtiments présents sur le trajet.</p>
+    <p>En hiver, profiter de la chaleur du soleil. En été, trouver la fraîcheur de l'ombre.</p>
+    <div class="about-opensource">
+      <p class="opensource-badge">Source ouverte</p>
+      Le code de Meridian Way est librement accessible. N'importe qui peut le consulter, le modifier ou contribuer au projet.
+    </div>
+  </div>
+)}
+
+{show('de') && (
+  <div class:list={['about-pane', { active: lang === 'de' }]} data-lang="de">
+    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <p class="about-tagline">Die passende Route nach Sonnenstand wählen.</p>
+    <p>Die App berechnet zwei Routen zwischen einem Start- und einem Zielpunkt. Die erste Route sucht so viel Sonne wie möglich. Die zweite bleibt so lange wie möglich im Schatten.</p>
+    <p>Für jede Berechnung wird die Position der Sonne zur gewählten Uhrzeit berücksichtigt, ebenso wie die Gebäude entlang des Weges.</p>
+    <p>Im Winter die Wärme der Sonne geniessen. Im Sommer den kühlen Schatten finden.</p>
+    <div class="about-opensource">
+      <p class="opensource-badge">Open Source</p>
+      Der Code von Meridian Way ist frei zugänglich. Jeder kann ihn einsehen, verändern oder zum Projekt beitragen.
+    </div>
+  </div>
+)}
+
+{show('it') && (
+  <div class:list={['about-pane', { active: lang === 'it' }]} data-lang="it">
+    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <p class="about-tagline">Trovare il percorso giusto in base al sole.</p>
+    <p>L'applicazione calcola due percorsi tra un punto di partenza e una destinazione. Il primo cerca di massimizzare il tempo trascorso al sole. Il secondo rimane il più possibile all'ombra.</p>
+    <p>Per ogni calcolo, viene considerata la posizione del sole all'ora scelta, insieme agli edifici presenti lungo il percorso.</p>
+    <p>D'inverno, godere del calore del sole. D'estate, trovare la frescura dell'ombra.</p>
+    <div class="about-opensource">
+      <p class="opensource-badge">Codice aperto</p>
+      Il codice di Meridian Way è liberamente accessibile. Chiunque può consultarlo, modificarlo o contribuire al progetto.
+    </div>
+  </div>
+)}
+
+{show('en') && (
+  <div class:list={['about-pane', { active: lang === 'en' }]} data-lang="en">
+    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <p class="about-tagline">Find the right route based on the sun.</p>
+    <p>The app calculates two routes between a starting point and a destination. The first one looks for as much sun as possible. The second one stays in the shade as long as possible.</p>
+    <p>For each calculation, the position of the sun at the chosen time is taken into account, along with the buildings along the way.</p>
+    <p>In winter, enjoy the warmth of the sun. In summer, find the cool of the shade.</p>
+    <div class="about-opensource">
+      <p class="opensource-badge">Open source</p>
+      Meridian Way's code is freely available. Anyone can read it, modify it, or contribute to the project.
+    </div>
+  </div>
+)}

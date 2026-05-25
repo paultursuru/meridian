@@ -1,0 +1,262 @@
+---
+import '../styles/main.css';
+import { translations, type Lang } from '../lib/i18n';
+import AboutContent from '../components/AboutContent.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+
+const urls: Record<Lang, string> = {
+  fr: 'https://meridian-way.ch/',
+  de: 'https://meridian-way.ch/de/',
+  it: 'https://meridian-way.ch/it/',
+  en: 'https://meridian-way.ch/en/',
+};
+---
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{t.title}</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#f97316" />
+  <meta name="description" content={t.meta_description} />
+  <link rel="canonical" href={urls[lang]} />
+  <link rel="alternate" hreflang="fr" href={urls.fr} />
+  <link rel="alternate" hreflang="de" href={urls.de} />
+  <link rel="alternate" hreflang="it" href={urls.it} />
+  <link rel="alternate" hreflang="en" href={urls.en} />
+  <link rel="alternate" hreflang="x-default" href={urls.fr} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={urls[lang]} />
+  <meta property="og:title" content={t.title} />
+  <meta property="og:description" content={t.meta_description} />
+  <meta property="og:image" content="https://meridian-way.ch/meridian-way-og.png" />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "MeridianWay",
+    "url": urls[lang],
+    "description": t.meta_description,
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "Web",
+    "inLanguage": ["fr", "de", "it", "en"],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
+    "author": { "@type": "Person", "url": "https://github.com/paultursuru" }
+  })} />
+</head>
+<body>
+
+<div id="app">
+  <div id="header">
+    <h1><span class="meri">Meridian</span><span class="way">Way</span></h1>
+    <div id="header-right">
+      <div id="sun-info"></div>
+      <button id="about-btn" aria-label={t.aria_about}>i</button>
+    </div>
+  </div>
+  <div id="search-panel">
+    <input type="text" id="inp-start" placeholder={t.placeholder_start} />
+    <input type="text" id="inp-end"   placeholder={t.placeholder_end} />
+    <div class="dt-group">
+      <input type="date" id="inp-date" />
+      <input type="time" id="inp-time" />
+    </div>
+    <button id="search-btn">{t.btn_search}</button>
+  </div>
+  <div id="map"></div>
+</div>
+
+<div id="status"></div>
+
+<div id="about-overlay"></div>
+<div id="about-drawer" role="dialog" aria-modal="true" aria-label={t.aria_about}>
+  <div id="about-header">
+    <div id="about-lang">
+      <button class:list={['lang-btn', { active: lang === 'fr' }]} data-lang="fr">FR</button>
+      <button class:list={['lang-btn', { active: lang === 'de' }]} data-lang="de">DE</button>
+      <button class:list={['lang-btn', { active: lang === 'it' }]} data-lang="it">IT</button>
+      <button class:list={['lang-btn', { active: lang === 'en' }]} data-lang="en">EN</button>
+    </div>
+    <button id="about-close" aria-label={t.aria_close}>×</button>
+  </div>
+
+  <div id="about-body">
+    <AboutContent lang={lang} allLangs={true} />
+  </div>
+
+  <div id="about-links">
+    <a href="https://github.com/paultursuru/meridian" target="_blank" rel="noopener" class="about-link github-link">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      GitHub
+    </a>
+    <a href="https://ko-fi.com/meridian_way" target="_blank" rel="noopener" class="about-link kofi-link">
+      ☕ Ko-fi
+    </a>
+  </div>
+</div>
+
+<div id="compass-wrap">
+  <div id="compass-box">
+    <canvas id="compass-cv" width="60" height="60"></canvas>
+  </div>
+  <div id="compass-label">{t.compass_label}</div>
+</div>
+
+<div id="results">
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="sunny">{t.tab_sunny}</button>
+    <button class="tab-btn shady"  data-tab="shady">{t.tab_shady}</button>
+  </div>
+  <div id="tab-sunny" class="tab-pane active"></div>
+  <div id="tab-shady" class="tab-pane"></div>
+  <div id="summary"></div>
+</div>
+
+<script>
+  import { initMap, displayRoutes, setActiveRoute } from '../lib/map.js';
+  import { getSun }                      from '../lib/sun.js';
+  import { geocode }                     from '../lib/geocode.js';
+  import { buildRoutes }                 from '../lib/routing.js';
+  import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
+  import { scoreRoute }                  from '../lib/shadow.js';
+  import { drawCompass }                 from '../lib/compass.js';
+  import { setStatus, initTabs, showResults, setActiveTab } from '../lib/ui.js';
+  import { initAutocomplete }            from '../lib/autocomplete.js';
+  import { tr }                          from '../lib/i18n.js';
+
+  initMap();
+  initTabs((type: string) => setActiveRoute(type));
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const input  = (id: string) => el<HTMLInputElement>(id);
+  const button = (id: string) => el<HTMLButtonElement>(id);
+
+  const now = new Date();
+  input('inp-date').value = now.toISOString().split('T')[0];
+  input('inp-time').value = now.toTimeString().slice(0, 5);
+
+  const startAC = initAutocomplete(input('inp-start'));
+  const endAC   = initAutocomplete(input('inp-end'));
+
+  async function handleSearch() {
+    const startQ = input('inp-start').value.trim();
+    const endQ   = input('inp-end').value.trim();
+    const dateV  = input('inp-date').value;
+    const timeV  = input('inp-time').value;
+
+    if (!startQ || !endQ) { alert(tr('alert_empty')); return; }
+
+    const btn = button('search-btn');
+    btn.disabled = true;
+    el('results').classList.remove('on');
+    el('compass-wrap').classList.remove('on');
+
+    try {
+      setStatus(tr('status_geocoding'));
+      const [startC, endC] = await Promise.all([
+        startAC.getPlace() ?? geocode(startQ),
+        endAC.getPlace()   ?? geocode(endQ),
+      ]);
+
+      let tDate = new Date();
+      if (dateV && timeV) tDate = new Date(`${dateV}T${timeV}`);
+      else if (dateV)     tDate = new Date(`${dateV}T12:00:00`);
+
+      const midLat = (startC.lat + endC.lat) / 2;
+      const midLng = (startC.lng + endC.lng) / 2;
+      const sun = getSun(tDate, midLat, midLng);
+
+      const infoEl = el('sun-info');
+      infoEl.style.display = 'block';
+      if (sun.altDeg <= 0) {
+        infoEl.textContent = tr('status_night', { alt: sun.altDeg.toFixed(1) });
+        infoEl.style.color = '#6366f1';
+      } else {
+        infoEl.textContent = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
+        infoEl.style.color = '#f97316';
+      }
+
+      drawCompass(sun.azDeg, sun.altDeg);
+      el('compass-wrap').classList.add('on');
+
+      const routes = await buildRoutes(startC, endC, setStatus);
+      if (!routes.length) throw new Error(tr('error_no_route'));
+
+      setStatus(tr('status_buildings'));
+      const buildings = await fetchBuildings(routesBbox(routes));
+
+      setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
+      routes.forEach(rt => {
+        const { score, segShade } = scoreRoute(rt, buildings, sun);
+        rt.sunScore = score;
+        rt.segShade = segShade;
+      });
+      routes.sort((a, b) => b.sunScore - a.sunScore);
+
+      const sunny = routes[0];
+      const shady = routes[routes.length - 1];
+
+      displayRoutes(startC, endC, sunny, shady, routes);
+      showResults(sunny, shady, routes);
+
+      const preselect = sun.altDeg > 40 ? 'shady' : 'sunny';
+      setActiveTab(preselect);
+      setActiveRoute(preselect);
+
+      setStatus(null);
+
+    } catch (err) {
+      setStatus(null);
+      alert(tr('error_prefix') + (err instanceof Error ? err.message : String(err)));
+      console.error(err);
+    } finally {
+      button('search-btn').disabled = false;
+    }
+  }
+
+  button('search-btn').addEventListener('click', handleSearch);
+  ['inp-start', 'inp-end'].forEach(id =>
+    input(id).addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') handleSearch(); })
+  );
+
+  const drawer  = el('about-drawer');
+  const overlay = el('about-overlay');
+
+  function openAbout() {
+    drawer.classList.add('open');
+    overlay.classList.add('on');
+  }
+  function closeAbout() {
+    drawer.classList.remove('open');
+    overlay.classList.remove('on');
+  }
+
+  el('about-btn').addEventListener('click', openAbout);
+  el('about-close').addEventListener('click', closeAbout);
+  overlay.addEventListener('click', closeAbout);
+  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeAbout(); });
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = (btn as HTMLElement).dataset.lang!;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.about-pane').forEach(p => {
+        p.classList.toggle('active', (p as HTMLElement).dataset.lang === lang);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

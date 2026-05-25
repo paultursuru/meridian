@@ -1,0 +1,132 @@
+---
+import '../styles/main.css';
+import { translations, type Lang } from '../lib/i18n';
+import AboutContent from '../components/AboutContent.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+
+const appUrls: Record<Lang, string> = {
+  fr: 'https://meridian-way.ch/',
+  de: 'https://meridian-way.ch/de/',
+  it: 'https://meridian-way.ch/it/',
+  en: 'https://meridian-way.ch/en/',
+};
+
+const aboutUrls: Record<Lang, string> = {
+  fr: 'https://meridian-way.ch/about',
+  de: 'https://meridian-way.ch/de/about',
+  it: 'https://meridian-way.ch/it/about',
+  en: 'https://meridian-way.ch/en/about',
+};
+---
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{t.about_title}</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#f97316" />
+  <meta name="description" content={t.about_meta_description} />
+  <link rel="canonical" href={aboutUrls[lang]} />
+  <link rel="alternate" hreflang="fr" href={aboutUrls.fr} />
+  <link rel="alternate" hreflang="de" href={aboutUrls.de} />
+  <link rel="alternate" hreflang="it" href={aboutUrls.it} />
+  <link rel="alternate" hreflang="en" href={aboutUrls.en} />
+  <link rel="alternate" hreflang="x-default" href={aboutUrls.fr} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={aboutUrls[lang]} />
+  <meta property="og:title" content={t.about_title} />
+  <meta property="og:description" content={t.about_meta_description} />
+  <meta property="og:image" content="https://meridian-way.ch/meridian-way-og.png" />
+</head>
+<body class="about-page">
+
+<div id="about-page-wrap">
+  <nav id="about-page-nav">
+    <a href={appUrls[lang]} class="back-link">{t.about_back}</a>
+    <div id="about-page-lang">
+      <a class:list={['lang-link', { active: lang === 'fr' }]} href={aboutUrls.fr}>FR</a>
+      <a class:list={['lang-link', { active: lang === 'de' }]} href={aboutUrls.de}>DE</a>
+      <a class:list={['lang-link', { active: lang === 'it' }]} href={aboutUrls.it}>IT</a>
+      <a class:list={['lang-link', { active: lang === 'en' }]} href={aboutUrls.en}>EN</a>
+    </div>
+  </nav>
+
+  <main id="about-page-content">
+    <AboutContent lang={lang} allLangs={false} />
+
+    <div id="about-page-links">
+      <a href="https://github.com/paultursuru/meridian" target="_blank" rel="noopener" class="about-link github-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+        GitHub
+      </a>
+      <a href="https://ko-fi.com/meridian_way" target="_blank" rel="noopener" class="about-link kofi-link">
+        ☕ Ko-fi
+      </a>
+    </div>
+  </main>
+</div>
+
+<style>
+  body.about-page {
+    background: white;
+    color: #374151;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  #about-page-wrap {
+    width: 100%;
+    max-width: 560px;
+  }
+  #about-page-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .back-link {
+    color: #f97316;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .back-link:hover { text-decoration: underline; }
+  #about-page-lang {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .lang-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .lang-link.active { background: #f97316; border-color: #f97316; color: white; }
+  .lang-link:hover:not(.active) { border-color: #f97316; color: #f97316; }
+  #about-page-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f3f4f6;
+  }
+</style>
+
+</body>
+</html>

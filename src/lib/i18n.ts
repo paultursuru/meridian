@@ -1,0 +1,139 @@
+export type Lang = 'fr' | 'de' | 'it' | 'en';
+
+export const translations = {
+  fr: {
+    title: 'MeridianWay — Navigation solaire',
+    meta_description: 'Calculez votre itinéraire selon l\'ensoleillement : deux routes, l\'une au soleil, l\'autre à l\'ombre.',
+    placeholder_start: '📍 Départ — ex: Place de la Riponne, Lausanne',
+    placeholder_end: '🏁 Arrivée — ex: Gare de Lausanne',
+    btn_search: 'Calculer',
+    tab_sunny: '☀️ Ensoleillé',
+    tab_shady: '🌑 Ombragé',
+    compass_label: 'Soleil',
+    aria_about: 'À propos',
+    aria_close: 'Fermer',
+    alert_empty: 'Veuillez saisir un départ et une arrivée.',
+    status_geocoding: '📍 Géocodage des adresses…',
+    status_night: '🌙 Nuit ({alt}° sous l\'horizon)',
+    status_sun: '☀️ Altitude {alt}° · Azimut {az}°',
+    status_buildings: '📦 Récupération des bâtiments…',
+    status_shadows: '🧮 Calcul des ombres ({n} bâtiments, {r} routes)…',
+    error_no_route: 'Aucun itinéraire trouvé.',
+    error_prefix: 'Erreur : ',
+    no_route: 'Aucun itinéraire',
+    label_distance: 'Distance',
+    label_duration: 'Durée',
+    label_shade: '🌑 Ombre',
+    label_sun: '☀️ Soleil',
+    pct_sunny: '% ensoleillé',
+    about_title: 'À propos — MeridianWay',
+    about_meta_description: 'MeridianWay calcule deux itinéraires piétons selon la position du soleil : l\'un maximise l\'ensoleillement, l\'autre l\'ombre.',
+    about_back: '← Ouvrir l\'application',
+  },
+  de: {
+    title: 'MeridianWay — Sonnennavigation',
+    meta_description: 'Berechnen Sie Ihre Route nach dem Sonnenstand: zwei Wege, einer in der Sonne, einer im Schatten.',
+    placeholder_start: '📍 Start — z.B. Bahnhofplatz, Bern',
+    placeholder_end: '🏁 Ziel — z.B. Bundeshaus, Bern',
+    btn_search: 'Berechnen',
+    tab_sunny: '☀️ Sonnig',
+    tab_shady: '🌑 Schattig',
+    compass_label: 'Sonne',
+    aria_about: 'Über die App',
+    aria_close: 'Schliessen',
+    alert_empty: 'Bitte Start und Ziel eingeben.',
+    status_geocoding: '📍 Adressen werden geokodiert…',
+    status_night: '🌙 Nacht ({alt}° unter dem Horizont)',
+    status_sun: '☀️ Höhe {alt}° · Azimut {az}°',
+    status_buildings: '📦 Gebäude werden geladen…',
+    status_shadows: '🧮 Schatten werden berechnet ({n} Gebäude, {r} Routen)…',
+    error_no_route: 'Keine Route gefunden.',
+    error_prefix: 'Fehler: ',
+    no_route: 'Keine Route',
+    label_distance: 'Distanz',
+    label_duration: 'Dauer',
+    label_shade: '🌑 Schatten',
+    label_sun: '☀️ Sonne',
+    pct_sunny: '% sonnig',
+    about_title: 'Über uns — MeridianWay',
+    about_meta_description: 'MeridianWay berechnet zwei Fussgängerrouten nach dem Sonnenstand: eine maximiert die Sonne, die andere den Schatten.',
+    about_back: '← App öffnen',
+  },
+  it: {
+    title: 'MeridianWay — Navigazione solare',
+    meta_description: 'Calcola il tuo percorso in base all\'esposizione solare: due itinerari, uno al sole, uno all\'ombra.',
+    placeholder_start: '📍 Partenza — es. Piazza della Riponne, Losanna',
+    placeholder_end: '🏁 Arrivo — es. Stazione di Losanna',
+    btn_search: 'Calcola',
+    tab_sunny: '☀️ Soleggiato',
+    tab_shady: '🌑 Ombreggiato',
+    compass_label: 'Sole',
+    aria_about: 'Informazioni',
+    aria_close: 'Chiudi',
+    alert_empty: 'Inserire partenza e arrivo.',
+    status_geocoding: '📍 Geocodifica degli indirizzi…',
+    status_night: '🌙 Notte ({alt}° sotto l\'orizzonte)',
+    status_sun: '☀️ Altitudine {alt}° · Azimut {az}°',
+    status_buildings: '📦 Caricamento edifici…',
+    status_shadows: '🧮 Calcolo delle ombre ({n} edifici, {r} percorsi)…',
+    error_no_route: 'Nessun percorso trovato.',
+    error_prefix: 'Errore: ',
+    no_route: 'Nessun percorso',
+    label_distance: 'Distanza',
+    label_duration: 'Durata',
+    label_shade: '🌑 Ombra',
+    label_sun: '☀️ Sole',
+    pct_sunny: '% soleggiato',
+    about_title: 'Informazioni — MeridianWay',
+    about_meta_description: 'MeridianWay calcola due percorsi pedonali in base alla posizione del sole: uno massimizza il sole, l\'altro l\'ombra.',
+    about_back: '← Apri l\'applicazione',
+  },
+  en: {
+    title: 'MeridianWay — Solar navigation',
+    meta_description: 'Plan your route based on sun exposure: two paths, one in the sun, one in the shade.',
+    placeholder_start: '📍 Start — e.g. Riponne Square, Lausanne',
+    placeholder_end: '🏁 End — e.g. Lausanne train station',
+    btn_search: 'Calculate',
+    tab_sunny: '☀️ Sunny',
+    tab_shady: '🌑 Shady',
+    compass_label: 'Sun',
+    aria_about: 'About',
+    aria_close: 'Close',
+    alert_empty: 'Please enter a start and end point.',
+    status_geocoding: '📍 Geocoding addresses…',
+    status_night: '🌙 Night ({alt}° below the horizon)',
+    status_sun: '☀️ Altitude {alt}° · Azimuth {az}°',
+    status_buildings: '📦 Fetching buildings…',
+    status_shadows: '🧮 Computing shadows ({n} buildings, {r} routes)…',
+    error_no_route: 'No route found.',
+    error_prefix: 'Error: ',
+    no_route: 'No route',
+    label_distance: 'Distance',
+    label_duration: 'Duration',
+    label_shade: '🌑 Shade',
+    label_sun: '☀️ Sun',
+    pct_sunny: '% sunny',
+    about_title: 'About — MeridianWay',
+    about_meta_description: 'MeridianWay calculates two pedestrian routes based on sun position: one maximises sunlight, the other shade.',
+    about_back: '← Open the app',
+  },
+} as const;
+
+export type Translations = typeof translations.fr;
+export type TranslationKey = keyof Translations;
+
+export function getLang(): Lang {
+  const lang = document.documentElement.lang as Lang;
+  return (lang in translations) ? lang : 'fr';
+}
+
+export function tr(key: TranslationKey, vars: Record<string, string> = {}): string {
+  const lang = getLang();
+  let str: string = (translations[lang] as Record<string, string>)[key]
+    ?? (translations.fr as Record<string, string>)[key]
+    ?? key;
+  for (const [k, v] of Object.entries(vars)) {
+    str = str.replace(`{${k}}`, v);
+  }
+  return str;
+}
