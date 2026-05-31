@@ -2,10 +2,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 let _map = null;
-let ghostLayers  = [];
-let sunnyLayers  = [];
-let shadyLayers  = [];
-let markerLayers = [];
+let ghostLayers   = [];
+let sunnyLayers   = [];
+let shadyLayers   = [];
+let markerLayers  = [];
+let previewMarkers = { start: null, end: null };
 
 // Gradient endpoints: orange (sun) → dark blue (shade)
 const SUN_RGB   = [249, 115,  22];
@@ -77,6 +78,16 @@ export function clearMap() {
   sunnyLayers  = [];
   shadyLayers  = [];
   markerLayers = [];
+  for (const role of ['start', 'end']) {
+    if (previewMarkers[role]) { _map.removeLayer(previewMarkers[role]); previewMarkers[role] = null; }
+  }
+}
+
+export function setPreviewPin(role, coords) {
+  if (previewMarkers[role]) _map.removeLayer(previewMarkers[role]);
+  const color = role === 'start' ? '#22c55e' : '#ef4444';
+  previewMarkers[role] = L.marker([coords.lat, coords.lng], { icon: pinIcon(color) }).addTo(_map);
+  _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
 // type: 'sunny' | 'shady' — full opacity for the active route, dimmed for the other.
@@ -111,6 +122,6 @@ export function displayRoutes(startC, endC, sunny, shady, all) {
 
   _map.fitBounds(
     L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]),
-    { padding: [50, 50] }
+    { paddingTopLeft: [40, 30], paddingBottomRight: [40, 200] }
   );
 }
