@@ -1,4 +1,3 @@
-import { fmtDist, fmtDur } from './helpers.js';
 import { tr } from './i18n.js';
 
 export function setStatus(msg) {
@@ -28,32 +27,28 @@ export function setActiveTab(type) {
   );
 }
 
-export function renderTab(id, rt, isSunny) {
+export function renderTab(id, rt) {
   const el = document.getElementById(id);
   if (!rt) {
     el.innerHTML = `<p style="padding:16px;color:#9ca3af">${tr('no_route')}</p>`;
     return;
   }
-  const pct = Math.round(rt.sunScore * 100);
-  const cls = isSunny ? 'sunny' : 'shady';
+  const sunPct   = Math.round(rt.sunScore * 100);
+  const shadePct = 100 - sunPct;
   el.innerHTML = `
-    <div class="stat">
-      <div class="val">${fmtDist(rt.distance)}</div>
-      <div class="lbl">${tr('label_distance')}</div>
-    </div>
-    <div class="stat">
-      <div class="val">${fmtDur(rt.duration)}</div>
-      <div class="lbl">${tr('label_duration')}</div>
-    </div>
-    <div class="bar-wrap">
-      <div class="bar-labels"><span>${tr('label_shade')}</span><span>${tr('label_sun')}</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-      <div class="pct ${cls}">${pct}${tr('pct_sunny')}</div>
+    <div class="ratio-wrap">
+      <div class="ratio-nums">
+        <span class="ratio-shade-num">${tr('label_shade')} <strong>${shadePct}%</strong></span>
+        <span class="ratio-sun-num"><strong>${sunPct}%</strong> ${tr('label_sun')}</span>
+      </div>
+      <div class="ratio-track">
+        <div class="ratio-fill" style="width:${sunPct}%"></div>
+      </div>
     </div>`;
 }
 
-export function showResults(sunny, shady, all) {
-  renderTab('tab-sunny', sunny, true);
-  renderTab('tab-shady', shady, false);
+export function showResults(sunny, shady) {
+  renderTab('tab-sunny', sunny);
+  renderTab('tab-shady', shady);
   document.getElementById('results').classList.add('on');
 }
