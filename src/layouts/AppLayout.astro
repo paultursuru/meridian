@@ -65,8 +65,14 @@ const urls: Record<Lang, string> = {
     </div>
   </div>
   <div id="search-panel">
-    <input type="text" id="inp-start" placeholder={t.placeholder_start} />
-    <input type="text" id="inp-end"   placeholder={t.placeholder_end} />
+    <div class="input-wrap">
+      <input type="text" id="inp-start" placeholder={t.placeholder_start} />
+      <button class="geo-btn" id="geo-start" title={t.geo_btn_title} aria-label={t.geo_btn_title}>📍</button>
+    </div>
+    <div class="input-wrap">
+      <input type="text" id="inp-end" placeholder={t.placeholder_end} />
+      <button class="geo-btn" id="geo-end" title={t.geo_btn_title} aria-label={t.geo_btn_title}>📍</button>
+    </div>
     <div class="dt-group">
       <input type="date" id="inp-date" />
       <input type="time" id="inp-time" />
@@ -124,9 +130,9 @@ const urls: Record<Lang, string> = {
 </div>
 
 <script>
-  import { initMap, displayRoutes, setActiveRoute } from '../lib/map.js';
+  import { initMap, displayRoutes, setActiveRoute, setPreviewPin } from '../lib/map.js';
   import { getSun }                      from '../lib/sun.js';
-  import { geocode }                     from '../lib/geocode.js';
+  import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
   import { scoreRoute }                  from '../lib/shadow.js';
@@ -146,8 +152,8 @@ const urls: Record<Lang, string> = {
   input('inp-date').value = now.toISOString().split('T')[0];
   input('inp-time').value = now.toTimeString().slice(0, 5);
 
-  const startAC = initAutocomplete(input('inp-start'));
-  const endAC   = initAutocomplete(input('inp-end'));
+  const startAC = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('start', p) });
+  const endAC   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('end',   p) });
 
   async function handleSearch() {
     const startQ = input('inp-start').value.trim();
@@ -224,6 +230,36 @@ const urls: Record<Lang, string> = {
       button('search-btn').disabled = false;
     }
   }
+
+  async function fillFromGeo(ac: ReturnType<typeof initAutocomplete>, role: 'start' | 'end', btnId: string) {
+    const btn = button(btnId);
+    btn.disabled = true;
+    btn.classList.add('loading');
+    setStatus(tr('geo_loading'));
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+      });
+      const label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      ac.setPlace({ lat, lng, label });
+      setPreviewPin(role, { lat, lng });
+      setStatus(null);
+    } catch (err: unknown) {
+      setStatus(null);
+      if ((err as GeolocationPositionError)?.code === 1) {
+        alert(tr('error_geo_denied'));
+      } else {
+        alert(tr('error_geo_timeout'));
+      }
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  }
+
+  button('geo-start').addEventListener('click', () => fillFromGeo(startAC, 'start', 'geo-start'));
+  button('geo-end').addEventListener('click',   () => fillFromGeo(endAC,   'end',   'geo-end'));
 
   button('search-btn').addEventListener('click', handleSearch);
   ['inp-start', 'inp-end'].forEach(id =>

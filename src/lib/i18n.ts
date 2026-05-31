@@ -29,6 +29,10 @@ export const translations = {
     about_title: 'À propos — MeridianWay',
     about_meta_description: 'MeridianWay calcule deux itinéraires piétons selon la position du soleil : l\'un maximise l\'ensoleillement, l\'autre l\'ombre.',
     about_back: '← Ouvrir l\'application',
+    geo_btn_title: 'Ma position',
+    geo_loading: '📍 Localisation en cours…',
+    error_geo_denied: 'Localisation refusée par le navigateur.',
+    error_geo_timeout: 'Localisation impossible, réessayez.',
   },
   de: {
     title: 'MeridianWay — Sonnennavigation',
@@ -58,6 +62,10 @@ export const translations = {
     about_title: 'Über uns — MeridianWay',
     about_meta_description: 'MeridianWay berechnet zwei Fussgängerrouten nach dem Sonnenstand: eine maximiert die Sonne, die andere den Schatten.',
     about_back: '← App öffnen',
+    geo_btn_title: 'Mein Standort',
+    geo_loading: '📍 Standort wird ermittelt…',
+    error_geo_denied: 'Standortzugriff wurde verweigert.',
+    error_geo_timeout: 'Standort nicht verfügbar, erneut versuchen.',
   },
   it: {
     title: 'MeridianWay — Navigazione solare',
@@ -87,6 +95,10 @@ export const translations = {
     about_title: 'Informazioni — MeridianWay',
     about_meta_description: 'MeridianWay calcola due percorsi pedonali in base alla posizione del sole: uno massimizza il sole, l\'altro l\'ombra.',
     about_back: '← Apri l\'applicazione',
+    geo_btn_title: 'La mia posizione',
+    geo_loading: '📍 Localizzazione in corso…',
+    error_geo_denied: 'Localizzazione rifiutata dal browser.',
+    error_geo_timeout: 'Localizzazione impossibile, riprova.',
   },
   en: {
     title: 'MeridianWay — Solar navigation',
@@ -116,6 +128,10 @@ export const translations = {
     about_title: 'About — MeridianWay',
     about_meta_description: 'MeridianWay calculates two pedestrian routes based on sun position: one maximises sunlight, the other shade.',
     about_back: '← Open the app',
+    geo_btn_title: 'My location',
+    geo_loading: '📍 Getting your location…',
+    error_geo_denied: 'Location access denied by browser.',
+    error_geo_timeout: 'Location unavailable, please try again.',
   },
 } as const;
 

@@ -8,7 +8,7 @@ function shortLabel(displayName) {
 // Creates and manages an autocomplete dropdown for a given input.
 // Returns { getPlace() } — call getPlace() in handleSearch to skip re-geocoding
 // when the user picked a suggestion.
-export function initAutocomplete(inputEl) {
+export function initAutocomplete(inputEl, { onSelect } = {}) {
   let selectedPlace = null;
   let debounceTimer = null;
 
@@ -44,6 +44,7 @@ export function initAutocomplete(inputEl) {
         e.preventDefault();
         inputEl.value = shortLabel(place.label);
         selectedPlace = place;
+        onSelect?.(place);
         hide();
       });
 
@@ -73,5 +74,10 @@ export function initAutocomplete(inputEl) {
   return {
     // Returns the pre-resolved {lat, lng} if the user picked a suggestion, null otherwise
     getPlace: () => selectedPlace,
+    // Inject a pre-resolved place (e.g. from geolocation) without re-geocoding
+    setPlace: ({ lat, lng, label }) => {
+      selectedPlace = { lat, lng, label };
+      inputEl.value = label;
+    },
   };
 }
