@@ -135,7 +135,9 @@ const urls: Record<Lang, string> = {
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
+  import { fetchTrees }                  from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
+  import { deciduousLeafFrac }           from '../lib/season.js';
   import { drawCompass }                 from '../lib/compass.js';
   import { setStatus, initTabs, showResults, setActiveTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
@@ -154,6 +156,37 @@ const urls: Record<Lang, string> = {
 
   const startAC = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('start', p) });
   const endAC   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('end',   p) });
+
+  function logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes }: {
+    startQ: string; endQ: string;
+    startC: { lat: number; lng: number }; endC: { lat: number; lng: number };
+    tDate: Date; sun: { azDeg: number; altDeg: number };
+    bbox: number[]; buildings: unknown[]; trees: unknown[]; leafFrac: number;
+    routes: { distance: number; sunScore: number; segShade: { i: number; shade: boolean }[]; geometry: { coordinates: number[][] } }[];
+  }) {
+    const payload = {
+      query: { from: startQ, to: endQ },
+      start: startC,
+      end: endC,
+      datetime: tDate.toISOString(),
+      sun: { altDeg: +sun.altDeg.toFixed(2), azDeg: +sun.azDeg.toFixed(1) },
+      bbox: bbox.map(v => +v.toFixed(5)),
+      buildingCount: buildings.length,
+      treeCount: trees.length,
+      leafFrac,
+      routes: routes.map((rt, idx) => ({
+        index: idx,
+        distanceM: Math.round(rt.distance),
+        sunScore: +rt.sunScore.toFixed(4),
+        shadedSegments: rt.segShade.filter(s => s.shade).length,
+        totalSegments: rt.segShade.length,
+        segShade: rt.segShade,
+        coordinates: rt.geometry.coordinates,
+      })),
+    };
+    // keeping this if debug needed
+    // console.log('SHADOW_DEBUG_JSON ' + JSON.stringify(payload));
+  }
 
   async function handleSearch() {
     const startQ = input('inp-start').value.trim();
@@ -200,11 +233,14 @@ const urls: Record<Lang, string> = {
       if (!routes.length) throw new Error(tr('error_no_route'));
 
       setStatus(tr('status_buildings'));
-      const buildings = await fetchBuildings(routesBbox(routes));
+      const bbox = routesBbox(routes);
+      const buildings = await fetchBuildings(bbox);
+      const trees = await fetchTrees(bbox);
+      const leafFrac = deciduousLeafFrac(tDate);
 
       setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       routes.forEach(rt => {
-        const { score, segShade } = scoreRoute(rt, buildings, sun);
+        const { score, segShade } = scoreRoute(rt, buildings, trees, sun, leafFrac);
         rt.sunScore = score;
         rt.segShade = segShade;
       });
@@ -221,6 +257,7 @@ const urls: Record<Lang, string> = {
       setActiveRoute(preselect);
 
       setStatus(null);
+      logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes });
 
     } catch (err) {
       setStatus(null);

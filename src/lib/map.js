@@ -20,17 +20,15 @@ function lerpColor(t) {
 }
 
 // Draws a route as per-segment colored polylines using shade data.
-// Since shadow.js samples every other segment (i += 2), unsampled intermediate
-// points get an interpolated shade value from their sampled neighbours.
+// segShade covers every segment (i → i+1), so each entry maps directly to its two endpoints.
 function drawGradientRoute(coords, segShade, weight, opacity) {
   const N = coords.length;
 
-  // Build a shade value [0=sun … 1=shade] for every point.
-  // Each sampled segment (i → i+2) spreads its value to all three points it spans.
+  // Build a shade value [0=sun … 1=shade] for every point by averaging adjacent segment values.
   const ptShade = new Array(N).fill(null);
   for (const { i, shade } of segShade) {
     const val = shade ? 1 : 0;
-    for (let j = i; j <= Math.min(i + 2, N - 1); j++) {
+    for (let j = i; j <= Math.min(i + 1, N - 1); j++) {
       ptShade[j] = ptShade[j] === null ? val : (ptShade[j] + val) / 2;
     }
   }

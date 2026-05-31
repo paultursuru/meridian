@@ -28,9 +28,10 @@ function parseBuildings(els) {
     else if (['church', 'cathedral', 'tower'].includes(way.tags.building)) height = 22;
 
     // Max distance from centroid to any vertex — used as bounding radius for shadow pre-filter
+    const cosLat = Math.cos(centroid.lat * Math.PI / 180);
     const radius = pts.reduce((max, p) => {
       const dlat = (p.lat - centroid.lat) * 111000;
-      const dlng = (p.lng - centroid.lng) * 111000;
+      const dlng = (p.lng - centroid.lng) * 111000 * cosLat;
       return Math.max(max, Math.sqrt(dlat * dlat + dlng * dlng));
     }, 0);
 
@@ -39,18 +40,6 @@ function parseBuildings(els) {
   return out;
 }
 
-function fallbackBuildings(bbox) {
-  const [s, w, n, e] = bbox;
-  const out = [];
-  for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) {
-    if (Math.random() < 0.55) out.push({
-      centroid: { lat: s + (n - s) * (i + 0.5) / 10, lng: w + (e - w) * (j + 0.5) / 10 },
-      height: 8 + Math.random() * 18,
-      verts: [],
-    });
-  }
-  return out;
-}
 
 export async function fetchBuildings(bbox) {
   const [s, w, n, e] = bbox;
@@ -63,7 +52,7 @@ export async function fetchBuildings(bbox) {
     const d = await r.json();
     return parseBuildings(d.elements || []);
   } catch (err) {
-    console.warn('Overpass failed → fallback', err);
-    return fallbackBuildings(bbox);
+    console.warn('Overpass buildings failed, shadows disabled for this query', err);
+    return [];
   }
 }

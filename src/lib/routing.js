@@ -41,14 +41,10 @@ export async function buildRoutes(start, end, onStatus) {
   const p2Lat = start.lat + dy * 0.67,    p2Lng = start.lng + dx * 0.67;
 
   const vias = [
-    { lat: mLat + py * 0.0007, lng: mLng + px * 0.0007 },
-    { lat: mLat - py * 0.0007, lng: mLng - px * 0.0007 },
-    { lat: mLat + py * 0.0013, lng: mLng + px * 0.0013 },
-    { lat: mLat - py * 0.0013, lng: mLng - px * 0.0013 },
-    { lat: mLat + py * 0.0018, lng: mLng + px * 0.0018 },
-    { lat: mLat - py * 0.0018, lng: mLng - px * 0.0018 },
-    { lat: p1Lat + py * 0.0010, lng: p1Lng + px * 0.0010 },
-    { lat: p2Lat - py * 0.0010, lng: p2Lng - px * 0.0010 },
+    { lat: mLat + py * 0.0010, lng: mLng + px * 0.0010 }, // ~111m left
+    { lat: mLat - py * 0.0010, lng: mLng - px * 0.0010 }, // ~111m right
+    { lat: mLat + py * 0.0016, lng: mLng + px * 0.0016 }, // ~178m left
+    { lat: mLat - py * 0.0016, lng: mLng - px * 0.0016 }, // ~178m right
   ];
 
   const settled = await Promise.allSettled(vias.map(v => osrmRoute([start, v, end])));
