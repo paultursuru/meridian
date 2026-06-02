@@ -8,9 +8,9 @@ let shadyLayers   = [];
 let markerLayers  = [];
 let previewMarkers = { start: null, end: null };
 
-// Gradient endpoints: orange (sun) → dark blue (shade)
-const SUN_RGB   = [249, 115,  22];
-const SHADE_RGB = [ 26,  58, 107];
+// Gradient endpoints: yellow (sun) → medium lavender (shade)
+const SUN_RGB   = [240, 242, 160];
+const SHADE_RGB = [186, 133, 199];
 
 function lerpColor(t) {
   const r = Math.round(SUN_RGB[0] + (SHADE_RGB[0] - SUN_RGB[0]) * t);
@@ -55,11 +55,12 @@ function drawGradientRoute(coords, segShade, weight, opacity) {
 
 export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org">OSM</a> &copy; <a href="https://carto.com">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 19,
   }).addTo(_map);
+  _map.getPane('tilePane').style.filter = 'invert(100%) hue-rotate(180deg) brightness(170%) contrast(110%)';
 }
 
 function pinIcon(color) {
