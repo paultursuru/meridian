@@ -28,7 +28,7 @@ const urls: Record<Lang, string> = {
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
-  <meta name="theme-color" content="#f97316" />
+  <meta name="theme-color" content="#0e120a" />
   <meta name="description" content={t.meta_description} />
   <link rel="canonical" href={urls[lang]} />
   <link rel="alternate" hreflang="fr" href={urls.fr} />
@@ -220,10 +220,10 @@ const urls: Record<Lang, string> = {
       infoEl.style.display = 'block';
       if (sun.altDeg <= 0) {
         infoEl.textContent = tr('status_night', { alt: sun.altDeg.toFixed(1) });
-        infoEl.style.color = '#6366f1';
+        infoEl.style.color = '#e8c8f0';
       } else {
         infoEl.textContent = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
-        infoEl.style.color = '#f97316';
+        infoEl.style.color = '#f0f2a0';
       }
 
       drawCompass(sun.azDeg, sun.altDeg);
