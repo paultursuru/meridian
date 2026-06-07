@@ -1,10 +1,5 @@
 import { suggest } from './geocode.js';
 
-// Shorten Nominatim display_name: keep first 3 comma-separated parts
-function shortLabel(displayName) {
-  return displayName.split(',').slice(0, 3).join(',').trim();
-}
-
 // Creates and manages an autocomplete dropdown for a given input.
 // Returns { getPlace() } — call getPlace() in handleSearch to skip re-geocoding
 // when the user picked a suggestion.
@@ -37,12 +32,23 @@ export function initAutocomplete(inputEl, { onSelect } = {}) {
       const li = document.createElement('li');
       li.className = 'ac-item';
       li.title = place.label; // full name on hover
-      li.textContent = shortLabel(place.label);
+
+      const strong = document.createElement('strong');
+      strong.className = 'ac-line1';
+      strong.textContent = place.line1;
+      li.appendChild(strong);
+
+      if (place.line2) {
+        const span = document.createElement('span');
+        span.className = 'ac-line2';
+        span.textContent = place.line2;
+        li.appendChild(span);
+      }
 
       li.addEventListener('mousedown', e => {
         // mousedown fires before blur — prevent input losing focus before we fill it
         e.preventDefault();
-        inputEl.value = shortLabel(place.label);
+        inputEl.value = place.short;
         selectedPlace = place;
         onSelect?.(place);
         hide();
@@ -76,7 +82,7 @@ export function initAutocomplete(inputEl, { onSelect } = {}) {
     getPlace: () => selectedPlace,
     // Inject a pre-resolved place (e.g. from geolocation) without re-geocoding
     setPlace: ({ lat, lng, label }) => {
-      selectedPlace = { lat, lng, label };
+      selectedPlace = { lat, lng, label, line1: label, line2: '', short: label };
       inputEl.value = label;
     },
   };
