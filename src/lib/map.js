@@ -2,7 +2,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 let _map = null;
-let ghostLayers   = [];
 let sunnyLayers   = [];
 let shadyLayers   = [];
 let markerLayers  = [];
@@ -21,7 +20,7 @@ function lerpColor(t) {
 
 // Draws a route as per-segment colored polylines using shade data.
 // segShade covers every segment (i → i+1), so each entry maps directly to its two endpoints.
-function drawGradientRoute(coords, segShade, weight, opacity) {
+function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
   const N = coords.length;
 
   // Build a shade value [0=sun … 1=shade] for every point by averaging adjacent segment values.
@@ -42,13 +41,15 @@ function drawGradientRoute(coords, segShade, weight, opacity) {
     const t = (ptShade[j] + ptShade[j + 1]) / 2;
     const [lng1, lat1] = coords[j];
     const [lng2, lat2] = coords[j + 1];
-    layers.push(L.polyline([[lat1, lng1], [lat2, lng2]], {
+    const seg = L.polyline([[lat1, lng1], [lat2, lng2]], {
       color: lerpColor(t),
       weight,
       opacity,
       lineCap: 'round',
       lineJoin: 'round',
-    }).addTo(_map));
+    });
+    if (onClick) seg.on('click', onClick);
+    layers.push(seg.addTo(_map));
   }
   return layers;
 }
@@ -72,8 +73,7 @@ function pinIcon(color) {
 }
 
 export function clearMap() {
-  [...ghostLayers, ...sunnyLayers, ...shadyLayers, ...markerLayers].forEach(l => _map.removeLayer(l));
-  ghostLayers  = [];
+  [...sunnyLayers, ...shadyLayers, ...markerLayers].forEach(l => _map.removeLayer(l));
   sunnyLayers  = [];
   shadyLayers  = [];
   markerLayers = [];
@@ -95,24 +95,21 @@ export function setActiveRoute(type) {
   shadyLayers.forEach(l => l.setStyle({ opacity: type === 'shady' ? 0.85 : 0.25 }));
 }
 
-export function displayRoutes(startC, endC, sunny, shady, all) {
+export function displayRoutes(startC, endC, sunny, shady) {
   clearMap();
 
-  // Ghost routes (all except the two highlighted ones)
-  all.forEach(rt => {
-    if (rt === sunny || rt === shady) return;
-    ghostLayers.push(L.geoJSON(rt.geometry, { style: { color: '#d1d5db', weight: 3, opacity: 0.45 } }).addTo(_map));
-  });
+  const dispatch = (type) => () =>
+    window.dispatchEvent(new CustomEvent('route-select', { detail: { type } }));
 
   // Shady route — gradient, drawn below sunny
   if (shady) {
-    drawGradientRoute(shady.geometry.coordinates, shady.segShade ?? [], 5.5, 0.85)
+    drawGradientRoute(shady.geometry.coordinates, shady.segShade ?? [], 5.5, 0.85, dispatch('shady'))
       .forEach(l => shadyLayers.push(l));
   }
 
   // Sunny route — gradient, drawn on top
   if (sunny) {
-    drawGradientRoute(sunny.geometry.coordinates, sunny.segShade ?? [], 5.5, 0.9)
+    drawGradientRoute(sunny.geometry.coordinates, sunny.segShade ?? [], 5.5, 0.9, dispatch('sunny'))
       .forEach(l => sunnyLayers.push(l));
   }
 

@@ -28,7 +28,11 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #header h1 .meri { color: #f0f2a0; }
 #header h1 .way  { color: #e8c8f0; font-style: italic; }
 #header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; }
-#sun-info { font-size: 0.82rem; font-weight: 600; display: none; }
+#sun-info { font-size: 0.82rem; font-weight: 600; display: none; white-space: nowrap; }
+#sun-info.visible { display: block; }
+#sun-info.day  { color: #f0f2a0; }
+#sun-info.night { color: #e8c8f0; }
+@media (max-width: 600px) { #sun-info { font-size: 0.7rem; } }
 
 /* ── Search panel ── */
 #search-panel {
@@ -83,7 +87,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .geo-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 .geo-btn.loading { animation: geo-pulse 0.8s ease-in-out infinite; opacity: 1; }
 @keyframes geo-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-.dt-group { display: flex; gap: 6px; }
+.dt-row { display: flex; gap: 8px; align-items: center; }
 #search-panel input[type="date"],
 #search-panel input[type="time"] {
   padding: 8px 10px;
@@ -112,6 +116,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 
 /* ── Map ── */
 #map { flex: 1; z-index: 1; }
+#map .leaflet-interactive { cursor: pointer; }
 
 /* ── Status toast ── */
 #status {
@@ -135,7 +140,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Compass ── */
 #compass-wrap {
   position: fixed;
-  top: 130px;
+  top: 120px;
   right: 16px;
   z-index: 2000;
   display: none;
@@ -441,5 +446,8 @@ p.opensource-badge {
     flex: 0 0 100%;
     min-width: 0;
   }
+  .dt-row { width: 100%; }
+  #search-btn { width: 100%; }
   #about-drawer { width: 100vw; }
+  #compass-wrap { top: 200px; }
 }
