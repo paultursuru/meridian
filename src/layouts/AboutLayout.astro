@@ -34,7 +34,7 @@ const aboutUrls: Record<Lang, string> = {
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
-  <meta name="theme-color" content="#f97316" />
+  <meta name="theme-color" content="#0e120a" />
   <meta name="description" content={t.about_meta_description} />
   <link rel="canonical" href={aboutUrls[lang]} />
   <link rel="alternate" hreflang="fr" href={aboutUrls.fr} />
@@ -78,8 +78,8 @@ const aboutUrls: Record<Lang, string> = {
 
 <style>
   body.about-page {
-    background: white;
-    color: #374151;
+    background: #0e120a;
+    color: #d8dbc8;
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -95,10 +95,10 @@ const aboutUrls: Record<Lang, string> = {
     align-items: center;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid rgba(240,242,160,0.13);
   }
   .back-link {
-    color: #f97316;
+    color: #f0f2a0;
     text-decoration: none;
     font-size: 0.9rem;
   }
@@ -108,23 +108,23 @@ const aboutUrls: Record<Lang, string> = {
     gap: 0.5rem;
   }
   .lang-link {
-    color: #6b7280;
+    color: rgba(216,219,200,0.6);
     text-decoration: none;
     font-size: 0.78rem;
     font-weight: 600;
     padding: 4px 10px;
-    border: 1.5px solid #e5e7eb;
+    border: 1.5px solid rgba(240,242,160,0.2);
     border-radius: 6px;
     transition: all 0.15s;
   }
-  .lang-link.active { background: #f97316; border-color: #f97316; color: white; }
-  .lang-link:hover:not(.active) { border-color: #f97316; color: #f97316; }
+  .lang-link.active { background: #f0f2a0; border-color: #f0f2a0; color: #0e120a; }
+  .lang-link:hover:not(.active) { border-color: rgba(240,242,160,0.5); color: #f0f2a0; }
   #about-page-links {
     display: flex;
     gap: 1rem;
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid rgba(240,242,160,0.13);
   }
 </style>
 
