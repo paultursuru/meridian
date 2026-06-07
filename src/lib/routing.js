@@ -31,34 +31,30 @@ export async function buildRoutes(start, end, onStatus) {
   onStatus('🗺️ Génération des itinéraires…');
   const all = await osrmAlts(start, end);
 
-  // Perpendicular offsets at pedestrian scale: adjacent streets ~100-200m apart
-  const dx = end.lng - start.lng, dy = end.lat - start.lat;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  const px = -dy / len, py = dx / len;
-
-  const mLat = (start.lat + end.lat) / 2, mLng = (start.lng + end.lng) / 2;
-  const p1Lat = start.lat + dy * 0.33,    p1Lng = start.lng + dx * 0.33;
-  const p2Lat = start.lat + dy * 0.67,    p2Lng = start.lng + dx * 0.67;
-
-  const vias = [
-    { lat: mLat + py * 0.0010, lng: mLng + px * 0.0010 }, // ~111m left
-    { lat: mLat - py * 0.0010, lng: mLng - px * 0.0010 }, // ~111m right
-    { lat: mLat + py * 0.0016, lng: mLng + px * 0.0016 }, // ~178m left
-    { lat: mLat - py * 0.0016, lng: mLng - px * 0.0016 }, // ~178m right
-  ];
-
-  const settled = await Promise.allSettled(vias.map(v => osrmRoute([start, v, end])));
-  settled.forEach(r => { if (r.status === 'fulfilled' && r.value) all.push(r.value); });
-
   const directDist = haversine(start.lat, start.lng, end.lat, end.lng);
 
-  // Remove routes with obvious backtracking (>2.5× direct haversine distance).
-  // Threshold is generous because pedestrian routes in hilly cities like Lausanne
-  // can legitimately reach 1.5–2× the crow-flies distance.
   const unique = [];
   for (const rt of all) {
     if (rt.distance > directDist * 2.5) continue;
     if (!unique.some(u => Math.abs(u.distance - rt.distance) / rt.distance < 0.03)) unique.push(rt);
+  }
+
+  // If OSRM only returned one route, try a single perpendicular waypoint as fallback.
+  if (unique.length < 2) {
+    const dx = end.lng - start.lng, dy = end.lat - start.lat;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const px = -dy / len, py = dx / len;
+    const mLat = (start.lat + end.lat) / 2, mLng = (start.lng + end.lng) / 2;
+
+    for (const offset of [0.0010, -0.0010]) {
+      const via = { lat: mLat + py * offset, lng: mLng + px * offset };
+      const rt = await osrmRoute([start, via, end]);
+      if (!rt || rt.distance > directDist * 2.5) continue;
+      if (!unique.some(u => Math.abs(u.distance - rt.distance) / rt.distance < 0.03)) {
+        unique.push(rt);
+        break;
+      }
+    }
   }
 
   return unique;

@@ -1,3 +1,5 @@
+import { overpassFetch } from './overpass.js';
+
 export function routesBbox(routes) {
   let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity;
   routes.forEach(rt => rt.geometry.coordinates.forEach(([lng, lat]) => {
@@ -45,11 +47,7 @@ export async function fetchBuildings(bbox) {
   const [s, w, n, e] = bbox;
   const q = `[out:json][timeout:25];(way["building"](${s},${w},${n},${e}););out body;>;out skel qt;`;
   try {
-    const r = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: `data=${encodeURIComponent(q)}`,
-    });
-    const d = await r.json();
+    const d = await overpassFetch(q);
     return parseBuildings(d.elements || []);
   } catch (err) {
     console.warn('Overpass buildings failed, shadows disabled for this query', err);

@@ -1,4 +1,4 @@
-const OVERPASS = 'https://overpass-api.de/api/interpreter';
+import { overpassFetch } from './overpass.js';
 
 function deciduous(tags) {
   const cycle = tags?.leaf_cycle || '';
@@ -57,8 +57,7 @@ export async function fetchTrees(bbox) {
   const [s, w, n, e] = bbox;
   const q = `[out:json][timeout:25];(node["natural"="tree"](${s},${w},${n},${e});way["natural"="tree_row"](${s},${w},${n},${e}););out body;>;out skel qt;`;
   try {
-    const r = await fetch(OVERPASS, { method: 'POST', body: `data=${encodeURIComponent(q)}` });
-    const d = await r.json();
+    const d = await overpassFetch(q);
     return parseTrees(d.elements || []);
   } catch (err) {
     console.warn('Overpass trees failed', err);
