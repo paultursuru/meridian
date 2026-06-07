@@ -14,12 +14,13 @@ const show = (l: Lang) => allLangs || l === lang;
   <div class:list={['about-pane', { active: lang === 'fr' }]} data-lang="fr">
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Navigation piétonne selon votre ensoleillement.</p>
-    <p>MeridianWay calcule deux itinéraires <strong>à pied</strong> entre un point de départ et une destination. L'objectif n'est pas le chemin le plus rapide, mais celui qui maximise — ou minimise — <strong>votre exposition au soleil</strong>.</p>
-    <p>L'application analyse la position exacte du soleil à l'heure choisie et les ombres projetées par les <strong>bâtiments environnants</strong>. Elle peut même suggérer <strong>de quel côté du trottoir marcher</strong> pour rester à l'ombre ou profiter du soleil tout au long du trajet.</p>
+    <p>MeridianWay calcule deux itinéraires <strong>à pied</strong> entre un point de départ et une destination. L'objectif n'est pas le chemin le plus rapide, mais celui qui maximise ou minimise <strong>votre exposition au soleil</strong>.</p>
+    <p>L'application analyse la position du soleil à l'heure choisie et les ombres portées par les bâtiments environnants, à partir des données ouvertes d'<strong>OpenStreetMap</strong>.</p>
+    <p>Les résultats sont des <strong>orientations</strong>, pas des certitudes au mètre près. Les hauteurs de bâtiments dans OpenStreetMap sont partielles mais régulièrement mises à jour par la communauté : certaines zones ombragées peuvent ne pas apparaître, et certains trajets sont en réalité plus à l'ombre qu'indiqué.</p>
     <p>En hiver, profiter de la chaleur du soleil. En été, trouver la fraîcheur de l'ombre.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Source ouverte</p>
-      Le code de Meridian Way est librement accessible. N'importe qui peut le consulter, le modifier ou contribuer au projet.
+      Le code de MeridianWay est librement accessible. N'importe qui peut le consulter, le modifier ou contribuer au projet. Les données cartographiques sont fournies par <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a> et sa communauté : si ce projet vous est utile, pensez à <a href="https://supporting.openstreetmap.org/" target="_blank" rel="noopener">soutenir la fondation OSM</a>.
     </div>
   </div>
 )}
@@ -28,12 +29,13 @@ const show = (l: Lang) => allLangs || l === lang;
   <div class:list={['about-pane', { active: lang === 'de' }]} data-lang="de">
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Fussgänger-Navigation nach Sonneneinstrahlung.</p>
-    <p>MeridianWay berechnet zwei <strong>Fussgängerrouten</strong> zwischen Start und Ziel. Nicht die schnellste Strecke zählt, sondern jene, die <strong>Ihre Sonneneinstrahlung</strong> maximiert — oder minimiert.</p>
-    <p>Die App analysiert den Sonnenstand zur gewählten Uhrzeit sowie die Schatten, die <strong>umliegende Gebäude</strong> auf den Weg werfen. Sie kann sogar empfehlen, <strong>auf welcher Seite des Gehsteigs</strong> Sie gehen sollten, um bestmöglich Schatten oder Sonne zu nutzen.</p>
+    <p>MeridianWay berechnet zwei <strong>Fussgängerrouten</strong> zwischen Start und Ziel. Nicht die schnellste Strecke zählt, sondern jene, die <strong>Ihre Sonneneinstrahlung</strong> maximiert oder minimiert.</p>
+    <p>Die App analysiert den genauen Sonnenstand zur gewählten Uhrzeit und die Schatten der umliegenden Gebäude, basierend auf den offenen Daten von <strong>OpenStreetMap</strong>.</p>
+    <p>Die Ergebnisse sind <strong>Orientierungshilfen</strong>, keine metergenauen Anweisungen. Die Gebäudehöhen in OpenStreetMap sind teilweise vorhanden, werden aber regelmässig von der Gemeinschaft aktualisiert : manche Schattenbereiche können dabei fehlen, und einige Routen sind in der Realität schattiger als angezeigt.</p>
     <p>Im Winter die Sonnenwärme geniessen. Im Sommer im kühlen Schatten bleiben.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Open Source</p>
-      Der Code von Meridian Way ist frei zugänglich. Jeder kann ihn einsehen, verändern oder zum Projekt beitragen.
+      Der Code von MeridianWay ist frei zugänglich. Jeder kann ihn einsehen, verändern oder zum Projekt beitragen. Die Kartendaten stammen von <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a> und seiner Gemeinschaft : wenn dieses Projekt nützlich ist, können Sie die <a href="https://supporting.openstreetmap.org/" target="_blank" rel="noopener">OSM-Stiftung unterstützen</a>.
     </div>
   </div>
 )}
@@ -42,12 +44,13 @@ const show = (l: Lang) => allLangs || l === lang;
   <div class:list={['about-pane', { active: lang === 'it' }]} data-lang="it">
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Navigazione pedonale secondo l'esposizione solare.</p>
-    <p>MeridianWay calcola due <strong>percorsi pedonali</strong> tra un punto di partenza e una destinazione. L'obiettivo non è il tragitto più veloce, ma quello che massimizza — o minimizza — <strong>la tua esposizione al sole</strong>.</p>
-    <p>L'applicazione analizza la posizione del sole all'ora scelta e le ombre proiettate dagli <strong>edifici circostanti</strong>. Può persino suggerire <strong>da che lato del marciapiede camminare</strong> per restare all'ombra o godere del sole per tutto il percorso.</p>
+    <p>MeridianWay calcola due <strong>percorsi pedonali</strong> tra un punto di partenza e una destinazione. L'obiettivo non è il tragitto più veloce, ma quello che massimizza o minimizza <strong>la tua esposizione al sole</strong>.</p>
+    <p>L'applicazione analizza la posizione del sole all'ora scelta e le ombre proiettate dagli edifici circostanti, sulla base dei dati aperti di <strong>OpenStreetMap</strong>.</p>
+    <p>I risultati sono <strong>indicazioni</strong>, non istruzioni precise al metro. Le altezze degli edifici in OpenStreetMap sono parziali ma regolarmente aggiornate dalla comunità : alcune zone d'ombra possono non apparire, e certi percorsi sono in realtà più ombreggiati di quanto indicato.</p>
     <p>D'inverno, godere del calore del sole. D'estate, restare al fresco all'ombra.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Codice aperto</p>
-      Il codice di Meridian Way è liberamente accessibile. Chiunque può consultarlo, modificarlo o contribuire al progetto.
+      Il codice di MeridianWay è liberamente accessibile. Chiunque può consultarlo, modificarlo o contribuire al progetto. I dati cartografici sono forniti da <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a> e dalla sua comunità : se questo progetto ti è utile, considera di <a href="https://supporting.openstreetmap.org/" target="_blank" rel="noopener">sostenere la fondazione OSM</a>.
     </div>
   </div>
 )}
@@ -56,12 +59,13 @@ const show = (l: Lang) => allLangs || l === lang;
   <div class:list={['about-pane', { active: lang === 'en' }]} data-lang="en">
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Pedestrian navigation for your sun exposure.</p>
-    <p>MeridianWay calculates two <strong>walking routes</strong> between a starting point and a destination. The goal isn't the fastest path — it's the one that maximises, or minimises, <strong>your exposure to the sun</strong>.</p>
-    <p>The app analyses the sun's exact position at the chosen time and the shadows cast by <strong>surrounding buildings</strong>. It can even suggest <strong>which side of the pavement to walk on</strong> to stay in shade — or sunshine — for as much of your journey as possible.</p>
+    <p>MeridianWay calculates two <strong>walking routes</strong> between a starting point and a destination. The goal isn't the fastest path, it's the one that maximises or minimises <strong>your exposure to the sun</strong>.</p>
+    <p>The app analyses the sun's exact position at the chosen time and the shadows cast by surrounding buildings, using open data from <strong>OpenStreetMap</strong>.</p>
+    <p>The results are <strong>suggestions</strong>, not precise instructions. Building heights in OpenStreetMap are partial but regularly updated by the community: some shaded areas may go undetected, and certain routes are actually shadier than shown.</p>
     <p>In winter, soak up the warmth of the sun. In summer, stay cool in the shade.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Open source</p>
-      Meridian Way's code is freely available. Anyone can read it, modify it, or contribute to the project.
+      MeridianWay's code is freely available. Anyone can read it, modify it, or contribute to the project. Map data is provided by <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a> and its community: if this project is useful to you, consider <a href="https://supporting.openstreetmap.org/" target="_blank" rel="noopener">supporting the OSM foundation</a>.
     </div>
   </div>
 )}
