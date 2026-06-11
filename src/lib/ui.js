@@ -1,9 +1,17 @@
-import { tr } from './i18n.js';
 
 export function setStatus(msg) {
   const el = document.getElementById('status');
   el.textContent = msg || '';
   el.classList.toggle('on', !!msg);
+}
+
+function fmtDist(m) {
+  return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m';
+}
+
+function fmtDur(sec) {
+  const min = Math.round(sec / 60);
+  return min + ' min';
 }
 
 export function initTabs(onTabChange) {
@@ -28,27 +36,77 @@ export function setActiveTab(type) {
 }
 
 export function renderTab(id, rt) {
-  const el = document.getElementById(id);
-  if (!rt) {
-    el.innerHTML = `<p style="padding:16px;color:#9ca3af">${tr('no_route')}</p>`;
-    return;
-  }
+  const prefix = id.replace('tab-', '');
+  const g = (suffix) => document.getElementById(`${prefix}-${suffix}`);
+
   const sunPct   = Math.round(rt.sunScore * 100);
   const shadePct = 100 - sunPct;
-  el.innerHTML = `
-    <div class="ratio-wrap">
-      <div class="ratio-nums">
-        <span class="ratio-shade-num">${tr('label_shade')} <strong>${shadePct}%</strong></span>
-        <span class="ratio-sun-num"><strong>${sunPct}%</strong> ${tr('label_sun')}</span>
-      </div>
-      <div class="ratio-track">
-        <div class="ratio-fill" style="width:${sunPct}%"></div>
-      </div>
-    </div>`;
+  const shadedM  = Math.round((1 - rt.sunScore) * rt.distance);
+  const sunnyM   = Math.round(rt.sunScore * rt.distance);
+
+  g('shade-pct').textContent   = shadePct + '%';
+  g('sun-pct').textContent     = sunPct + '%';
+  g('ratio-fill').style.width  = sunPct + '%';
+  g('dist').textContent        = fmtDist(rt.distance);
+  g('dur').textContent         = fmtDur(rt.duration);
+  g('shaded-dist').textContent = fmtDist(shadedM);
+  g('sun-dist').textContent    = fmtDist(sunnyM);
+
+  const elevEl   = g('elev');
+  const elevStat = g('elev-stat');
+  elevStat.style.display = '';
+  if (rt.elevation) {
+    elevEl.textContent = '↑' + rt.elevation.up + 'm  ↓' + rt.elevation.down + 'm';
+    elevEl.classList.remove('elev-loading');
+  } else {
+    elevEl.textContent = '…';
+    elevEl.classList.add('elev-loading');
+  }
+}
+
+let drawerInited = false;
+
+function initDrawer() {
+  if (drawerInited) return;
+  drawerInited = true;
+
+  const drawer = document.getElementById('results');
+  const handle = document.getElementById('drawer-handle');
+
+  let startY = 0, isDragging = false, moved = false;
+
+  function dragStart(y) { startY = y; isDragging = true; moved = false; }
+  function dragMove(y)  { if (isDragging && Math.abs(y - startY) > 8) moved = true; }
+  function dragEnd(y) {
+    if (!isDragging) return;
+    isDragging = false;
+    const dy = startY - y;
+    if (!moved) {
+      drawer.classList.toggle('expanded');
+    } else if (dy > 40) {
+      drawer.classList.add('expanded');
+    } else if (dy < -40) {
+      drawer.classList.remove('expanded');
+    }
+  }
+
+  handle.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), { passive: true });
+  handle.addEventListener('touchmove',  e => dragMove(e.touches[0].clientY),  { passive: true });
+  handle.addEventListener('touchend',   e => dragEnd(e.changedTouches[0].clientY));
+  handle.addEventListener('mousedown',  e => { dragStart(e.clientY); e.preventDefault(); });
+  document.addEventListener('mousemove', e => dragMove(e.clientY));
+  document.addEventListener('mouseup',   e => dragEnd(e.clientY));
+
+  handle.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); drawer.classList.toggle('expanded'); }
+  });
 }
 
 export function showResults(sunny, shady) {
   renderTab('tab-sunny', sunny);
   renderTab('tab-shady', shady);
-  document.getElementById('results').classList.add('on');
+  const drawer = document.getElementById('results');
+  drawer.classList.remove('expanded');
+  drawer.classList.add('on');
+  initDrawer();
 }

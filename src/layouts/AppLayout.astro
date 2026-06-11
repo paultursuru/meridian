@@ -119,14 +119,88 @@ const urls: Record<Lang, string> = {
 </div>
 
 <div id="results">
+  <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
+    <div id="drawer-bar"></div>
+  </div>
   <div id="tabs">
     <button class="tab-btn shady"  data-tab="shady">{t.tab_shady}</button>
     <button class="tab-btn active" data-tab="sunny">{t.tab_sunny}</button>
   </div>
-  <div id="tab-sunny" class="tab-pane active"></div>
-  <div id="tab-shady" class="tab-pane"></div>
-  <div id="summary"></div>
-  <a href="/about"></a>
+  <div id="tab-sunny" class="tab-pane active">
+    <div class="ratio-wrap">
+      <div class="ratio-nums">
+        <span class="ratio-shade-num">{t.label_shade} <strong id="sunny-shade-pct"></strong></span>
+        <span class="ratio-sun-num"><strong id="sunny-sun-pct"></strong> {t.label_sun}</span>
+      </div>
+      <div class="ratio-track">
+        <div class="ratio-fill" id="sunny-ratio-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="route-details">
+      <div class="detail-stats">
+        <div class="detail-stat">
+          <span class="stat-val" id="sunny-dist"></span>
+          <span class="stat-lbl">{t.label_distance}</span>
+        </div>
+        <div class="detail-stat">
+          <span class="stat-val" id="sunny-dur"></span>
+          <span class="stat-lbl">{t.label_duration}</span>
+        </div>
+        <div class="detail-stat" id="sunny-elev-stat" style="display:none">
+          <span class="stat-val elev-val" id="sunny-elev"></span>
+          <span class="stat-lbl">{t.label_elevation}</span>
+        </div>
+      </div>
+      <div class="detail-split">
+        <div class="detail-split-shade">
+          <span class="split-val" id="sunny-shaded-dist"></span>
+          <span class="split-lbl">{t.label_shade}</span>
+        </div>
+        <div class="detail-split-sun">
+          <span class="split-val" id="sunny-sun-dist"></span>
+          <span class="split-lbl">{t.label_sun}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-shady" class="tab-pane">
+    <div class="ratio-wrap">
+      <div class="ratio-nums">
+        <span class="ratio-shade-num">{t.label_shade} <strong id="shady-shade-pct"></strong></span>
+        <span class="ratio-sun-num"><strong id="shady-sun-pct"></strong> {t.label_sun}</span>
+      </div>
+      <div class="ratio-track">
+        <div class="ratio-fill" id="shady-ratio-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="route-details">
+      <div class="detail-stats">
+        <div class="detail-stat">
+          <span class="stat-val" id="shady-dist"></span>
+          <span class="stat-lbl">{t.label_distance}</span>
+        </div>
+        <div class="detail-stat">
+          <span class="stat-val" id="shady-dur"></span>
+          <span class="stat-lbl">{t.label_duration}</span>
+        </div>
+        <div class="detail-stat" id="shady-elev-stat" style="display:none">
+          <span class="stat-val elev-val" id="shady-elev"></span>
+          <span class="stat-lbl">{t.label_elevation}</span>
+        </div>
+      </div>
+      <div class="detail-split">
+        <div class="detail-split-shade">
+          <span class="split-val" id="shady-shaded-dist"></span>
+          <span class="split-lbl">{t.label_shade}</span>
+        </div>
+        <div class="detail-split-sun">
+          <span class="split-val" id="shady-sun-dist"></span>
+          <span class="split-lbl">{t.label_sun}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -139,9 +213,10 @@ const urls: Record<Lang, string> = {
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { drawCompass }                 from '../lib/compass.js';
-  import { setStatus, initTabs, showResults, setActiveTab } from '../lib/ui.js';
+  import { setStatus, initTabs, showResults, setActiveTab, renderTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { tr }                          from '../lib/i18n.js';
+  import { fetchRoutesElevation }        from '../lib/elevation.js';
 
   initMap();
   initTabs((type: string) => setActiveRoute(type));
@@ -272,6 +347,16 @@ const urls: Record<Lang, string> = {
       setActiveRoute(preselect);
 
       setStatus(null);
+
+      // Fetch elevation in background — single API call for both routes
+      fetchRoutesElevation(sunny.geometry.coordinates, shady.geometry.coordinates)
+        .then(([sunElev, shadyElev]) => {
+          sunny.elevation = sunElev;
+          shady.elevation = shadyElev;
+          renderTab('tab-sunny', sunny);
+          renderTab('tab-shady', shady);
+        })
+        .catch(() => { /* elevation unavailable, silently skip */ });
       logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes });
 
     } catch (err) {
