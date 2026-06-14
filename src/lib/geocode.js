@@ -1,4 +1,5 @@
 const NOM_BASE = 'https://nominatim.openstreetmap.org';
+const PHOTON_BASE = 'https://photon.komoot.io/api';
 
 // Parses Nominatim structured address fields into two display lines.
 // line1: street number + street name (bold in dropdown)
@@ -12,6 +13,19 @@ function formatAddress(item) {
   const city = a.city || a.town || a.village || a.municipality || a.suburb || a.county || '';
   const line2 = [city, a.country].filter(Boolean).join(', ');
   return { line1, line2, short: line2 ? `${line1}, ${line2}` : line1 };
+}
+
+// Parses a Photon GeoJSON feature into the same display shape as formatAddress.
+function formatPhotonFeature(feature) {
+  const p = feature.properties || {};
+  const road = p.street || p.name || '';
+  const line1 = [p.housenumber, road].filter(Boolean).join(' ') || p.name || '';
+  const city = p.city || p.town || p.village || p.state || '';
+  const line2 = [city, p.country].filter(Boolean).join(', ');
+  const short = line2 ? `${line1}, ${line2}` : line1;
+  const label = [line1, line2].filter(Boolean).join(', ');
+  const [lng, lat] = feature.geometry.coordinates;
+  return { label, line1, line2, short, lat, lng };
 }
 
 export async function geocode(q) {
@@ -32,23 +46,16 @@ export async function reverseGeocode(lat, lng) {
 }
 
 // Returns up to 5 suggestions for the autocomplete dropdown.
-export async function suggest(q) {
+// Uses Photon (komoot.io) which is built for autocomplete — unlike Nominatim which forbids it.
+// near: optional { lat, lng } to bias results by proximity (no hard filter).
+export async function suggest(q, { near } = {}) {
   if (q.length < 3) return [];
-  const url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=5&accept-language=fr&addressdetails=1`;
+  let url = `${PHOTON_BASE}/?q=${encodeURIComponent(q)}&limit=5&lang=fr`;
+  if (near) url += `&lat=${near.lat}&lon=${near.lng}`;
   try {
     const r = await fetch(url);
     const d = await r.json();
-    return d.map(item => {
-      const { line1, line2, short } = formatAddress(item);
-      return {
-        label: item.display_name,
-        line1,
-        line2,
-        short,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-      };
-    });
+    return (d.features || []).map(formatPhotonFeature);
   } catch {
     return [];
   }

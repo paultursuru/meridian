@@ -3,7 +3,7 @@ import { suggest } from './geocode.js';
 // Creates and manages an autocomplete dropdown for a given input.
 // Returns { getPlace() } — call getPlace() in handleSearch to skip re-geocoding
 // when the user picked a suggestion.
-export function initAutocomplete(inputEl, { onSelect } = {}) {
+export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
   let selectedPlace = null;
   let debounceTimer = null;
 
@@ -67,7 +67,8 @@ export function initAutocomplete(inputEl, { onSelect } = {}) {
     const q = inputEl.value.trim();
     if (q.length < 3) { hide(); return; }
     debounceTimer = setTimeout(async () => {
-      const results = await suggest(q);
+      const anchor = getAnchor?.();
+      const results = await suggest(q, anchor ? { near: anchor } : {});
       show(results);
     }, 300);
   });
