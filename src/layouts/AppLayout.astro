@@ -216,7 +216,7 @@ const urls: Record<Lang, string> = {
   import { setStatus, initTabs, showResults, setActiveTab, renderTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { tr }                          from '../lib/i18n.js';
-  import { fetchRoutesElevation }        from '../lib/elevation.js';
+
 
   initMap();
   initTabs((type: string) => setActiveRoute(type));
@@ -235,8 +235,10 @@ const urls: Record<Lang, string> = {
   input('inp-date').value = now.toISOString().split('T')[0];
   input('inp-time').value = now.toTimeString().slice(0, 5);
 
-  const startAC = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('start', p) });
-  const endAC   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('end',   p) });
+  let startAC: ReturnType<typeof initAutocomplete>;
+  let endAC:   ReturnType<typeof initAutocomplete>;
+  startAC = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('start', p), getAnchor: () => endAC?.getPlace() });
+  endAC   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('end',   p), getAnchor: () => startAC.getPlace() });
 
   // Default map center (Lausanne) — used for sun-info at page load
   const MAP_LAT = 46.5197, MAP_LNG = 6.6323;
@@ -346,17 +348,10 @@ const urls: Record<Lang, string> = {
       setActiveTab(preselect);
       setActiveRoute(preselect);
 
+      renderTab('tab-sunny', sunny);
+      renderTab('tab-shady', shady);
       setStatus(null);
 
-      // Fetch elevation in background — single API call for both routes
-      fetchRoutesElevation(sunny.geometry.coordinates, shady.geometry.coordinates)
-        .then(([sunElev, shadyElev]) => {
-          sunny.elevation = sunElev;
-          shady.elevation = shadyElev;
-          renderTab('tab-sunny', sunny);
-          renderTab('tab-shady', shady);
-        })
-        .catch(() => { /* elevation unavailable, silently skip */ });
       logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes });
 
     } catch (err) {
