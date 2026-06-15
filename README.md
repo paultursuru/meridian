@@ -9,7 +9,7 @@ Pedestrian navigation app that finds the **sunniest** and **shadiest** walking r
 1. **Geocoding:** addresses are resolved via Nominatim (OSM) with autocomplete
 2. **Sun position:** altitude and azimuth computed with [SunCalc](https://github.com/mourner/suncalc) for the chosen date, time and midpoint coordinates
 3. **Route generation:** OSRM foot-routing API generates up to ~10 route variants by shifting intermediate waypoints perpendicularly to the direct line (77-200 m offsets at pedestrian street scale)
-4. **Building data:** Overpass API fetches all building footprints in the route bounding box, with real heights from OSM tags (`height`, `building:levels`)
+4. **Building & vegetation data:** Overpass API fetches all building footprints in the route bounding box, with real heights from OSM tags (`height`, `building:levels`), plus trees (`natural=tree`, `natural=tree_row`, `landuse=forest`) with seasonal leaf-coverage modelling (deciduous vs evergreen, based on the chosen date)
 5. **Shadow scoring:** for each route segment, every building's shadow is evaluated with a geometrically exact model: a segment midpoint `q` is in shadow if the reverse-projection `q - shadow_vec` (shifting `q` toward the sun by `height / tan(altitude)`) falls inside the building's ground footprint (ray-casting point-in-polygon)
 6. **Ranking:** routes are sorted by sun fraction; the sunniest and shadiest are highlighted
 7. **Display:** both routes are drawn with a per-segment orange-to-blue gradient matching the actual sun/shade pattern; the recommended tab (shade at high sun, sun at low sun) is pre-selected
@@ -36,21 +36,25 @@ All external APIs are free and require no API key.
 ## Project structure
 
 ```
-sunpath-app/
+meridian/
 ├── src/
 │   ├── pages/
 │   │   └── index.astro        # single page: HTML, CSS, script orchestration
 │   └── lib/
 │       ├── autocomplete.js    # address dropdown (Nominatim suggest, debounced)
-│       ├── buildings.js       # Overpass query + building polygon parsing
+│       ├── buildings.js       # building polygon parsing
 │       ├── compass.js         # canvas compass showing sun direction
+│       ├── elevation.js       # D+/D− fetch via OpenTopoData/Open-Elevation with retry
 │       ├── geocode.js         # address → {lat, lng} via Nominatim
 │       ├── helpers.js         # haversine, bearing, fmtDist, fmtDur
+│       ├── i18n.ts            # translations (fr/de/it/en)
 │       ├── map.js             # Leaflet init, gradient route drawing, opacity control
-│       ├── elevation.js       # D+/D− fetch via OpenTopoData/Open-Elevation with retry
+│       ├── overpass.js        # Overpass API fetch with retry/backoff
 │       ├── routing.js         # OSRM foot routing + via-point variant generation
+│       ├── season.js          # leaf-coverage fraction by date (deciduous vs evergreen)
 │       ├── shadow.js          # per-segment shadow scoring (point-in-polygon)
 │       ├── sun.js             # SunCalc wrapper → {azDeg, altDeg}
+│       ├── trees.js           # tree footprint fetch + shadow scoring with seasonal canopy
 │       └── ui.js              # status toast, tabs, swipeable results drawer
 └── package.json
 ```
@@ -66,7 +70,7 @@ nvm install 22 && nvm use 22
 ```
 
 ```sh
-cd sunpath-app
+cd meridian
 npm install
 npm run dev        # http://localhost:4321
 ```
@@ -112,7 +116,6 @@ The drawer is driven by touch/mouse drag events and snaps to either state with a
 | OSM building heights are incomplete in many areas | Integrate authoritative 3D building datasets per country (e.g. swisstopo swissBUILDINGS3D for Switzerland, IGN BD TOPO for France, OS Building Height Attribute for the UK) |
 | OSRM via-point variants don't always find both sidewalks of the same street | Use micro-offsets (~11 m) or OSRM snapping to `highway=footway` ways |
 | Route deduplication by distance ±3% may miss genuinely different same-length routes | Compare coordinate-level geometry overlap |
-| No vegetation (trees, parks) | Integrate OSM `natural=tree` and `landuse=forest` |
 | Flat-roof assumption | Extend to pitched roofs using OSM `roof:shape` |
-| GraphHopper `algorithm=alternative_route` would produce cleaner non-backtracking variants | Needs an API key (free or 💰) |
+| GraphHopper `algorithm=alternative_route` would produce cleaner non-backtracking variants | Needs an API key |
 | SRTM 30 m elevation has ~15–30 m horizontal resolution | Use higher-res DEM (e.g. swisstopo DHM25 for Switzerland) for accurate urban D+/D− |
