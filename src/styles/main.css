@@ -417,6 +417,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: rgba(216,219,200,0.6);
   cursor: pointer;
   transition: all 0.15s;
+  text-decoration: none;
 }
 .lang-btn:hover { border-color: #f0f2a0; color: #f0f2a0; }
 .lang-btn.active { background: #f0f2a0; border-color: #f0f2a0; color: #0e120a; }
