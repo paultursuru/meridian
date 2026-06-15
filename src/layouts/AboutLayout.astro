@@ -23,6 +23,7 @@ const aboutUrls: Record<Lang, string> = {
   it: 'https://meridian-way.ch/it/about',
   en: 'https://meridian-way.ch/en/about',
 };
+
 ---
 <!DOCTYPE html>
 <html lang={lang}>
@@ -73,6 +74,11 @@ const aboutUrls: Record<Lang, string> = {
       <a href="https://ko-fi.com/meridian_way" target="_blank" rel="noopener" class="about-link kofi-link">
         ☕ Ko-fi
       </a>
+    </div>
+    <div class="footer-links">
+      <a href={lang === 'fr' ? '/about' : `/${lang}/about`} class="footer-link">{t.aria_about}</a>
+      <span class="footer-link">-</span>
+      <a href={lang === 'fr' ? '/privacy' : `/${lang}/privacy`} class="footer-link">{t.about_privacy}</a>
     </div>
   </main>
 </div>

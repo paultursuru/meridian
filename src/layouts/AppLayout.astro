@@ -110,6 +110,11 @@ const urls: Record<Lang, string> = {
       ☕ Ko-fi
     </a>
   </div>
+  <div class="footer-links">
+    <a href={lang === 'fr' ? '/about' : `/${lang}/about`} class="footer-link">{t.aria_about}</a>
+    <span class="footer-link">-</span>
+    <a href={lang === 'fr' ? '/privacy' : `/${lang}/privacy`} class="footer-link">{t.about_privacy}</a>
+  </div>
 </div>
 
 <div id="compass-wrap">
@@ -266,28 +271,7 @@ const urls: Record<Lang, string> = {
     bbox: number[]; buildings: unknown[]; trees: unknown[]; leafFrac: number;
     routes: { distance: number; sunScore: number; segShade: { i: number; shade: boolean }[]; geometry: { coordinates: number[][] } }[];
   }) {
-    const payload = {
-      query: { from: startQ, to: endQ },
-      start: startC,
-      end: endC,
-      datetime: tDate.toISOString(),
-      sun: { altDeg: +sun.altDeg.toFixed(2), azDeg: +sun.azDeg.toFixed(1) },
-      bbox: bbox.map(v => +v.toFixed(5)),
-      buildingCount: buildings.length,
-      treeCount: trees.length,
-      leafFrac,
-      routes: routes.map((rt, idx) => ({
-        index: idx,
-        distanceM: Math.round(rt.distance),
-        sunScore: +rt.sunScore.toFixed(4),
-        shadedSegments: rt.segShade.filter(s => s.shade).length,
-        totalSegments: rt.segShade.length,
-        segShade: rt.segShade,
-        coordinates: rt.geometry.coordinates,
-      })),
-    };
-    // keeping this if debug needed
-    // console.log('SHADOW_DEBUG_JSON ' + JSON.stringify(payload));
+    // console.log('SHADOW_DEBUG_JSON ' + JSON.stringify({ query: { from: startQ, to: endQ }, start: startC, end: endC, datetime: tDate.toISOString(), sun: { altDeg: +sun.altDeg.toFixed(2), azDeg: +sun.azDeg.toFixed(1) }, bbox: bbox.map(v => +v.toFixed(5)), buildingCount: buildings.length, treeCount: trees.length, leafFrac, routes: routes.map((rt, idx) => ({ index: idx, distanceM: Math.round(rt.distance), sunScore: +rt.sunScore.toFixed(4), shadedSegments: rt.segShade.filter(s => s.shade).length, totalSegments: rt.segShade.length })) }));
   }
 
   async function handleSearch() {

@@ -36,6 +36,7 @@ export const translations = {
     geo_loading: '📍 Localisation en cours…',
     error_geo_denied: 'Localisation refusée par le navigateur.',
     error_geo_timeout: 'Localisation impossible, réessayez.',
+    about_privacy: 'Confidentialité',
   },
   de: {
     title: 'MeridianWay — Sonnennavigation',
@@ -72,6 +73,7 @@ export const translations = {
     geo_loading: '📍 Standort wird ermittelt…',
     error_geo_denied: 'Standortzugriff wurde verweigert.',
     error_geo_timeout: 'Standort nicht verfügbar, erneut versuchen.',
+    about_privacy: 'Datenschutz',
   },
   it: {
     title: 'MeridianWay — Navigazione solare',
@@ -108,6 +110,7 @@ export const translations = {
     geo_loading: '📍 Localizzazione in corso…',
     error_geo_denied: 'Localizzazione rifiutata dal browser.',
     error_geo_timeout: 'Localizzazione impossibile, riprova.',
+    about_privacy: 'Privacy',
   },
   en: {
     title: 'MeridianWay — Solar navigation',
@@ -144,6 +147,7 @@ export const translations = {
     geo_loading: '📍 Getting your location…',
     error_geo_denied: 'Location access denied by browser.',
     error_geo_timeout: 'Location unavailable, please try again.',
+    about_privacy: 'Privacy',
   },
 } as const;
 
