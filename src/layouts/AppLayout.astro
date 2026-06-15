@@ -89,16 +89,16 @@ const urls: Record<Lang, string> = {
 <div id="about-drawer" role="dialog" aria-modal="true" aria-label={t.aria_about}>
   <div id="about-header">
     <div id="about-lang">
-      <button class:list={['lang-btn', { active: lang === 'fr' }]} data-lang="fr">FR</button>
-      <button class:list={['lang-btn', { active: lang === 'de' }]} data-lang="de">DE</button>
-      <button class:list={['lang-btn', { active: lang === 'it' }]} data-lang="it">IT</button>
-      <button class:list={['lang-btn', { active: lang === 'en' }]} data-lang="en">EN</button>
+      <a class:list={['lang-btn', { active: lang === 'fr' }]} href="/">FR</a>
+      <a class:list={['lang-btn', { active: lang === 'de' }]} href="/de/">DE</a>
+      <a class:list={['lang-btn', { active: lang === 'it' }]} href="/it/">IT</a>
+      <a class:list={['lang-btn', { active: lang === 'en' }]} href="/en/">EN</a>
     </div>
     <button id="about-close" aria-label={t.aria_close}>×</button>
   </div>
 
   <div id="about-body">
-    <AboutContent lang={lang} allLangs={true} />
+    <AboutContent lang={lang} />
   </div>
 
   <div id="about-links">
@@ -400,16 +400,6 @@ const urls: Record<Lang, string> = {
   overlay.addEventListener('click', closeAbout);
   document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeAbout(); });
 
-  document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const lang = (btn as HTMLElement).dataset.lang!;
-      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.about-pane').forEach(p => {
-        p.classList.toggle('active', (p as HTMLElement).dataset.lang === lang);
-      });
-    });
-  });
 </script>
 
 </body>
