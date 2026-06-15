@@ -1,0 +1,125 @@
+---
+import '../styles/main.css';
+import { type Lang } from '../lib/i18n';
+import PrivacyContent from '../components/PrivacyContent.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const appUrls: Record<Lang, string> = {
+  fr: 'https://meridian-way.ch/',
+  de: 'https://meridian-way.ch/de/',
+  it: 'https://meridian-way.ch/it/',
+  en: 'https://meridian-way.ch/en/',
+};
+
+const privacyUrls: Record<Lang, string> = {
+  fr: 'https://meridian-way.ch/privacy',
+  de: 'https://meridian-way.ch/de/privacy',
+  it: 'https://meridian-way.ch/it/privacy',
+  en: 'https://meridian-way.ch/en/privacy',
+};
+
+const titles: Record<Lang, string> = {
+  fr: 'Confidentialité — MeridianWay',
+  de: 'Datenschutz — MeridianWay',
+  it: 'Privacy — MeridianWay',
+  en: 'Privacy — MeridianWay',
+};
+
+const backLabels: Record<Lang, string> = {
+  fr: '← Ouvrir l\'application',
+  de: '← Anwendung öffnen',
+  it: '← Apri l\'applicazione',
+  en: '← Open the app',
+};
+---
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{titles[lang]}</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#0e120a" />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href={privacyUrls[lang]} />
+  <link rel="alternate" hreflang="fr" href={privacyUrls.fr} />
+  <link rel="alternate" hreflang="de" href={privacyUrls.de} />
+  <link rel="alternate" hreflang="it" href={privacyUrls.it} />
+  <link rel="alternate" hreflang="en" href={privacyUrls.en} />
+  <link rel="alternate" hreflang="x-default" href={privacyUrls.fr} />
+</head>
+<body class="privacy-page">
+
+<div id="about-page-wrap">
+  <nav id="about-page-nav">
+    <a href={appUrls[lang]} class="back-link">{backLabels[lang]}</a>
+    <div id="about-page-lang">
+      <a class:list={['lang-link', { active: lang === 'fr' }]} href={privacyUrls.fr}>FR</a>
+      <a class:list={['lang-link', { active: lang === 'de' }]} href={privacyUrls.de}>DE</a>
+      <a class:list={['lang-link', { active: lang === 'it' }]} href={privacyUrls.it}>IT</a>
+      <a class:list={['lang-link', { active: lang === 'en' }]} href={privacyUrls.en}>EN</a>
+    </div>
+  </nav>
+
+  <main id="about-page-content">
+    <PrivacyContent lang={lang} />
+  </main>
+</div>
+
+<style>
+  body.privacy-page {
+    background: #0e120a;
+    color: #d8dbc8;
+    min-height: 100vh;
+    height: max-content;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow: auto;
+  }
+  #about-page-wrap {
+    width: 100%;
+    max-width: 680px;
+  }
+  #about-page-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(240,242,160,0.13);
+  }
+  .back-link {
+    color: #f0f2a0;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .back-link:hover { text-decoration: underline; }
+  #about-page-lang {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .lang-link {
+    color: rgba(216,219,200,0.6);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border: 1.5px solid rgba(240,242,160,0.2);
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .lang-link.active { background: #f0f2a0; border-color: #f0f2a0; color: #0e120a; }
+  .lang-link:hover:not(.active) { border-color: rgba(240,242,160,0.5); color: #f0f2a0; }
+</style>
+
+</body>
+</html>

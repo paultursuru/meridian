@@ -1,0 +1,212 @@
+---
+import type { Lang } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+---
+
+{lang === 'fr' && (
+  <div class="privacy-pane">
+    <h1>Politique de confidentialité</h1>
+    <p class="privacy-date"><em>Dernière mise à jour : juin 2026</em></p>
+
+    <h2>Ce que MeridianWay fait (et ne fait pas)</h2>
+    <p>MeridianWay est une application entièrement statique : elle ne possède pas de serveur propre, ne crée pas de compte utilisateur et ne stocke aucune donnée personnelle en base de données. Tout le calcul (position du soleil, score d'ombre) s'effectue directement dans votre navigateur.</p>
+
+    <h2>Données transmises à des services tiers</h2>
+    <p>Pour fonctionner, l'application envoie certaines données à des services externes. Ces services reçoivent votre adresse IP ainsi que les données listées ci-dessous.</p>
+
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Données transmises</th><th>Finalité</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Texte saisi dans les champs adresse</td><td>Suggestions d'autocomplétion</td></tr>
+        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Adresse saisie ; coordonnées GPS si géolocalisation activée</td><td>Géocodage et géocodage inverse</td></tr>
+        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Coordonnées de départ et d'arrivée</td><td>Calcul des itinéraires</td></tr>
+        <tr><td><strong>Overpass API</strong> (serveurs OSM)</td><td>Zone géographique de l'itinéraire</td><td>Données bâtiments et arbres</td></tr>
+        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Zone de la carte affichée</td><td>Tuiles cartographiques</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Page visitée, type d'appareil, langue du navigateur — sans cookies, IP anonymisée</td><td>Statistiques d'utilisation agrégées</td></tr>
+        <tr><td><strong>Sentry</strong> (Functional Software Inc., USA)</td><td>Erreurs techniques, URL de la page, type de navigateur — sans données d'identité</td><td>Détection et correction de bugs</td></tr>
+      </tbody>
+    </table>
+
+    <p>La géolocalisation est <strong>optionnelle</strong> et uniquement déclenchée si vous cliquez sur le bouton de localisation.</p>
+
+    <h2>Cookies et stockage local</h2>
+    <p>MeridianWay n'utilise <strong>aucun cookie</strong>. Aucune donnée n'est enregistrée dans le stockage local de votre navigateur.</p>
+
+    <h2>Vos droits</h2>
+    <p>Conformément à la loi fédérale suisse sur la protection des données (nLPD) et au RGPD pour les utilisateurs de l'Union européenne, vous pouvez à tout moment demander quelles données vous concernant ont été traitées. Les données transmises aux services tiers sont régies par leurs propres politiques de confidentialité.</p>
+
+    <h2>Contact</h2>
+    <p>Pour toute question relative à la protection des données : <a href="mailto:contact@meridian-way.ch">contact@meridian-way.ch</a></p>
+  </div>
+)}
+
+{lang === 'de' && (
+  <div class="privacy-pane">
+    <h1>Datenschutzerklärung</h1>
+    <p class="privacy-date"><em>Zuletzt aktualisiert: Juni 2026</em></p>
+
+    <h2>Was MeridianWay tut (und nicht tut)</h2>
+    <p>MeridianWay ist eine vollständig statische Anwendung: Sie verfügt über keinen eigenen Server, erstellt keine Benutzerkonten und speichert keine personenbezogenen Daten in einer Datenbank. Alle Berechnungen (Sonnenposition, Schattenbewertung) erfolgen direkt in Ihrem Browser.</p>
+
+    <h2>An Drittanbieter übermittelte Daten</h2>
+    <p>Für den Betrieb sendet die Anwendung bestimmte Daten an externe Dienste. Diese Dienste erhalten Ihre IP-Adresse sowie die nachstehend aufgeführten Daten.</p>
+
+    <table>
+      <thead>
+        <tr><th>Dienst</th><th>Übermittelte Daten</th><th>Zweck</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>In den Adressfeldern eingegebener Text</td><td>Autocomplete-Vorschläge</td></tr>
+        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Eingegebene Adresse; GPS-Koordinaten bei aktivierter Standortbestimmung</td><td>Geo- und Reverse-Geocoding</td></tr>
+        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Start- und Zielkoordinaten</td><td>Routenberechnung</td></tr>
+        <tr><td><strong>Overpass API</strong> (OSM-Server)</td><td>Geografischer Bereich der Route</td><td>Gebäude- und Baumdaten</td></tr>
+        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Angezeigter Kartenausschnitt</td><td>Kartenkacheln</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Besuchte Seite, Gerätetyp, Browsersprache — ohne Cookies, anonymisierte IP</td><td>Aggregierte Nutzungsstatistiken</td></tr>
+        <tr><td><strong>Sentry</strong> (Functional Software Inc., USA)</td><td>Technische Fehler, Seiten-URL, Browsertyp — ohne Identitätsdaten</td><td>Fehlererkennung und -behebung</td></tr>
+      </tbody>
+    </table>
+
+    <p>Die Standortbestimmung ist <strong>optional</strong> und wird nur aktiviert, wenn Sie auf die Standortschaltfläche klicken.</p>
+
+    <h2>Cookies und lokaler Speicher</h2>
+    <p>MeridianWay verwendet <strong>keine Cookies</strong>. Es werden keine Daten im lokalen Speicher Ihres Browsers gespeichert.</p>
+
+    <h2>Ihre Rechte</h2>
+    <p>Gemäss dem Schweizer Bundesgesetz über den Datenschutz (DSG) und der DSGVO für Nutzer der Europäischen Union können Sie jederzeit anfragen, welche Daten über Sie verarbeitet wurden. Die an Drittanbieter übermittelten Daten unterliegen deren eigenen Datenschutzrichtlinien.</p>
+
+    <h2>Kontakt</h2>
+    <p>Bei Fragen zum Datenschutz: <a href="mailto:contact@meridian-way.ch">contact@meridian-way.ch</a></p>
+  </div>
+)}
+
+{lang === 'it' && (
+  <div class="privacy-pane">
+    <h1>Informativa sulla privacy</h1>
+    <p class="privacy-date"><em>Ultimo aggiornamento: giugno 2026</em></p>
+
+    <h2>Cosa fa (e non fa) MeridianWay</h2>
+    <p>MeridianWay è un'applicazione completamente statica: non dispone di un proprio server, non crea account utente e non memorizza dati personali in alcun database. Tutti i calcoli (posizione del sole, punteggio ombra) vengono eseguiti direttamente nel tuo browser.</p>
+
+    <h2>Dati trasmessi a servizi di terze parti</h2>
+    <p>Per funzionare, l'applicazione invia alcuni dati a servizi esterni. Questi servizi ricevono il tuo indirizzo IP e i dati elencati di seguito.</p>
+
+    <table>
+      <thead>
+        <tr><th>Servizio</th><th>Dati trasmessi</th><th>Finalità</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Testo inserito nei campi indirizzo</td><td>Suggerimenti di completamento automatico</td></tr>
+        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Indirizzo inserito; coordinate GPS se la geolocalizzazione è attivata</td><td>Geocodifica e geocodifica inversa</td></tr>
+        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Coordinate di partenza e arrivo</td><td>Calcolo degli itinerari</td></tr>
+        <tr><td><strong>Overpass API</strong> (server OSM)</td><td>Area geografica dell'itinerario</td><td>Dati edifici e alberi</td></tr>
+        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Area della mappa visualizzata</td><td>Tile cartografiche</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Pagina visitata, tipo di dispositivo, lingua del browser — senza cookie, IP anonimizzato</td><td>Statistiche d'uso aggregate</td></tr>
+        <tr><td><strong>Sentry</strong> (Functional Software Inc., USA)</td><td>Errori tecnici, URL della pagina, tipo di browser — senza dati di identità</td><td>Rilevamento e correzione dei bug</td></tr>
+      </tbody>
+    </table>
+
+    <p>La geolocalizzazione è <strong>opzionale</strong> e viene attivata solo se fai clic sul pulsante di localizzazione.</p>
+
+    <h2>Cookie e archiviazione locale</h2>
+    <p>MeridianWay non utilizza <strong>alcun cookie</strong>. Nessun dato viene salvato nell'archiviazione locale del tuo browser.</p>
+
+    <h2>I tuoi diritti</h2>
+    <p>In conformità con la legge federale svizzera sulla protezione dei dati (LPD) e il RGPD per gli utenti dell'Unione europea, puoi richiedere in qualsiasi momento quali dati che ti riguardano sono stati trattati. I dati trasmessi a servizi di terze parti sono disciplinati dalle rispettive informative sulla privacy.</p>
+
+    <h2>Contatto</h2>
+    <p>Per qualsiasi domanda sulla protezione dei dati: <a href="mailto:contact@meridian-way.ch">contact@meridian-way.ch</a></p>
+  </div>
+)}
+
+{lang === 'en' && (
+  <div class="privacy-pane">
+    <h1>Privacy Policy</h1>
+    <p class="privacy-date"><em>Last updated: June 2026</em></p>
+
+    <h2>What MeridianWay does (and doesn't do)</h2>
+    <p>MeridianWay is a fully static application: it has no server of its own, creates no user accounts, and stores no personal data in any database. All calculations (sun position, shadow scoring) run directly in your browser.</p>
+
+    <h2>Data sent to third-party services</h2>
+    <p>To function, the application sends certain data to external services. These services receive your IP address along with the data listed below.</p>
+
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Data sent</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Text typed in address fields</td><td>Autocomplete suggestions</td></tr>
+        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Address entered; GPS coordinates if geolocation is enabled</td><td>Geocoding and reverse geocoding</td></tr>
+        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Start and end coordinates</td><td>Route calculation</td></tr>
+        <tr><td><strong>Overpass API</strong> (OSM servers)</td><td>Geographic area of the route</td><td>Building and tree data</td></tr>
+        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Displayed map area</td><td>Map tiles</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Page visited, device type, browser language — no cookies, anonymised IP</td><td>Aggregated usage statistics</td></tr>
+        <tr><td><strong>Sentry</strong> (Functional Software Inc., USA)</td><td>Technical errors, page URL, browser type — no identity data</td><td>Bug detection and fixing</td></tr>
+      </tbody>
+    </table>
+
+    <p>Geolocation is <strong>optional</strong> and only triggered if you click the location button.</p>
+
+    <h2>Cookies and local storage</h2>
+    <p>MeridianWay uses <strong>no cookies</strong>. No data is saved in your browser's local storage.</p>
+
+    <h2>Your rights</h2>
+    <p>Under the Swiss Federal Act on Data Protection (FADP) and the GDPR for users in the European Union, you may at any time request details of what data concerning you has been processed. Data transmitted to third-party services is governed by their own privacy policies.</p>
+
+    <h2>Contact</h2>
+    <p>For any questions regarding data protection: <a href="mailto:contact@meridian-way.ch">contact@meridian-way.ch</a></p>
+  </div>
+)}
+
+<style>
+  .privacy-pane h1 {
+    font-size: 1.5rem;
+    color: #f0f2a0;
+    margin-bottom: 0.25rem;
+  }
+  .privacy-pane h2 {
+    font-size: 1rem;
+    color: #f0f2a0;
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .privacy-date {
+    color: rgba(216,219,200,0.5);
+    font-size: 0.82rem;
+    margin-bottom: 1.5rem;
+  }
+  .privacy-pane p {
+    line-height: 1.6;
+    color: #d8dbc8;
+    margin-bottom: 0.75rem;
+  }
+  .privacy-pane a {
+    color: #f0f2a0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin: 1rem 0 1.25rem;
+  }
+  th {
+    text-align: left;
+    color: rgba(216,219,200,0.6);
+    font-weight: 600;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(240,242,160,0.15);
+  }
+  td {
+    padding: 7px 8px;
+    border-bottom: 1px solid rgba(240,242,160,0.07);
+    vertical-align: top;
+    color: #d8dbc8;
+  }
+  td:first-child { white-space: nowrap; }
+</style>
