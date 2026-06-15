@@ -1,6 +1,6 @@
 ---
 import '../styles/main.css';
-import { type Lang } from '../lib/i18n';
+import { translations, type Lang } from '../lib/i18n';
 import PrivacyContent from '../components/PrivacyContent.astro';
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
 }
 
 const { lang } = Astro.props;
+const t = translations[lang];
 
 const appUrls: Record<Lang, string> = {
   fr: 'https://meridian-way.ch/',
@@ -35,6 +36,20 @@ const backLabels: Record<Lang, string> = {
   de: '← Anwendung öffnen',
   it: '← Apri l\'applicazione',
   en: '← Open the app',
+};
+
+const aboutUrls: Record<Lang, string> = {
+  fr: 'https://meridian-way.ch/about',
+  de: 'https://meridian-way.ch/de/about',
+  it: 'https://meridian-way.ch/it/about',
+  en: 'https://meridian-way.ch/en/about',
+};
+
+const aboutLabels: Record<Lang, string> = {
+  fr: 'À propos',
+  de: 'Über die App',
+  it: 'Informazioni',
+  en: 'About',
 };
 ---
 <!DOCTYPE html>
@@ -73,6 +88,12 @@ const backLabels: Record<Lang, string> = {
   <main id="about-page-content">
     <PrivacyContent lang={lang} />
   </main>
+
+  <div class="footer-links">
+    <a href={lang === 'fr' ? '/about' : `/${lang}/about`} class="footer-link">{t.aria_about}</a>
+    <span class="footer-link">-</span>
+    <a href={lang === 'fr' ? '/privacy' : `/${lang}/privacy`} class="footer-link">{t.about_privacy}</a>
+  </div>
 </div>
 
 <style>
@@ -120,6 +141,19 @@ const backLabels: Record<Lang, string> = {
   }
   .lang-link.active { background: #f0f2a0; border-color: #f0f2a0; color: #0e120a; }
   .lang-link:hover:not(.active) { border-color: rgba(240,242,160,0.5); color: #f0f2a0; }
+  #about-page-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(240,242,160,0.13);
+  }
+  .about-link {
+    color: rgba(216,219,200,0.6);
+    text-decoration: none;
+    font-size: 0.82rem;
+  }
+  .about-link:hover { color: #f0f2a0; }
 </style>
 
 </body>
