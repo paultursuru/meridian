@@ -1,5 +1,7 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import '@maplibre/maplibre-gl-leaflet';
 
 let _map = null;
 let sunnyLayers   = [];
@@ -7,9 +9,9 @@ let shadyLayers   = [];
 let markerLayers  = [];
 let previewMarkers = { start: null, end: null };
 
-// Gradient endpoints: yellow (sun) → medium lavender (shade)
-const SUN_RGB   = [240, 242, 160];
-const SHADE_RGB = [186, 133, 199];
+// Gradient endpoints: dark red (sun) → dark blue (shade) — readable on a light map in daylight
+const SUN_RGB   = [183, 28, 28];
+const SHADE_RGB = [13, 71, 161];
 
 function lerpColor(t) {
   const r = Math.round(SUN_RGB[0] + (SHADE_RGB[0] - SUN_RGB[0]) * t);
@@ -56,12 +58,12 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
 
 export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org">OSM</a> &copy; <a href="https://carto.com">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 19,
+  // OSM Bright GL vector style (openmaptiles/osm-bright-gl-style), hosted by Stadia Maps.
+  // Keyless on localhost; for production add a Stadia API key or domain auth.
+  L.maplibreGL({
+    style: 'https://tiles.stadiamaps.com/styles/osm_bright.json',
+    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(_map);
-  _map.getPane('tilePane').style.filter = 'invert(100%) hue-rotate(180deg) brightness(170%) contrast(110%)';
 }
 
 function pinIcon(color) {
