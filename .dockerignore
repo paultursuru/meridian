@@ -24,3 +24,6 @@
 # jetbrains setting folder
 **/.idea
 fly.toml
+
+# cloudflare worker (déployé séparément, pas dans l'image nginx)
+overpass-cache

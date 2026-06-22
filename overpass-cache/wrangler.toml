@@ -1,0 +1,7 @@
+name = "overpass-cache"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[[kv_namespaces]]
+binding = "OVERPASS_CACHE"
+id = "ecccd596914e4a8bbd2afcc76dfb7a23"
