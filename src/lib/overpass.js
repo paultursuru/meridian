@@ -1,4 +1,4 @@
-const ENDPOINT = 'https://overpass-api.de/api/interpreter';
+const ENDPOINT = 'https://overpass-cache.meridianway.workers.dev';
 const RETRYABLE = new Set([429, 503, 504]);
 const BACKOFF_MS = [1000, 3000, 6000];
 
