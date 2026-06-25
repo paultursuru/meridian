@@ -91,6 +91,17 @@ export function setPreviewPin(role, coords) {
   _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
+// Swap start/end preview pins: positions are unchanged, only the colors and
+// role references switch. Tolerates either pin being absent.
+export function swapPreviewPins() {
+  const start = previewMarkers.start;
+  const end   = previewMarkers.end;
+  if (start) start.setIcon(pinIcon('#ef4444'));
+  if (end)   end.setIcon(pinIcon('#22c55e'));
+  previewMarkers.start = end;
+  previewMarkers.end   = start;
+}
+
 // type: 'sunny' | 'shady' — full opacity for the active route, dimmed for the other.
 export function setActiveRoute(type) {
   sunnyLayers.forEach(l => l.setStyle({ opacity: type === 'sunny' ? 0.9 : 0.25 }));

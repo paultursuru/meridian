@@ -86,5 +86,11 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
       selectedPlace = { lat, lng, label, line1: label, line2: '', short: label };
       inputEl.value = label;
     },
+    // Snapshot of the field (text + cached place) — used to swap start/end
+    getState: () => ({ value: inputEl.value, place: selectedPlace }),
+    setState: ({ value, place }) => {
+      inputEl.value = value;
+      selectedPlace = place;
+    },
   };
 }

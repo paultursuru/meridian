@@ -105,6 +105,8 @@ After a route search, a bottom drawer slides up from the map edge. The drawer ha
 - **Peeked (default):** the active tab and its sun/shade ratio bar are visible at a glance without covering the map.
 - **Expanded:** drag the handle upward (or tap it) to reveal the full detail panel — distance, walking duration, elevation D+/D−, and the shaded vs. sunny distance split. Drag down or tap to collapse.
 
+The walking duration shows a **climb supplement** next to the base flat-walking time when the route goes uphill: roughly `+4 min per 100 m of ascent` (Naismith-style, counting ascent only — strong walkers feel little of it). It's rendered as a small `+X min` after the base duration and is hidden when there's no meaningful climb.
+
 The drawer is driven by touch/mouse drag events and snaps to either state with a CSS `transform` transition (no layout reflow).
 
 ---

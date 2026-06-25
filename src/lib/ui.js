@@ -14,6 +14,20 @@ function fmtDur(sec) {
   return min + ' min';
 }
 
+// Extra walking time from climbing: ~4 min per 100 m of ascent (Naismith-style,
+// conservative — strong walkers feel little of it). Only the uphill counts.
+function climbMinutes(rt) {
+  if (!rt.elevation || !rt.elevation.up) return 0;
+  return Math.round((rt.elevation.up / 100) * 4);
+}
+
+// Base flat-walking time + a small "+X min" supplement for the ascent.
+function fmtDurWithClimb(rt) {
+  const base = fmtDur(rt.duration);
+  const climb = climbMinutes(rt);
+  return climb > 0 ? `${base} <span class="dur-climb">+${climb} min</span>` : base;
+}
+
 export function initTabs(onTabChange) {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -48,7 +62,7 @@ export function renderTab(id, rt) {
   g('sun-pct').textContent     = sunPct + '%';
   g('ratio-fill').style.width  = sunPct + '%';
   g('dist').textContent        = fmtDist(rt.distance);
-  g('dur').textContent         = fmtDur(rt.duration);
+  g('dur').innerHTML           = fmtDurWithClimb(rt);
   g('shaded-dist').textContent = fmtDist(shadedM);
   g('sun-dist').textContent    = fmtDist(sunnyM);
 
@@ -106,7 +120,6 @@ export function showResults(sunny, shady) {
   renderTab('tab-sunny', sunny);
   renderTab('tab-shady', shady);
   const drawer = document.getElementById('results');
-  drawer.classList.remove('expanded');
-  drawer.classList.add('on');
+  drawer.classList.add('on', 'expanded');
   initDrawer();
 }
