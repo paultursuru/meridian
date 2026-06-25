@@ -66,13 +66,16 @@ const urls: Record<Lang, string> = {
     </div>
   </div>
   <div id="search-panel">
-    <div class="input-wrap">
-      <input type="text" id="inp-start" placeholder={t.placeholder_start} />
-      <button class="geo-btn" id="geo-start" title={t.geo_btn_title} aria-label={t.geo_btn_title}>📍</button>
-    </div>
-    <div class="input-wrap">
-      <input type="text" id="inp-end" placeholder={t.placeholder_end} />
-      <button class="geo-btn" id="geo-end" title={t.geo_btn_title} aria-label={t.geo_btn_title}>📍</button>
+    <div class="route-inputs">
+      <div class="input-wrap">
+        <input type="text" id="inp-start" placeholder={t.placeholder_start} />
+        <button class="geo-btn" id="geo-start" title={t.geo_btn_title} aria-label={t.geo_btn_title}>📍</button>
+      </div>
+      <button id="swap-btn" type="button" title={t.swap_btn_title} aria-label={t.swap_btn_title}><span class="swap-ico">⇅</span></button>
+      <div class="input-wrap">
+        <input type="text" id="inp-end" placeholder={t.placeholder_end} />
+        <button class="geo-btn" id="geo-end" title={t.geo_btn_title} aria-label={t.geo_btn_title}>📍</button>
+      </div>
     </div>
     <div class="dt-row">
       <input type="date" id="inp-date" />
@@ -210,7 +213,7 @@ const urls: Record<Lang, string> = {
 </div>
 
 <script>
-  import { initMap, displayRoutes, setActiveRoute, setPreviewPin } from '../lib/map.js';
+  import { initMap, displayRoutes, setActiveRoute, setPreviewPin, swapPreviewPins } from '../lib/map.js';
   import { getSun }                      from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
@@ -377,6 +380,20 @@ const urls: Record<Lang, string> = {
 
   button('geo-start').addEventListener('click', () => fillFromGeo(startAC, 'start', 'geo-start'));
   button('geo-end').addEventListener('click',   () => fillFromGeo(endAC,   'end',   'geo-end'));
+
+  let swapAngle = 0;
+  function swapEndpoints() {
+    const a = startAC.getState();
+    const b = endAC.getState();
+    startAC.setState(b);
+    endAC.setState(a);
+    swapPreviewPins();
+    // Accumulate the angle so the transition replays in full on every click.
+    swapAngle += 180;
+    el<HTMLElement>('swap-btn').querySelector<HTMLElement>('.swap-ico')!
+      .style.transform = `rotate(${swapAngle}deg)`;
+  }
+  button('swap-btn').addEventListener('click', swapEndpoints);
 
   button('search-btn').addEventListener('click', handleSearch);
   ['inp-start', 'inp-end'].forEach(id =>
