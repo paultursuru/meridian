@@ -3,6 +3,16 @@ import { haversine } from './helpers.js';
 const ORS_BASE = 'https://api.openrouteservice.org/v2/directions/foot-walking';
 const ORS_KEY  = import.meta.env.PUBLIC_ORS_KEY;
 const WALK_MS  = 4.5 / 3.6; // 4.5 km/h in m/s
+const RETRYABLE  = new Set([429, 503, 504]);
+const BACKOFF_MS = [1000, 3000];
+
+// Thrown when ORS keeps returning 429 after retries — lets the UI show a
+// friendly "too many requests" message instead of a raw "ORS 429".
+function rateLimitError() {
+  const err = new Error('ORS rate limit (429)');
+  err.code = 'RATE_LIMIT';
+  return err;
+}
 
 // Coords from ORS with elevation=true are [lon, lat, ele].
 function calcElevFromCoords(coords) {
@@ -25,14 +35,21 @@ function parseFeatures(features) {
 }
 
 async function orsPost(body) {
-  const r = await fetch(`${ORS_BASE}/geojson`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': ORS_KEY },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) throw new Error(`ORS ${r.status}`);
-  const d = await r.json();
-  return parseFeatures(d.features || []);
+  let lastStatus;
+  for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
+    if (attempt > 0) await new Promise(res => setTimeout(res, BACKOFF_MS[attempt - 1]));
+    const r = await fetch(`${ORS_BASE}/geojson`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': ORS_KEY },
+      body: JSON.stringify(body),
+    });
+    if (RETRYABLE.has(r.status)) { lastStatus = r.status; continue; }
+    if (!r.ok) throw new Error(`ORS ${r.status}`);
+    const d = await r.json();
+    return parseFeatures(d.features || []);
+  }
+  if (lastStatus === 429) throw rateLimitError();
+  throw new Error(`ORS ${lastStatus}`);
 }
 
 async function orsAlts(start, end) {

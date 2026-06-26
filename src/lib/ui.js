@@ -5,6 +5,23 @@ export function setStatus(msg) {
   el.classList.toggle('on', !!msg);
 }
 
+let toastTimer = null;
+
+// Transient, non-blocking notification (replaces alert()). Auto-dismisses.
+// type: 'error' (default) — styled via .toast-<type> in main.css.
+export function showToast(msg, type = 'error') {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.className = `toast toast-${type} on`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('on'), 4500);
+}
+
 function fmtDist(m) {
   return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m';
 }

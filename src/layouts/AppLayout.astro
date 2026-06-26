@@ -222,7 +222,7 @@ const urls: Record<Lang, string> = {
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { drawCompass }                 from '../lib/compass.js';
-  import { setStatus, initTabs, showResults, setActiveTab, renderTab } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, showResults, setActiveTab, renderTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { tr }                          from '../lib/i18n.js';
 
@@ -283,7 +283,7 @@ const urls: Record<Lang, string> = {
     const dateV  = input('inp-date').value;
     const timeV  = input('inp-time').value;
 
-    if (!startQ || !endQ) { alert(tr('alert_empty')); return; }
+    if (!startQ || !endQ) { showToast(tr('alert_empty')); return; }
 
     const btn = button('search-btn');
     btn.disabled = true;
@@ -344,7 +344,11 @@ const urls: Record<Lang, string> = {
 
     } catch (err) {
       setStatus(null);
-      alert(tr('error_prefix') + (err instanceof Error ? err.message : String(err)));
+      if ((err as { code?: string })?.code === 'RATE_LIMIT') {
+        showToast(tr('error_rate_limit'));
+      } else {
+        showToast(tr('error_prefix') + (err instanceof Error ? err.message : String(err)));
+      }
       console.error(err);
     } finally {
       button('search-btn').disabled = false;
@@ -368,9 +372,9 @@ const urls: Record<Lang, string> = {
     } catch (err: unknown) {
       setStatus(null);
       if ((err as GeolocationPositionError)?.code === 1) {
-        alert(tr('error_geo_denied'));
+        showToast(tr('error_geo_denied'));
       } else {
-        alert(tr('error_geo_timeout'));
+        showToast(tr('error_geo_timeout'));
       }
     } finally {
       btn.disabled = false;
