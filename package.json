@@ -9,7 +9,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",
@@ -19,5 +21,8 @@
     "leaflet": "^1.9.4",
     "maplibre-gl": "^5.24.0",
     "suncalc": "^1.9.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.9"
   }
 }

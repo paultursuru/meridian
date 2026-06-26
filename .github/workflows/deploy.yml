@@ -4,11 +4,31 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
   deploy:
     name: Deploy to Fly.io
     runs-on: ubuntu-latest
+    needs: test # deploy only runs if the test job passes
+    # Only deploy on a push to main — never on pull requests.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - uses: actions/checkout@v4
