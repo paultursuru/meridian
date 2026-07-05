@@ -377,12 +377,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
-.dur-climb {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #e0a85c;
-  margin-left: 1px;
-}
 .detail-split {
   display: flex;
   gap: 10px;
