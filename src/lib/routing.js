@@ -56,21 +56,54 @@ async function orsAlts(start, end) {
   return orsPost({
     coordinates: [[start.lng, start.lat], [end.lng, end.lat]],
     elevation: true,
-    alternative_routes: { target_count: 3, share_factor: 0.6, weight_factor: 1.4 },
+    // target_count is capped at 3 by ORS; diversity comes from allowing longer
+    // detours (weight_factor) and less overlap between alternatives (share_factor).
+    alternative_routes: { target_count: 3, share_factor: 0.5, weight_factor: 1.8 },
   });
+}
+
+// ~35 m grid cells for geometry comparison. Coarser would merge parallel
+// streets; finer would miss the same street sampled at offset points.
+const CELL_DEG = 0.00035;
+
+function routeCells(coords) {
+  const cells = new Set();
+  for (const [lon, lat] of coords) {
+    cells.add(`${Math.round(lon / CELL_DEG)}:${Math.round(lat / CELL_DEG)}`);
+  }
+  return cells;
+}
+
+// Fraction of route A lying on route B, with one cell of tolerance.
+export function routeOverlap(coordsA, coordsB) {
+  const cellsA = routeCells(coordsA);
+  const cellsB = routeCells(coordsB);
+  let hits = 0;
+  for (const key of cellsA) {
+    const [x, y] = key.split(':').map(Number);
+    let found = false;
+    for (let dx = -1; dx <= 1 && !found; dx++)
+      for (let dy = -1; dy <= 1 && !found; dy++)
+        if (cellsB.has(`${x + dx}:${y + dy}`)) found = true;
+    if (found) hits++;
+  }
+  return hits / cellsA.size;
+}
+
+// Dedup by geometry, not by distance: two same-length routes on different
+// streets are exactly the pairs worth keeping for sun scoring.
+export function dedupeRoutes(all, directDist) {
+  const unique = [];
+  for (const rt of all) {
+    if (rt.distance > directDist * 2.5) continue;
+    const dup = unique.some(u => routeOverlap(rt.geometry.coordinates, u.geometry.coordinates) >= 0.9);
+    if (!dup) unique.push(rt);
+  }
+  return unique;
 }
 
 export async function buildRoutes(start, end, onStatus) {
   onStatus('🗺️ Génération des itinéraires…');
   const all = await orsAlts(start, end);
-
-  const directDist = haversine(start.lat, start.lng, end.lat, end.lng);
-
-  const unique = [];
-  for (const rt of all) {
-    if (rt.distance > directDist * 2.5) continue;
-    if (!unique.some(u => Math.abs(u.distance - rt.distance) / rt.distance < 0.03)) unique.push(rt);
-  }
-
-  return unique;
+  return dedupeRoutes(all, haversine(start.lat, start.lng, end.lat, end.lng));
 }

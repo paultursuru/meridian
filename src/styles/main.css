@@ -296,6 +296,17 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #drawer-handle:hover #drawer-bar { background: rgba(240,242,160,0.45); }
 
+/* ── Single-route note (replaces the tabs when only one unique route exists) ── */
+#single-route-note {
+  display: none;
+  padding: 9px 16px 11px;
+  border-bottom: 1.5px solid rgba(240,242,160,0.1);
+  font-size: 0.82rem;
+  color: rgba(216,219,200,0.55);
+  text-align: center;
+}
+#single-route-note.on { display: block; }
+
 /* ── Tabs ── */
 #tabs {
   display: flex;
