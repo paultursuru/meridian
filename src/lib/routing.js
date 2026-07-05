@@ -1,4 +1,5 @@
 import { haversine } from './helpers.js';
+import { tr } from './i18n.js';
 
 const ORS_BASE = 'https://api.openrouteservice.org/v2/directions/foot-walking';
 const ORS_KEY  = import.meta.env.PUBLIC_ORS_KEY;
@@ -103,7 +104,7 @@ export function dedupeRoutes(all, directDist) {
 }
 
 export async function buildRoutes(start, end, onStatus) {
-  onStatus('🗺️ Génération des itinéraires…');
+  onStatus(tr('status_routing'));
   const all = await orsAlts(start, end);
   return dedupeRoutes(all, haversine(start.lat, start.lng, end.lat, end.lng));
 }

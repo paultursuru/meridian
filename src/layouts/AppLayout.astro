@@ -348,7 +348,7 @@ const urls: Record<Lang, string> = {
         setStatus(tr('status_buildings'));
         buildings = await fetchBuildings(bbox);
         trees = await fetchTrees(bbox);
-        leafFrac = deciduousLeafFrac(tDate);
+        leafFrac = deciduousLeafFrac(tDate, midLat);
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       }
       routes.forEach(rt => {
