@@ -20,7 +20,8 @@
     "astro": "^6.3.7",
     "leaflet": "^1.9.4",
     "maplibre-gl": "^5.24.0",
-    "suncalc": "^1.9.0"
+    "suncalc": "^1.9.0",
+    "tz-lookup": "^6.1.25"
   },
   "devDependencies": {
     "vitest": "^4.1.9"

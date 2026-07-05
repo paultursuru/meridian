@@ -221,6 +221,7 @@ const urls: Record<Lang, string> = {
   import { fetchTrees }                  from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
+  import { resolveTimeZone, zonedTimeToUtc } from '../lib/timezone.js';
   import { drawCompass }                 from '../lib/compass.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab, renderTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
@@ -297,12 +298,17 @@ const urls: Record<Lang, string> = {
         endAC.getPlace()   ?? geocode(endQ),
       ]);
 
-      let tDate = new Date();
-      if (dateV && timeV) tDate = new Date(`${dateV}T${timeV}`);
-      else if (dateV)     tDate = new Date(`${dateV}T12:00:00`);
-
       const midLat = (startC.lat + endC.lat) / 2;
       const midLng = (startC.lng + endC.lng) / 2;
+
+      // Date/time inputs are wall-clock values for the route's location, not
+      // the browser's — resolve the destination's IANA zone and convert.
+      let tDate = new Date();
+      if (dateV) {
+        const destTz = resolveTimeZone(midLat, midLng);
+        tDate = zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz);
+      }
+
       const sun = getSun(tDate, midLat, midLng);
 
       updateSunInfo(sun);
