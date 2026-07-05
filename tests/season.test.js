@@ -25,6 +25,37 @@ describe('leafFraction (deciduous)', () => {
   });
 });
 
+describe('leafFraction (southern hemisphere)', () => {
+  const SYDNEY_LAT = -33.87;
+
+  it('is full canopy November–March', () => {
+    for (const m of [11, 12, 1, 2, 3]) {
+      expect(leafFraction(dateInMonth(m), true, SYDNEY_LAT)).toBe(1.0);
+    }
+  });
+
+  it('is partial in the shoulder months', () => {
+    expect(leafFraction(dateInMonth(10), true, SYDNEY_LAT)).toBe(0.70); // October
+    expect(leafFraction(dateInMonth(4), true, SYDNEY_LAT)).toBe(0.70);  // April
+    expect(leafFraction(dateInMonth(9), true, SYDNEY_LAT)).toBe(0.40);  // September
+    expect(leafFraction(dateInMonth(5), true, SYDNEY_LAT)).toBe(0.40);  // May
+  });
+
+  it('is bare in the austral winter (Jun–Aug)', () => {
+    for (const m of [6, 7, 8]) {
+      expect(leafFraction(dateInMonth(m), true, SYDNEY_LAT)).toBe(0.05);
+    }
+  });
+
+  it('mirrors the northern hemisphere with a 6-month shift', () => {
+    for (let m = 1; m <= 12; m++) {
+      const shifted = ((m + 5) % 12) + 1;
+      expect(leafFraction(dateInMonth(m), true, SYDNEY_LAT))
+        .toBe(leafFraction(dateInMonth(shifted), true, 46.5));
+    }
+  });
+});
+
 describe('leafFraction (evergreen)', () => {
   it('always returns full canopy regardless of month', () => {
     for (let m = 1; m <= 12; m++) {
@@ -37,5 +68,9 @@ describe('deciduousLeafFrac', () => {
   it('matches leafFraction(date, true)', () => {
     const d = dateInMonth(1);
     expect(deciduousLeafFrac(d)).toBe(leafFraction(d, true));
+  });
+
+  it('passes the latitude through (January in Sydney = full canopy)', () => {
+    expect(deciduousLeafFrac(dateInMonth(1), -33.87)).toBe(1.0);
   });
 });

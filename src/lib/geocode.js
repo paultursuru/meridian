@@ -1,5 +1,15 @@
+import { tr, getLang } from './i18n.js';
+
 const NOM_BASE = 'https://nominatim.openstreetmap.org';
 const PHOTON_BASE = 'https://photon.komoot.io/api';
+
+// Photon only supports a few response languages; 'default' returns local
+// (on-the-ground) names, which is the least-wrong fallback for the others.
+const PHOTON_LANGS = new Set(['en', 'de', 'fr']);
+const photonLang = () => {
+  const lang = getLang();
+  return PHOTON_LANGS.has(lang) ? lang : 'default';
+};
 
 // Parses Nominatim structured address fields into two display lines.
 // line1: street number + street name (bold in dropdown)
@@ -33,18 +43,18 @@ function formatPhotonFeature(feature) {
 }
 
 export async function geocode(q) {
-  const url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=fr`;
+  const url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=${getLang()}`;
   const r = await fetch(url);
   const d = await r.json();
-  if (!d.length) throw new Error(`Adresse introuvable : "${q}"`);
+  if (!d.length) throw new Error(tr('error_address_not_found', { q }));
   return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
 }
 
 export async function reverseGeocode(lat, lng) {
-  const url = `${NOM_BASE}/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr&addressdetails=1`;
+  const url = `${NOM_BASE}/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=${getLang()}&addressdetails=1`;
   const r = await fetch(url);
   const d = await r.json();
-  if (!d.display_name) throw new Error('Position non reconnue');
+  if (!d.display_name) throw new Error(tr('error_position_unknown'));
   const { short } = formatAddress(d);
   return short;
 }
@@ -54,7 +64,7 @@ export async function reverseGeocode(lat, lng) {
 // near: optional { lat, lng } to bias results by proximity (no hard filter).
 export async function suggest(q, { near } = {}) {
   if (q.length < 3) return [];
-  let url = `${PHOTON_BASE}/?q=${encodeURIComponent(q)}&limit=5&lang=fr`;
+  let url = `${PHOTON_BASE}/?q=${encodeURIComponent(q)}&limit=5&lang=${photonLang()}`;
   if (near) url += `&lat=${near.lat}&lon=${near.lng}`;
   try {
     const r = await fetch(url);
