@@ -2,6 +2,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-leaflet';
+import { collapseDrawer } from './ui.js';
 
 let _map = null;
 let sunnyLayers   = [];
@@ -49,6 +50,7 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
       opacity,
       lineCap: 'round',
       lineJoin: 'round',
+      bubblingMouseEvents: false, // keep route clicks from also closing the drawer via the map click below
     });
     if (onClick) seg.on('click', onClick);
     layers.push(seg.addTo(_map));
@@ -64,6 +66,8 @@ export function initMap() {
     style: 'https://tiles.stadiamaps.com/styles/osm_bright.json',
     attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(_map);
+
+  _map.on('click', collapseDrawer);
 }
 
 function pinIcon(color) {
