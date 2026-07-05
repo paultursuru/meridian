@@ -19,7 +19,11 @@ function formatAddress(item) {
 function formatPhotonFeature(feature) {
   const p = feature.properties || {};
   const road = p.street || p.name || '';
-  const line1 = [p.housenumber, road].filter(Boolean).join(' ') || p.name || '';
+  const streetLine = [p.housenumber, road].filter(Boolean).join(' ');
+  // p.name is the POI name (e.g. a museum) when distinct from the street — keep it
+  // so results like "Musée Olympique" aren't reduced to their bare street address.
+  const placeName = p.name && p.name !== road ? p.name : '';
+  const line1 = [placeName, streetLine].filter(Boolean).join(', ') || placeName || road || '';
   const city = p.city || p.town || p.village || p.state || '';
   const line2 = [city, p.country].filter(Boolean).join(', ');
   const short = line2 ? `${line1}, ${line2}` : line1;
