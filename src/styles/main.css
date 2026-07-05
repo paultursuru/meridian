@@ -192,6 +192,11 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: #f7d9d2;
   border: 1px solid rgba(240,120,90,0.35);
 }
+.toast-success {
+  background: rgba(20,38,16,0.94);
+  color: #ddf0d2;
+  border: 1px solid rgba(140,220,110,0.35);
+}
 
 /* ── Compass ── */
 #compass-wrap {
@@ -295,6 +300,23 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   transition: background 0.15s;
 }
 #drawer-handle:hover #drawer-bar { background: rgba(240,242,160,0.45); }
+
+/* ── Share button (top-right of the results drawer) ── */
+#share-btn {
+  position: absolute;
+  top: 7px; right: 12px;
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #161b12;
+  border: 1px solid rgba(240,242,160,0.2);
+  border-radius: 50%;
+  color: #d8dbc8;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+#share-btn:hover { border-color: rgba(240,242,160,0.45); color: #f0f2a0; }
 
 /* ── Single-route note (replaces the tabs when only one unique route exists) ── */
 #single-route-note {

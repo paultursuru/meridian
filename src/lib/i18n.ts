@@ -42,6 +42,8 @@ export const translations = {
     error_geo_denied: 'Localisation refusée par le navigateur.',
     error_geo_timeout: 'Localisation impossible, réessayez.',
     about_privacy: 'Confidentialité',
+    share_btn_title: 'Partager cet itinéraire',
+    toast_link_copied: 'Lien copié dans le presse-papier.',
   },
   de: {
     title: 'MeridianWay — Sonnennavigation',
@@ -84,6 +86,8 @@ export const translations = {
     error_geo_denied: 'Standortzugriff wurde verweigert.',
     error_geo_timeout: 'Standort nicht verfügbar, erneut versuchen.',
     about_privacy: 'Datenschutz',
+    share_btn_title: 'Route teilen',
+    toast_link_copied: 'Link in die Zwischenablage kopiert.',
   },
   it: {
     title: 'MeridianWay — Navigazione solare',
@@ -126,6 +130,8 @@ export const translations = {
     error_geo_denied: 'Localizzazione rifiutata dal browser.',
     error_geo_timeout: 'Localizzazione impossibile, riprova.',
     about_privacy: 'Privacy',
+    share_btn_title: 'Condividi il percorso',
+    toast_link_copied: 'Link copiato negli appunti.',
   },
   en: {
     title: 'MeridianWay — Solar navigation',
@@ -168,6 +174,8 @@ export const translations = {
     error_geo_denied: 'Location access denied by browser.',
     error_geo_timeout: 'Location unavailable, please try again.',
     about_privacy: 'Privacy',
+    share_btn_title: 'Share this route',
+    toast_link_copied: 'Link copied to clipboard.',
   },
 } as const;
 
