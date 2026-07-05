@@ -132,6 +132,7 @@ const urls: Record<Lang, string> = {
     <div id="drawer-bar"></div>
   </div>
   <div id="weather-note"></div>
+  <div id="night-note">{t.night_note}</div>
   <div id="single-route-note">{t.single_route_note}</div>
   <div id="tabs">
     <button class="tab-btn shady"  data-tab="shady">{t.tab_shady}</button>
@@ -317,26 +318,35 @@ const urls: Record<Lang, string> = {
       }
 
       const sun = getSun(tDate, midLat, midLng);
+      // Night: sun exposure doesn't apply — no weather badge, no compass,
+      // no shadow computation; just show the shortest route and say so.
+      const night = sun.altDeg <= 0;
 
       // Fired now, awaited only before rendering results: the routing +
       // Overpass calls below dwarf it, so it's effectively free. Resolves
       // to null when the date is beyond the forecast horizon or on error.
-      const weatherP = fetchWeather(midLat, midLng, tDate);
+      const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
 
       updateSunInfo(sun);
       drawCompass(sun.azDeg, sun.altDeg);
-      el('compass-wrap').classList.add('on');
+      el('compass-wrap').classList.toggle('on', !night);
 
       const routes = await buildRoutes(startC, endC, setStatus);
       if (!routes.length) throw new Error(tr('error_no_route'));
 
-      setStatus(tr('status_buildings'));
       const bbox = routesBbox(routes);
-      const buildings = await fetchBuildings(bbox);
-      const trees = await fetchTrees(bbox);
-      const leafFrac = deciduousLeafFrac(tDate);
-
-      setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
+      let buildings: Awaited<ReturnType<typeof fetchBuildings>> = [];
+      let trees: Awaited<ReturnType<typeof fetchTrees>> = [];
+      let leafFrac = 1;
+      if (!night) {
+        // At night every route scores 0 — shadow geometry is pointless,
+        // so skip the two Overpass round trips entirely.
+        setStatus(tr('status_buildings'));
+        buildings = await fetchBuildings(bbox);
+        trees = await fetchTrees(bbox);
+        leafFrac = deciduousLeafFrac(tDate);
+        setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
+      }
       routes.forEach(rt => {
         const { score, segShade } = scoreRoute(rt, buildings, trees, sun, leafFrac);
         rt.sunScore = score;
@@ -344,12 +354,14 @@ const urls: Record<Lang, string> = {
       });
       routes.sort((a, b) => b.sunScore - a.sunScore);
 
-      const sunny = routes[0];
+      let sunny = routes[0];
       const shady = routes[routes.length - 1];
-      const single = routes.length === 1;
+      // Night collapses the sunny/shady distinction: show only the shortest route.
+      if (night) sunny = routes.reduce((a, b) => (b.distance < a.distance ? b : a));
+      const single = night || routes.length === 1;
 
       displayRoutes(startC, endC, sunny, single ? null : shady);
-      showResults(sunny, shady, single);
+      showResults(sunny, shady, single, night);
 
       const weather = await weatherP;
       const weatherEl = el('weather-note');

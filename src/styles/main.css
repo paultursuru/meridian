@@ -318,6 +318,19 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #weather-note.on { display: block; }
 
+/* ── Night note (sun below the horizon — sun/shade stats don't apply) ── */
+#night-note {
+  display: none;
+  padding: 9px 16px 11px;
+  border-bottom: 1.5px solid rgba(240,242,160,0.1);
+  font-size: 0.82rem;
+  color: rgba(216,219,200,0.55);
+  text-align: center;
+}
+#night-note.on { display: block; }
+#results.night .ratio-wrap,
+#results.night .detail-split { display: none; }
+
 /* ── Tabs ── */
 #tabs {
   display: flex;
