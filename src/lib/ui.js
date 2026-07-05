@@ -135,9 +135,14 @@ export function collapseDrawer() {
   document.getElementById('results')?.classList.remove('expanded');
 }
 
-export function showResults(sunny, shady) {
+// single = only one unique route survived dedup: hide the sunny/shady tabs
+// (they would show the same route twice), show an honest note instead, and
+// render the route's stats — sun/shade split included — in the sunny pane.
+export function showResults(sunny, shady, single = false) {
+  document.getElementById('tabs').style.display = single ? 'none' : '';
+  document.getElementById('single-route-note').classList.toggle('on', single);
   renderTab('tab-sunny', sunny);
-  renderTab('tab-shady', shady);
+  if (!single) renderTab('tab-shady', shady);
   const drawer = document.getElementById('results');
   drawer.classList.add('on');
   initDrawer();

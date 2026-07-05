@@ -131,6 +131,7 @@ const urls: Record<Lang, string> = {
   <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
     <div id="drawer-bar"></div>
   </div>
+  <div id="single-route-note">{t.single_route_note}</div>
   <div id="tabs">
     <button class="tab-btn shady"  data-tab="shady">{t.tab_shady}</button>
     <button class="tab-btn active" data-tab="sunny">{t.tab_sunny}</button>
@@ -223,7 +224,7 @@ const urls: Record<Lang, string> = {
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { resolveTimeZone, zonedTimeToUtc } from '../lib/timezone.js';
   import { drawCompass }                 from '../lib/compass.js';
-  import { setStatus, showToast, initTabs, showResults, setActiveTab, renderTab } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, showResults, setActiveTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { tr }                          from '../lib/i18n.js';
 
@@ -334,16 +335,14 @@ const urls: Record<Lang, string> = {
 
       const sunny = routes[0];
       const shady = routes[routes.length - 1];
+      const single = routes.length === 1;
 
-      displayRoutes(startC, endC, sunny, shady);
-      showResults(sunny, shady);
+      displayRoutes(startC, endC, sunny, single ? null : shady);
+      showResults(sunny, shady, single);
 
-      const preselect = sun.altDeg > 40 ? 'shady' : 'sunny';
+      const preselect = !single && sun.altDeg > 40 ? 'shady' : 'sunny';
       setActiveTab(preselect);
       setActiveRoute(preselect);
-
-      renderTab('tab-sunny', sunny);
-      renderTab('tab-shady', shady);
       setStatus(null);
 
       logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes });
