@@ -138,12 +138,17 @@ export function collapseDrawer() {
 // single = only one unique route survived dedup: hide the sunny/shady tabs
 // (they would show the same route twice), show an honest note instead, and
 // render the route's stats — sun/shade split included — in the sunny pane.
-export function showResults(sunny, shady, single = false) {
+// night = sun below the horizon: also single (shortest route), but with a
+// night note and without the meaningless sun/shade ratio rows (via CSS on
+// the .night class).
+export function showResults(sunny, shady, single = false, night = false) {
   document.getElementById('tabs').style.display = single ? 'none' : '';
-  document.getElementById('single-route-note').classList.toggle('on', single);
+  document.getElementById('single-route-note').classList.toggle('on', single && !night);
+  document.getElementById('night-note').classList.toggle('on', night);
   renderTab('tab-sunny', sunny);
   if (!single) renderTab('tab-shady', shady);
   const drawer = document.getElementById('results');
+  drawer.classList.toggle('night', night);
   drawer.classList.add('on');
   initDrawer();
 }
