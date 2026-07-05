@@ -307,6 +307,17 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #single-route-note.on { display: block; }
 
+/* ── Weather note (overcast forecast — shown above the tabs) ── */
+#weather-note {
+  display: none;
+  padding: 9px 16px 11px;
+  border-bottom: 1.5px solid rgba(240,242,160,0.1);
+  font-size: 0.82rem;
+  color: rgba(216,219,200,0.55);
+  text-align: center;
+}
+#weather-note.on { display: block; }
+
 /* ── Tabs ── */
 #tabs {
   display: flex;
