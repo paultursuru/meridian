@@ -23,15 +23,15 @@ export function closestHourIndex(unixTimes, targetDate) {
   return best;
 }
 
-// Cloud cover (0-100 %) at the given point and instant, or null when the
-// date is outside the forecast window or the request fails. Weather is
-// best-effort decoration: every failure path returns null and the search
-// continues without it.
-export async function fetchCloudCover(lat, lng, date, now = new Date()) {
+// Cloud cover (0-100 %) and air temperature (°C) at the given point and
+// instant, or null when the date is outside the forecast window or the
+// request fails. Weather is best-effort decoration: every failure path
+// returns null and the search continues without it.
+export async function fetchWeather(lat, lng, date, now = new Date()) {
   if (!isForecastable(date, now)) return null;
   const day = date.toISOString().split('T')[0]; // UTC day containing `date`
   const url = `${OM_BASE}?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}`
-    + `&hourly=cloud_cover&timeformat=unixtime&start_date=${day}&end_date=${day}`;
+    + `&hourly=cloud_cover,temperature_2m&timeformat=unixtime&start_date=${day}&end_date=${day}`;
   try {
     const r = await fetch(url);
     if (!r.ok) return null;
@@ -39,8 +39,11 @@ export async function fetchCloudCover(lat, lng, date, now = new Date()) {
     const times  = d?.hourly?.time;
     const covers = d?.hourly?.cloud_cover;
     if (!times?.length || !covers?.length) return null;
-    const cloudCover = covers[closestHourIndex(times, date)];
-    return Number.isFinite(cloudCover) ? { cloudCover } : null;
+    const i = closestHourIndex(times, date);
+    const cloudCover  = covers[i];
+    const temperature = d?.hourly?.temperature_2m?.[i];
+    if (!Number.isFinite(cloudCover)) return null;
+    return { cloudCover, temperature: Number.isFinite(temperature) ? temperature : null };
   } catch {
     return null;
   }

@@ -224,7 +224,8 @@ const urls: Record<Lang, string> = {
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { resolveTimeZone, zonedTimeToUtc } from '../lib/timezone.js';
-  import { fetchCloudCover }             from '../lib/weather.js';
+  import { fetchWeather }                from '../lib/weather.js';
+  import { preselectTab }                from '../lib/preselect.js';
   import { drawCompass }                 from '../lib/compass.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
@@ -320,7 +321,7 @@ const urls: Record<Lang, string> = {
       // Fired now, awaited only before rendering results: the routing +
       // Overpass calls below dwarf it, so it's effectively free. Resolves
       // to null when the date is beyond the forecast horizon or on error.
-      const weatherP = fetchCloudCover(midLat, midLng, tDate);
+      const weatherP = fetchWeather(midLat, midLng, tDate);
 
       updateSunInfo(sun);
       drawCompass(sun.azDeg, sun.altDeg);
@@ -359,7 +360,12 @@ const urls: Record<Lang, string> = {
         weatherEl.classList.remove('on');
       }
 
-      const preselect = !single && sun.altDeg > 40 ? 'shady' : 'sunny';
+      const preselect = single ? 'sunny' : preselectTab({
+        altDeg: sun.altDeg,
+        temperature: weather?.temperature ?? null,
+        month: tDate.getUTCMonth(),
+        lat: midLat,
+      });
       setActiveTab(preselect);
       setActiveRoute(preselect);
       setStatus(null);

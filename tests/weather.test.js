@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { isForecastable, closestHourIndex, fetchCloudCover } from '../src/lib/weather.js';
+import { isForecastable, closestHourIndex, fetchWeather } from '../src/lib/weather.js';
 
 const NOW = new Date('2026-07-05T12:00:00Z');
 
@@ -44,7 +44,7 @@ describe('closestHourIndex', () => {
   });
 });
 
-describe('fetchCloudCover', () => {
+describe('fetchWeather', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   const target = new Date('2026-07-05T14:00:00Z');
@@ -55,45 +55,55 @@ describe('fetchCloudCover', () => {
     return spy;
   }
 
-  it('returns the cloud cover of the hour closest to the target', async () => {
+  it('returns cloud cover and temperature of the hour closest to the target', async () => {
     stubFetch({
       ok: true,
       json: async () => ({
         hourly: {
           time: [T12 + HOUR, T12 + 2 * HOUR, T12 + 3 * HOUR], // 13:00Z, 14:00Z, 15:00Z
           cloud_cover: [10, 85, 40],
+          temperature_2m: [21.3, 26.1, 24.9],
         },
       }),
     });
-    const w = await fetchCloudCover(46.52, 6.63, target, NOW);
-    expect(w).toEqual({ cloudCover: 85 });
+    const w = await fetchWeather(46.52, 6.63, target, NOW);
+    expect(w).toEqual({ cloudCover: 85, temperature: 26.1 });
+  });
+
+  it('returns a null temperature when the field is missing', async () => {
+    stubFetch({
+      ok: true,
+      json: async () => ({ hourly: { time: [T12], cloud_cover: [50] } }),
+    });
+    const w = await fetchWeather(46.52, 6.63, target, NOW);
+    expect(w).toEqual({ cloudCover: 50, temperature: null });
   });
 
   it('requests the UTC day containing the target instant', async () => {
     const spy = stubFetch({ ok: true, json: async () => ({ hourly: { time: [T12], cloud_cover: [50] } }) });
-    await fetchCloudCover(46.52, 6.63, target, NOW);
+    await fetchWeather(46.52, 6.63, target, NOW);
     expect(spy.mock.calls[0][0]).toContain('start_date=2026-07-05&end_date=2026-07-05');
   });
 
   it('skips the request entirely when the date is too far in the future', async () => {
     const spy = stubFetch({ ok: true, json: async () => ({}) });
-    const w = await fetchCloudCover(46.52, 6.63, new Date('2026-09-01T12:00:00Z'), NOW);
+    const w = await fetchWeather(46.52, 6.63, new Date('2026-09-01T12:00:00Z'), NOW);
     expect(w).toBeNull();
     expect(spy).not.toHaveBeenCalled();
   });
 
   it('returns null on HTTP error', async () => {
     stubFetch({ ok: false, status: 429 });
-    expect(await fetchCloudCover(46.52, 6.63, target, NOW)).toBeNull();
+    expect(await fetchWeather(46.52, 6.63, target, NOW)).toBeNull();
   });
 
   it('returns null on network failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
-    expect(await fetchCloudCover(46.52, 6.63, target, NOW)).toBeNull();
+    expect(await fetchWeather(46.52, 6.63, target, NOW)).toBeNull();
   });
 
   it('returns null on an empty or malformed payload', async () => {
     stubFetch({ ok: true, json: async () => ({ hourly: { time: [], cloud_cover: [] } }) });
-    expect(await fetchCloudCover(46.52, 6.63, target, NOW)).toBeNull();
+    expect(await fetchWeather(46.52, 6.63, target, NOW)).toBeNull();
   });
 });
