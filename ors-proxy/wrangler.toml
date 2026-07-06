@@ -1,0 +1,9 @@
+name = "ors-proxy"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Créer le namespace puis coller l'id retourné :
+#   npx wrangler kv namespace create ORS_CACHE
+[[kv_namespaces]]
+binding = "ORS_CACHE"
+id = "6c563c5e82444df49373ecc56e90ada1"

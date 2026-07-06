@@ -1,9 +1,10 @@
 import { haversine } from './helpers.js';
 import { tr } from './i18n.js';
 
-const ORS_BASE = 'https://api.openrouteservice.org/v2/directions/foot-walking';
-const ORS_KEY  = import.meta.env.PUBLIC_ORS_KEY;
-const WALK_MS  = 4.5 / 3.6; // 4.5 km/h in m/s
+// ORS is proxied through a Cloudflare Worker (ors-proxy/) so the API key
+// never ships in the client bundle. Same pattern as overpass.js.
+const ORS_PROXY = 'https://ors-proxy.meridianway.workers.dev';
+const WALK_MS   = 4.5 / 3.6; // 4.5 km/h in m/s
 const RETRYABLE  = new Set([429, 503, 504]);
 const BACKOFF_MS = [1000, 3000];
 
@@ -39,9 +40,9 @@ async function orsPost(body) {
   let lastStatus;
   for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
     if (attempt > 0) await new Promise(res => setTimeout(res, BACKOFF_MS[attempt - 1]));
-    const r = await fetch(`${ORS_BASE}/geojson`, {
+    const r = await fetch(ORS_PROXY, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': ORS_KEY },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     if (RETRYABLE.has(r.status)) { lastStatus = r.status; continue; }
