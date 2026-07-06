@@ -3,8 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ARG PUBLIC_ORS_KEY
-RUN PUBLIC_ORS_KEY=$PUBLIC_ORS_KEY npm run build
+RUN npm run build
 
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
