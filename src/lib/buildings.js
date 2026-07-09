@@ -10,6 +10,26 @@ export function routesBbox(routes) {
   return [s - p, w - p, n + p, e + p];
 }
 
+// Single-storey outbuildings: without this, an untagged shed gets the generic
+// 10 m default and shades like a three-storey apartment block.
+const LOW_BUILDING_TYPES = new Set([
+  'garage', 'garages', 'carport', 'shed', 'hut', 'cabin',
+  'kiosk', 'garbage_shed', 'greenhouse', 'roof', 'service',
+]);
+const LOW_BUILDING_HEIGHT = 2.5;
+
+// Estimated height in metres from OSM tags. Explicit height wins, then
+// levels (~3.5 m each), then a per-type default (10 m for ordinary buildings).
+export function buildingHeight(tags) {
+  let fallback = 10;
+  if (LOW_BUILDING_TYPES.has(tags.building)) fallback = LOW_BUILDING_HEIGHT;
+  else if (['church', 'cathedral', 'tower'].includes(tags.building)) fallback = 22;
+
+  if (tags.height) return parseFloat(tags.height) || fallback;
+  if (tags['building:levels']) return parseInt(tags['building:levels']) * 3.5 || fallback;
+  return fallback;
+}
+
 function parseBuildings(els) {
   const nodes = {};
   els.filter(e => e.type === 'node').forEach(nd => { nodes[nd.id] = { lat: nd.lat, lng: nd.lon }; });
@@ -24,10 +44,7 @@ function parseBuildings(els) {
       lng: pts.reduce((s, p) => s + p.lng, 0) / pts.length,
     };
 
-    let height = 10;
-    if (way.tags.height)                   height = parseFloat(way.tags.height) || 10;
-    else if (way.tags['building:levels'])  height = parseInt(way.tags['building:levels']) * 3.5;
-    else if (['church', 'cathedral', 'tower'].includes(way.tags.building)) height = 22;
+    const height = buildingHeight(way.tags);
 
     // Max distance from centroid to any vertex — used as bounding radius for shadow pre-filter
     const cosLat = Math.cos(centroid.lat * Math.PI / 180);
