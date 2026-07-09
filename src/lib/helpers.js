@@ -18,6 +18,14 @@ export function angleDiff(a, b) {
   return d > 180 ? 360 - d : d;
 }
 
+// Local-calendar "YYYY-MM-DD" for <input type="date"> values.
+// Built from local date parts: toISOString() would give the UTC date, which
+// is still yesterday for a UTC+ user between midnight and the UTC offset.
+export function localDateValue(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 export function fmtDist(m) {
   return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km';
 }

@@ -235,6 +235,7 @@ const urls: Record<Lang, string> = {
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { tr }                          from '../lib/i18n.js';
+  import { localDateValue }              from '../lib/helpers.js';
 
 
   initMap();
@@ -251,7 +252,7 @@ const urls: Record<Lang, string> = {
   const button = (id: string) => el<HTMLButtonElement>(id);
 
   const now = new Date();
-  input('inp-date').value = now.toISOString().split('T')[0];
+  input('inp-date').value = localDateValue(now);
   input('inp-time').value = now.toTimeString().slice(0, 5);
 
   let startAC: ReturnType<typeof initAutocomplete>;

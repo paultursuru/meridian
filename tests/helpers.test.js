@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { haversine, bearing, angleDiff, fmtDist, fmtDur } from '../src/lib/helpers.js';
+import { haversine, bearing, angleDiff, fmtDist, fmtDur, localDateValue } from '../src/lib/helpers.js';
 
 describe('haversine', () => {
   it('returns 0 for identical points', () => {
@@ -70,5 +70,18 @@ describe('fmtDur', () => {
   it('shows h+mm from one hour, zero-padding minutes', () => {
     expect(fmtDur(3600)).toBe('1h00');
     expect(fmtDur(3660)).toBe('1h01');
+  });
+});
+
+describe('localDateValue', () => {
+  it('zero-pads month and day', () => {
+    expect(localDateValue(new Date(2026, 8, 5))).toBe('2026-09-05');
+  });
+
+  it('keeps the local calendar date just after local midnight', () => {
+    // In any UTC+ timezone, toISOString() on this date would still say the
+    // previous day — the exact bug this helper replaces (review 2.2).
+    const justPastMidnight = new Date(2026, 0, 1, 0, 30);
+    expect(localDateValue(justPastMidnight)).toBe('2026-01-01');
   });
 });
