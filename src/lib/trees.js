@@ -22,13 +22,17 @@ function treeHeight(tags) {
   return 8; // default: 8m
 }
 
-function parseTrees(elements) {
+// Default canopy height for forest polygons without a height tag.
+const FOREST_CANOPY_HEIGHT = 15;
+
+function parseVegetation(elements) {
   const nodes = {};
   elements
     .filter(e => e.type === 'node')
     .forEach(nd => { nodes[nd.id] = { lat: nd.lat, lng: nd.lon }; });
 
   const trees = [];
+  const forests = [];
 
   for (const el of elements) {
     if (el.type === 'node' && el.tags?.natural === 'tree') {
@@ -47,20 +51,34 @@ function parseTrees(elements) {
         const pt = nodes[id];
         if (pt) trees.push({ lat: pt.lat, lng: pt.lng, height: h, crownRadius: r, isDeciduous: dec });
       }
+    } else if (el.type === 'way' && (el.tags?.landuse === 'forest' || el.tags?.natural === 'wood')) {
+      const verts = (el.nodes || []).map(id => nodes[id]).filter(Boolean);
+      if (verts.length < 3) continue;
+      let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity;
+      for (const p of verts) {
+        if (p.lat < s) s = p.lat; if (p.lat > n) n = p.lat;
+        if (p.lng < w) w = p.lng; if (p.lng > e) e = p.lng;
+      }
+      forests.push({
+        verts,
+        bbox: { s, w, n, e },
+        height: parseFloat(el.tags.height) || FOREST_CANOPY_HEIGHT,
+        isDeciduous: deciduous(el.tags),
+      });
     }
   }
 
-  return trees;
+  return { trees, forests };
 }
 
-export async function fetchTrees(bbox) {
+export async function fetchVegetation(bbox) {
   const [s, w, n, e] = bbox;
-  const q = `[out:json][timeout:25];(node["natural"="tree"](${s},${w},${n},${e});way["natural"="tree_row"](${s},${w},${n},${e}););out body;>;out skel qt;`;
+  const q = `[out:json][timeout:25];(node["natural"="tree"](${s},${w},${n},${e});way["natural"="tree_row"](${s},${w},${n},${e});way["landuse"="forest"](${s},${w},${n},${e});way["natural"="wood"](${s},${w},${n},${e}););out body;>;out skel qt;`;
   try {
     const d = await overpassFetch(q);
-    return parseTrees(d.elements || []);
+    return parseVegetation(d.elements || []);
   } catch (err) {
-    console.warn('Overpass trees failed', err);
-    return [];
+    console.warn('Overpass vegetation failed', err);
+    return { trees: [], forests: [] };
   }
 }

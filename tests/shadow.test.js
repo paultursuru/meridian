@@ -89,6 +89,61 @@ describe('scoreRoute — trees and seasons', () => {
   });
 });
 
+describe('scoreRoute — forests', () => {
+  // A square forest centred on (lat, lng), `halfM` metres to each side.
+  function squareForest(lat, lng, halfM, { height = 15, isDeciduous = false } = {}) {
+    const dLat = halfM / M_PER_DEG_LAT;
+    const dLng = halfM / mPerDegLng(lat);
+    const verts = [
+      { lat: lat - dLat, lng: lng - dLng },
+      { lat: lat - dLat, lng: lng + dLng },
+      { lat: lat + dLat, lng: lng + dLng },
+      { lat: lat + dLat, lng: lng - dLng },
+    ];
+    return {
+      verts,
+      bbox: { s: lat - dLat, w: lng - dLng, n: lat + dLat, e: lng + dLng },
+      height,
+      isDeciduous,
+    };
+  }
+
+  it('shades a route running deep inside an evergreen forest', () => {
+    const forest = squareForest(CLAT, CLNG, 200);
+    const rt = route([CLNG - 0.0001, CLAT], [CLNG + 0.0001, CLAT]);
+    const res = scoreRoute(rt, [], [], SUN, 1.0, [forest]);
+    expect(res.score).toBeLessThan(0.2);
+    expect(res.segShade.every(s => s.shade)).toBe(true);
+  });
+
+  it('keeps the sun-side edge of a forest sunny', () => {
+    const forest = squareForest(CLAT, CLNG, 200);
+    // Sun due south → the canopy shadow falls north. A route just south of the
+    // forest (sun side) is in full sun.
+    const southLat = CLAT - 220 / M_PER_DEG_LAT;
+    const rt = route([CLNG - 0.0001, southLat], [CLNG + 0.0001, southLat]);
+    const res = scoreRoute(rt, [], [], SUN, 1.0, [forest]);
+    expect(res.score).toBe(1);
+  });
+
+  it('shades a route just past the north edge (canopy shadow overhang)', () => {
+    const forest = squareForest(CLAT, CLNG, 200, { height: 15 });
+    // Sun at 45° → shadow length == canopy height (15 m). 10 m north of the
+    // edge is still inside the cast shadow.
+    const northLat = CLAT + 210 / M_PER_DEG_LAT;
+    const rt = route([CLNG - 0.0001, northLat], [CLNG + 0.0001, northLat]);
+    const res = scoreRoute(rt, [], [], SUN, 1.0, [forest]);
+    expect(res.score).toBeLessThan(0.2);
+  });
+
+  it('lets sun through a deciduous forest in winter', () => {
+    const forest = squareForest(CLAT, CLNG, 200, { isDeciduous: true });
+    const rt = route([CLNG - 0.0001, CLAT], [CLNG + 0.0001, CLAT]);
+    const res = scoreRoute(rt, [], [], SUN, 0.05, [forest]);
+    expect(res.score).toBeGreaterThan(0.9);
+  });
+});
+
 describe('scoreRoute — building takes priority over tree', () => {
   it('keeps full shade under a building even when a bare winter tree overlaps', () => {
     const building = squareBuilding(CLAT, CLNG, 40, 10);
