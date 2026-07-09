@@ -106,29 +106,40 @@ function forestShadeAt(lat, lng, forests, shadowDirRad, altRad, deciduousLeafFra
 // Fractions along each segment where shade is sampled (25%, 50%, 75%).
 const TEST_FRACTIONS = [0.25, 0.5, 0.75];
 
+// Fallback walking speed when the route carries no distance/duration.
+const DEFAULT_WALK_MS = 4.5 / 3.6; // 4.5 km/h in m/s
+
 // Returns { score: [0,1], segShade: [{i, shade}] }
 // score = fraction of distance in sun (1 = fully sunny, 0 = fully shaded).
 // Every segment is tested at 3 points; score is fractional, shade boolean uses majority vote.
 // trees, deciduousLeafFrac and forests are optional (defaults to no vegetation).
+// sun is either a static { azDeg, altDeg } or a sampler (elapsedS) => { azDeg, altDeg }
+// (see makeSunSampler in sun.js) — with a sampler, each segment is scored with
+// the sun where it will actually be at that point of the walk.
 export function scoreRoute(rt, buildings, trees = [], sun, deciduousLeafFrac = 1.0, forests = []) {
-  const { azDeg, altDeg } = sun;
   const coords = rt.geometry.coordinates;
   const segShade = [];
 
-  if (altDeg <= 0) {
-    for (let i = 0; i < coords.length - 1; i++) segShade.push({ i, shade: true });
-    return { score: 0, segShade };
-  }
+  const sunAt = typeof sun === 'function' ? sun : () => sun;
+  const speed = rt.duration > 0 ? rt.distance / rt.duration : DEFAULT_WALK_MS;
 
-  const altRad       = altDeg * Math.PI / 180;
-  const shadowDirRad = ((azDeg + 180) % 360) * Math.PI / 180;
   let sunLen = 0, totalLen = 0;
 
   for (let i = 0; i < coords.length - 1; i++) {
     const [lng1, lat1] = coords[i];
     const [lng2, lat2] = coords[i + 1];
     const segLen = haversine(lat1, lng1, lat2, lng2);
+
+    const { azDeg, altDeg } = sunAt((totalLen + segLen / 2) / speed);
     totalLen += segLen;
+
+    if (altDeg <= 0) {
+      segShade.push({ i, shade: true });
+      continue;
+    }
+
+    const altRad       = altDeg * Math.PI / 180;
+    const shadowDirRad = ((azDeg + 180) % 360) * Math.PI / 180;
 
     let shadeSum = 0;
     for (const f of TEST_FRACTIONS) {

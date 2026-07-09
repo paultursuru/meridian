@@ -220,7 +220,7 @@ const urls: Record<Lang, string> = {
 
 <script>
   import { initMap, displayRoutes, setActiveRoute, setPreviewPin, swapPreviewPins } from '../lib/map.js';
-  import { getSun }                      from '../lib/sun.js';
+  import { getSun, makeSunSampler }      from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
@@ -352,8 +352,12 @@ const urls: Record<Lang, string> = {
         leafFrac = deciduousLeafFrac(tDate, midLat);
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       }
+      // The sun moves ~11° azimuth over a 45-min walk — enough to flip which
+      // side of a street is shaded. Score each segment with the sun at its
+      // estimated arrival time instead of freezing it at departure.
+      const sunSampler = makeSunSampler(tDate, midLat, midLng);
       routes.forEach(rt => {
-        const { score, segShade } = scoreRoute(rt, buildings, trees, sun, leafFrac, forests);
+        const { score, segShade } = scoreRoute(rt, buildings, trees, sunSampler, leafFrac, forests);
         rt.sunScore = score;
         rt.segShade = segShade;
       });
