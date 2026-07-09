@@ -75,14 +75,38 @@ function treeShadeAt(lat, lng, trees, shadowDirRad, altRad, deciduousLeafFrac) {
   return 0;
 }
 
+// A dense canopy still lets some light through the leaves.
+const FOREST_CANOPY_DENSITY = 0.85;
+
+// Returns a shade coefficient [0, 1] from forest/wood canopy polygons.
+// Same reverse-projection as trees: the point is shaded if, moved toward the
+// sun by the canopy shadow length, it lands under the canopy. This keeps the
+// sun-side edge of a forest sunny and the inside/shadow-side edge shaded.
+function forestShadeAt(lat, lng, forests, shadowDirRad, altRad, deciduousLeafFrac) {
+  if (!forests.length) return 0;
+  const cosLat = Math.cos(lat * Math.PI / 180);
+  for (const f of forests) {
+    const coeff = FOREST_CANOPY_DENSITY * (f.isDeciduous ? deciduousLeafFrac : 1.0);
+    if (coeff <= 0) continue;
+    const sLen = f.height / Math.tan(altRad);
+    const pLat = lat - Math.cos(shadowDirRad) * sLen / 111000;
+    const pLng = lng - Math.sin(shadowDirRad) * sLen / (111000 * cosLat);
+    // Forest polygons can be huge, so pre-filter on their bounding box instead
+    // of a centroid radius.
+    if (pLat < f.bbox.s || pLat > f.bbox.n || pLng < f.bbox.w || pLng > f.bbox.e) continue;
+    if (pointInPolygon(pLat, pLng, f.verts)) return coeff;
+  }
+  return 0;
+}
+
 // Fractions along each segment where shade is sampled (25%, 50%, 75%).
 const TEST_FRACTIONS = [0.25, 0.5, 0.75];
 
 // Returns { score: [0,1], segShade: [{i, shade}] }
 // score = fraction of distance in sun (1 = fully sunny, 0 = fully shaded).
 // Every segment is tested at 3 points; score is fractional, shade boolean uses majority vote.
-// trees and deciduousLeafFrac are optional (defaults to no trees).
-export function scoreRoute(rt, buildings, trees = [], sun, deciduousLeafFrac = 1.0) {
+// trees, deciduousLeafFrac and forests are optional (defaults to no vegetation).
+export function scoreRoute(rt, buildings, trees = [], sun, deciduousLeafFrac = 1.0, forests = []) {
   const { azDeg, altDeg } = sun;
   const coords = rt.geometry.coordinates;
   const segShade = [];
@@ -106,9 +130,12 @@ export function scoreRoute(rt, buildings, trees = [], sun, deciduousLeafFrac = 1
     for (const f of TEST_FRACTIONS) {
       const lat = lat1 + (lat2 - lat1) * f;
       const lng = lng1 + (lng2 - lng1) * f;
-      // Buildings take priority (full shade); trees add fractional shade if no building covers the point
+      // Buildings take priority (full shade); vegetation adds fractional shade if no building covers the point
       const bShade = buildingShadeAt(lat, lng, buildings, shadowDirRad, altRad);
-      shadeSum += bShade || treeShadeAt(lat, lng, trees, shadowDirRad, altRad, deciduousLeafFrac);
+      shadeSum += bShade || Math.max(
+        treeShadeAt(lat, lng, trees, shadowDirRad, altRad, deciduousLeafFrac),
+        forestShadeAt(lat, lng, forests, shadowDirRad, altRad, deciduousLeafFrac),
+      );
     }
 
     const shadeRatio = shadeSum / TEST_FRACTIONS.length;

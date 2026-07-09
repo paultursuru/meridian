@@ -224,7 +224,7 @@ const urls: Record<Lang, string> = {
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
-  import { fetchTrees }                  from '../lib/trees.js';
+  import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { resolveTimeZone, zonedTimeToUtc } from '../lib/timezone.js';
@@ -340,19 +340,20 @@ const urls: Record<Lang, string> = {
 
       const bbox = routesBbox(routes);
       let buildings: Awaited<ReturnType<typeof fetchBuildings>> = [];
-      let trees: Awaited<ReturnType<typeof fetchTrees>> = [];
+      let trees: Awaited<ReturnType<typeof fetchVegetation>>['trees'] = [];
+      let forests: Awaited<ReturnType<typeof fetchVegetation>>['forests'] = [];
       let leafFrac = 1;
       if (!night) {
         // At night every route scores 0 — shadow geometry is pointless,
         // so skip the two Overpass round trips entirely.
         setStatus(tr('status_buildings'));
         buildings = await fetchBuildings(bbox);
-        trees = await fetchTrees(bbox);
+        ({ trees, forests } = await fetchVegetation(bbox));
         leafFrac = deciduousLeafFrac(tDate, midLat);
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       }
       routes.forEach(rt => {
-        const { score, segShade } = scoreRoute(rt, buildings, trees, sun, leafFrac);
+        const { score, segShade } = scoreRoute(rt, buildings, trees, sun, leafFrac, forests);
         rt.sunScore = score;
         rt.segShade = segShade;
       });
