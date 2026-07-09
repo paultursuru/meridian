@@ -25,11 +25,54 @@ function treeHeight(tags) {
 // Default canopy height for forest polygons without a height tag.
 const FOREST_CANOPY_HEIGHT = 15;
 
+function isForest(tags) {
+  return tags?.landuse === 'forest' || tags?.natural === 'wood';
+}
+
+// Stitch multipolygon member ways (arrays of node ids) into closed rings by
+// matching endpoints. Unclosed leftovers (broken data) are dropped.
+function stitchRings(memberWays) {
+  const segs = memberWays.filter(w => w.length >= 2).map(w => [...w]);
+  const rings = [];
+  while (segs.length) {
+    const ring = segs.pop();
+    let extended = true;
+    while (ring[0] !== ring[ring.length - 1] && extended) {
+      extended = false;
+      const end = ring[ring.length - 1];
+      for (let i = 0; i < segs.length; i++) {
+        const s = segs[i];
+        if (s[0] === end)          { ring.push(...s.slice(1)); segs.splice(i, 1); extended = true; break; }
+        if (s[s.length - 1] === end) { ring.push(...s.slice(0, -1).reverse()); segs.splice(i, 1); extended = true; break; }
+      }
+    }
+    if (ring[0] === ring[ring.length - 1] && ring.length >= 4) rings.push(ring);
+  }
+  return rings;
+}
+
+function makeForest(verts, tags, holes = []) {
+  let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity;
+  for (const p of verts) {
+    if (p.lat < s) s = p.lat; if (p.lat > n) n = p.lat;
+    if (p.lng < w) w = p.lng; if (p.lng > e) e = p.lng;
+  }
+  return {
+    verts,
+    holes,
+    bbox: { s, w, n, e },
+    height: parseFloat(tags?.height) || FOREST_CANOPY_HEIGHT,
+    isDeciduous: deciduous(tags),
+  };
+}
+
 function parseVegetation(elements) {
   const nodes = {};
-  elements
-    .filter(e => e.type === 'node')
-    .forEach(nd => { nodes[nd.id] = { lat: nd.lat, lng: nd.lon }; });
+  const waysById = {};
+  for (const el of elements) {
+    if (el.type === 'node') nodes[el.id] = { lat: el.lat, lng: el.lon };
+    else if (el.type === 'way') waysById[el.id] = el;
+  }
 
   const trees = [];
   const forests = [];
@@ -51,20 +94,24 @@ function parseVegetation(elements) {
         const pt = nodes[id];
         if (pt) trees.push({ lat: pt.lat, lng: pt.lng, height: h, crownRadius: r, isDeciduous: dec });
       }
-    } else if (el.type === 'way' && (el.tags?.landuse === 'forest' || el.tags?.natural === 'wood')) {
+    } else if (el.type === 'way' && isForest(el.tags)) {
       const verts = (el.nodes || []).map(id => nodes[id]).filter(Boolean);
-      if (verts.length < 3) continue;
-      let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity;
-      for (const p of verts) {
-        if (p.lat < s) s = p.lat; if (p.lat > n) n = p.lat;
-        if (p.lng < w) w = p.lng; if (p.lng > e) e = p.lng;
+      if (verts.length >= 3) forests.push(makeForest(verts, el.tags));
+    } else if (el.type === 'relation' && isForest(el.tags)) {
+      // Large forests are usually multipolygon relations: stitch outer member
+      // ways into rings; inner rings are clearings (holes in the canopy).
+      const outers = [], inners = [];
+      for (const m of el.members || []) {
+        if (m.type !== 'way') continue;
+        const way = waysById[m.ref];
+        if (way) (m.role === 'inner' ? inners : outers).push(way.nodes || []);
       }
-      forests.push({
-        verts,
-        bbox: { s, w, n, e },
-        height: parseFloat(el.tags.height) || FOREST_CANOPY_HEIGHT,
-        isDeciduous: deciduous(el.tags),
-      });
+      const idsToVerts = ring => ring.map(id => nodes[id]).filter(Boolean);
+      const holes = stitchRings(inners).map(idsToVerts).filter(v => v.length >= 3);
+      for (const ring of stitchRings(outers)) {
+        const verts = idsToVerts(ring);
+        if (verts.length >= 3) forests.push(makeForest(verts, el.tags, holes));
+      }
     }
   }
 
@@ -73,7 +120,8 @@ function parseVegetation(elements) {
 
 export async function fetchVegetation(bbox) {
   const [s, w, n, e] = bbox;
-  const q = `[out:json][timeout:25];(node["natural"="tree"](${s},${w},${n},${e});way["natural"="tree_row"](${s},${w},${n},${e});way["landuse"="forest"](${s},${w},${n},${e});way["natural"="wood"](${s},${w},${n},${e}););out body;>;out skel qt;`;
+  const bb = `(${s},${w},${n},${e})`;
+  const q = `[out:json][timeout:25];(node["natural"="tree"]${bb};way["natural"="tree_row"]${bb};way["landuse"="forest"]${bb};way["natural"="wood"]${bb};relation["landuse"="forest"]${bb};relation["natural"="wood"]${bb};);out body;>;out skel qt;`;
   try {
     const d = await overpassFetch(q);
     return parseVegetation(d.elements || []);

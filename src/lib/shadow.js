@@ -94,7 +94,11 @@ function forestShadeAt(lat, lng, forests, shadowDirRad, altRad, deciduousLeafFra
     // Forest polygons can be huge, so pre-filter on their bounding box instead
     // of a centroid radius.
     if (pLat < f.bbox.s || pLat > f.bbox.n || pLng < f.bbox.w || pLng > f.bbox.e) continue;
-    if (pointInPolygon(pLat, pLng, f.verts)) return coeff;
+    if (pointInPolygon(pLat, pLng, f.verts)) {
+      // Inner rings of multipolygon forests are clearings — no canopy there.
+      if (f.holes?.some(h => pointInPolygon(pLat, pLng, h))) continue;
+      return coeff;
+    }
   }
   return 0;
 }
