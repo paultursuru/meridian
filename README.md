@@ -9,10 +9,10 @@ Live at [meridian-way.ch](https://meridian-way.ch), available in French, German,
 ## How it works
 
 1. **Geocoding:** address autocomplete via Photon (komoot.io); the final address-to-coordinates lookup on search uses Nominatim (OSM). Reverse geocoding (for the geolocation buttons) also uses Nominatim.
-2. **Sun position:** altitude and azimuth computed with [SunCalc](https://github.com/mourner/suncalc) for the chosen date, time and route midpoint. The date/time inputs are interpreted as wall-clock time at the destination (via `tz-lookup`), not the browser's local time.
+2. **Sun position:** altitude and azimuth computed with [SunCalc](https://github.com/mourner/suncalc) for the chosen date, time and route midpoint. The date/time inputs are interpreted as wall-clock time at the destination (via `tz-lookup`), not the browser's local time. The sun is not frozen at departure: shadow scoring moves it along the walk (see 5).
 3. **Route generation:** OpenRouteService (`foot-walking`, GeoJSON) returns up to 3 alternative routes per query (`alternative_routes`, capped by ORS itself), tuned for diversity with `weight_factor`/`share_factor`. Requests go through a Cloudflare Worker proxy (`ors-proxy/`) that holds the ORS API key server-side and caches responses in KV for 7 days, so the key never ships in the client bundle and repeat searches are free.
 4. **Building & vegetation data:** the Overpass API (via a caching Cloudflare Worker, `overpass-cache/`, 30-day KV TTL) fetches all building footprints in the route bounding box, with real heights from OSM tags (`height`, `building:levels`), plus trees (`natural=tree`, `natural=tree_row`) and forest polygons (`landuse=forest`, `natural=wood`) with seasonal leaf-coverage modelling (deciduous vs evergreen, based on the chosen date and hemisphere). Forest canopy counts as fractional shade (~85% dense), so a route through a wood scores shady in summer but mostly sunny under bare winter branches.
-5. **Shadow scoring:** for each route segment (sampled at 25/50/75%), every building's and tree's shadow is evaluated with a geometrically exact model: the sun ray from the sample point toward the sun is tested against each polygon (point-in-polygon plus edge-intersection), correctly handling buildings anywhere between the ground point and the shadow-tip, not just at the exact shadow length.
+5. **Shadow scoring:** for each route segment (sampled at 25/50/75%), every building's and tree's shadow is evaluated with a geometrically exact model: the sun ray from the sample point toward the sun is tested against each polygon (point-in-polygon plus edge-intersection), correctly handling buildings anywhere between the ground point and the shadow-tip, not just at the exact shadow length. Each segment is scored with the sun at its **estimated arrival time** (cumulative distance ÷ walking pace, SunCalc memoized per minute of walking) — over a 45-min walk the sun moves ~11° of azimuth, enough to flip which side of a street is shaded, and a mid-route sunset shades the remaining segments.
 6. **Ranking:** routes are deduplicated by geometry overlap (not by distance) so that two similar-length routes on different streets both survive, then sorted by sun fraction; the sunniest and shadiest are highlighted. At night (sun below the horizon) shadow scoring is skipped entirely and only the shortest route is shown.
 7. **Display:** both routes are drawn with a per-segment orange-to-blue gradient matching the actual sun/shade pattern; the recommended tab is pre-selected using forecast temperature when available (Open-Meteo, up to 15 days out), falling back to a season/altitude heuristic otherwise.
 8. **Elevation:** ORS returns elevation inline with each route (`elevation: true`), no separate API call. D+ and D- are computed from the coordinate elevation profile and shown in the results drawer; the displayed walking duration folds in a climb-time supplement (~4 min per 100 m of ascent, ascent only) rather than showing it as a separate figure.
@@ -69,7 +69,7 @@ meridian/
 │   │   ├── season.js         # leaf-coverage fraction by date (deciduous vs evergreen)
 │   │   ├── shadow.js         # per-segment shadow scoring (sun-ray vs polygon)
 │   │   ├── share.js          # shareable-URL serialization (from/to/date/time query params)
-│   │   ├── sun.js            # SunCalc wrapper -> {azDeg, altDeg}
+│   │   ├── sun.js            # SunCalc wrapper -> {azDeg, altDeg} + memoized time sampler
 │   │   ├── timezone.js       # IANA timezone lookup + wall-clock <-> UTC conversion
 │   │   ├── trees.js          # tree footprint fetch + seasonal canopy shadow scoring
 │   │   ├── ui.js             # status toast, tabs, swipeable results drawer
@@ -116,6 +116,8 @@ The shadow cast by a building or tree of height `h` at solar altitude `α` exten
 A route sample point is in shadow if the sun ray from that point toward the shadow tip crosses the building's ground-floor polygon or tree crown, tested with ray-casting (point-in-polygon) plus a segment-intersection check against every polygon edge. This is geometrically exact for flat-roofed buildings and correctly catches buildings that lie anywhere along the ray, not just exactly at the shadow-tip distance.
 
 Trees add fractional shade on top of buildings: deciduous trees are weighted by a seasonal leaf-coverage fraction (bare in winter, full canopy May-September, shifted six months in the southern hemisphere), evergreen trees always score full shade.
+
+The sun position itself is time-stepped: each segment is evaluated with the sun at the moment the walker is expected to reach it, derived from the route's own pace (`makeSunSampler` in `sun.js`, quantized to 60 s buckets and memoized). This costs a handful of extra SunCalc calls per route — the expensive polygon tests run exactly as often as with a fixed sun.
 
 A conservative bounding-radius pre-filter (`|point - centroid| > sLen + radius`) skips buildings/trees that cannot possibly cast shadow on a given point, keeping per-route scoring fast even with hundreds of features.
 

@@ -154,6 +154,35 @@ describe('scoreRoute — forests', () => {
   });
 });
 
+describe('scoreRoute — sun moving along the walk (sampler)', () => {
+  // Two ~76 m segments walked at the default 1.25 m/s: segment midpoints are
+  // reached at ~31 s and ~92 s. A sampler that drops the sun below the horizon
+  // after 60 s leaves the first segment sunny and shades the second.
+  const rt = {
+    geometry: {
+      coordinates: [[CLNG, CLAT], [CLNG + 0.001, CLAT], [CLNG + 0.002, CLAT]],
+    },
+  };
+
+  it('scores each segment with the sun at its own arrival time', () => {
+    const sunAt = (elapsedS) =>
+      elapsedS < 60 ? { azDeg: 180, altDeg: 45 } : { azDeg: 180, altDeg: -5 };
+    const res = scoreRoute(rt, [], [], sunAt);
+    expect(res.segShade.map(s => s.shade)).toEqual([false, true]);
+    expect(res.score).toBeCloseTo(0.5, 1);
+  });
+
+  it('uses the route pace when distance and duration are provided', () => {
+    // Same route walked twice as fast: both segment midpoints fall before the
+    // 60 s sunset, so the whole route stays sunny.
+    const fast = { ...rt, distance: 153, duration: 61 }; // ~2.5 m/s
+    const sunAt = (elapsedS) =>
+      elapsedS < 60 ? { azDeg: 180, altDeg: 45 } : { azDeg: 180, altDeg: -5 };
+    const res = scoreRoute(fast, [], [], sunAt);
+    expect(res.score).toBe(1);
+  });
+});
+
 describe('scoreRoute — building takes priority over tree', () => {
   it('keeps full shade under a building even when a bare winter tree overlaps', () => {
     const building = squareBuilding(CLAT, CLNG, 40, 10);
