@@ -136,6 +136,16 @@ describe('scoreRoute — forests', () => {
     expect(res.score).toBeLessThan(0.2);
   });
 
+  it('keeps a clearing (multipolygon hole) sunny inside a forest', () => {
+    const forest = squareForest(CLAT, CLNG, 500);
+    // 200 m-wide clearing centred on the route — larger than the 15 m canopy
+    // shadow overhang, so the sampled points stay in the sun.
+    forest.holes = [squareForest(CLAT, CLNG, 100).verts];
+    const rt = route([CLNG - 0.0001, CLAT], [CLNG + 0.0001, CLAT]);
+    const res = scoreRoute(rt, [], [], SUN, 1.0, [forest]);
+    expect(res.score).toBe(1);
+  });
+
   it('lets sun through a deciduous forest in winter', () => {
     const forest = squareForest(CLAT, CLNG, 200, { isDeciduous: true });
     const rt = route([CLNG - 0.0001, CLAT], [CLNG + 0.0001, CLAT]);
