@@ -225,21 +225,21 @@ const urls: Record<Lang, string> = {
 
 <script>
   import { initMap, displayRoutes, setActiveRoute, setPreviewPin, swapPreviewPins } from '../lib/map.js';
-  import { getSun, makeSunSampler }      from '../lib/sun.js';
+  import { getSun, getSunTimes, compassDir, makeSunSampler } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
   import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
-  import { resolveTimeZone, zonedTimeToUtc } from '../lib/timezone.js';
+  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone } from '../lib/timezone.js';
   import { fetchWeather }                from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
   import { drawCompass }                 from '../lib/compass.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
-  import { tr }                          from '../lib/i18n.js';
+  import { tr, type TranslationKey }     from '../lib/i18n.js';
   import { localDateValue }              from '../lib/helpers.js';
 
 
@@ -267,24 +267,46 @@ const urls: Record<Lang, string> = {
 
   // Default map center (Lausanne) — used for sun-info at page load
   const MAP_LAT = 46.5197, MAP_LNG = 6.6323;
+  const MAP_TZ = resolveTimeZone(MAP_LAT, MAP_LNG);
 
   // Cloud cover (%) above which the sunny/shady distinction stops mattering
   const OVERCAST_PCT = 60;
 
-  function updateSunInfo(sun: { azDeg: number; altDeg: number }) {
-    const infoEl = el('sun-info');
-    infoEl.classList.toggle('day',   sun.altDeg > 0);
-    infoEl.classList.toggle('night', sun.altDeg <= 0);
-    infoEl.classList.add('visible');
-    if (sun.altDeg <= 0) {
-      infoEl.textContent = tr('status_night', { alt: sun.altDeg.toFixed(1) });
-    } else {
-      infoEl.textContent = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
-    }
+  // Plain-language headline ("Sun in the south-west · sets 21:32") is the
+  // default; the exact degrees (review 3.3 — nobody knows what azimuth is)
+  // stay one tap away instead of disappearing — this app is as much about
+  // exploring the sun's position as it is about routing.
+  const sunInfoEl = el('sun-info');
+  sunInfoEl.setAttribute('role', 'button');
+  sunInfoEl.setAttribute('tabindex', '0');
+
+  function renderSunInfoText() {
+    const showTechnical = sunInfoEl.dataset.showTechnical === '1';
+    sunInfoEl.textContent = (showTechnical ? sunInfoEl.dataset.technical : sunInfoEl.dataset.human) ?? '';
+  }
+
+  function toggleSunInfoDetail() {
+    sunInfoEl.dataset.showTechnical = sunInfoEl.dataset.showTechnical === '1' ? '0' : '1';
+    renderSunInfoText();
+  }
+  sunInfoEl.addEventListener('click', toggleSunInfoDetail);
+  sunInfoEl.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSunInfoDetail(); }
+  });
+
+  function updateSunInfo(sun: { azDeg: number; altDeg: number }, times: { sunrise: Date; sunset: Date }, timeZone: string) {
+    sunInfoEl.classList.toggle('day',   sun.altDeg > 0);
+    sunInfoEl.classList.toggle('night', sun.altDeg <= 0);
+    sunInfoEl.classList.add('visible');
+    sunInfoEl.dataset.technical = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
+    sunInfoEl.dataset.human = sun.altDeg <= 0
+      ? tr('night_position', { time: formatTimeInZone(times.sunrise, timeZone) })
+      : tr('sun_position', { dir: tr(('dir_' + compassDir(sun.azDeg)) as TranslationKey), time: formatTimeInZone(times.sunset, timeZone) });
+    renderSunInfoText();
   }
 
   // Show sun position immediately on load
-  updateSunInfo(getSun(now, MAP_LAT, MAP_LNG));
+  updateSunInfo(getSun(now, MAP_LAT, MAP_LNG), getSunTimes(now, MAP_LAT, MAP_LNG), MAP_TZ);
 
   function logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes }: {
     startQ: string; endQ: string;
@@ -321,9 +343,9 @@ const urls: Record<Lang, string> = {
 
       // Date/time inputs are wall-clock values for the route's location, not
       // the browser's — resolve the destination's IANA zone and convert.
+      const destTz = resolveTimeZone(midLat, midLng);
       let tDate = new Date();
       if (dateV) {
-        const destTz = resolveTimeZone(midLat, midLng);
         tDate = zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz);
       }
 
@@ -337,7 +359,7 @@ const urls: Record<Lang, string> = {
       // to null when the date is beyond the forecast horizon or on error.
       const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
 
-      updateSunInfo(sun);
+      updateSunInfo(sun, getSunTimes(tDate, midLat, midLng), destTz);
       drawCompass(sun.azDeg, sun.altDeg);
       el('compass-wrap').classList.toggle('on', !night);
 

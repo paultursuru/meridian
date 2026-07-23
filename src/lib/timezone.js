@@ -25,3 +25,8 @@ export function zonedTimeToUtc(wallTime, timeZone) {
   const offset = tzOffsetMs(timeZone, naive);
   return new Date(naive.getTime() - offset);
 }
+
+// "HH:mm" wall-clock reading of `date` in `timeZone` (always 24h, locale-independent).
+export function formatTimeInZone(date, timeZone) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
+}

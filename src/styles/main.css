@@ -29,11 +29,13 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #header h1 .meri { color: #f0f2a0; }
 #header h1 .way  { color: #e8c8f0; font-style: italic; }
 #navbar-tagline { font-size: 0.72rem; color: rgba(216,219,200,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; }
-#header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; }
-#sun-info { font-size: 0.82rem; font-weight: 600; display: none; white-space: nowrap; }
+#header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; flex-shrink: 0; }
+#sun-info { font-size: 0.82rem; font-weight: 600; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45vw; cursor: pointer; border-radius: 4px; }
 #sun-info.visible { display: block; }
 #sun-info.day  { color: #f0f2a0; }
 #sun-info.night { color: #e8c8f0; }
+#sun-info:hover, #sun-info:focus-visible { opacity: 0.75; }
+#sun-info:active { opacity: 0.55; }
 @media (max-width: 600px) { #sun-info { font-size: 0.7rem; } }
 
 /* ── Search panel ── */
