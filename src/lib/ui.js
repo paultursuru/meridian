@@ -1,3 +1,4 @@
+import { fmtDist, fmtDur } from './helpers.js';
 
 export function setStatus(msg) {
   const el = document.getElementById('status');
@@ -20,15 +21,6 @@ export function showToast(msg, type = 'error') {
   el.className = `toast toast-${type} on`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('on'), 4500);
-}
-
-function fmtDist(m) {
-  return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m';
-}
-
-function fmtDur(sec) {
-  const min = Math.round(sec / 60);
-  return min + ' min';
 }
 
 // Extra walking time from climbing: ~4 min per 100 m of ascent (Naismith-style,
