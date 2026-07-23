@@ -62,10 +62,14 @@ export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
   // OSM Bright GL vector style (openmaptiles/osm-bright-gl-style), hosted by Stadia Maps.
   // Keyless on localhost; for production add a Stadia API key or domain auth.
-  L.maplibreGL({
+  const glLayer = L.maplibreGL({
     style: 'https://tiles.stadiamaps.com/styles/osm_bright.json',
     attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(_map);
+
+  glLayer.getMaplibreMap().once('load', () => {
+    document.getElementById('map-splash')?.classList.add('hidden');
+  });
 
   _map.on('click', collapseDrawer);
 }

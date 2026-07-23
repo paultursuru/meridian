@@ -4,8 +4,8 @@
   "description": "Itinéraires selon l'ensoleillement",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f0f2f5",
-  "theme_color": "#f97316",
+  "background_color": "#0e120a",
+  "theme_color": "#0e120a",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

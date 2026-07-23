@@ -24,9 +24,11 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   z-index: 1000;
   flex-shrink: 0;
 }
+#header-title { display: flex; flex-direction: column; gap: 1px; }
 #header h1 { font-size: 1.3rem; font-weight: 700; color: #d8dbc8; letter-spacing: -0.5px; font-family: 'BricolageGrotesqueMedium'; }
 #header h1 .meri { color: #f0f2a0; }
 #header h1 .way  { color: #e8c8f0; font-style: italic; }
+#navbar-tagline { font-size: 0.72rem; color: rgba(216,219,200,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; }
 #header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; }
 #sun-info { font-size: 0.82rem; font-weight: 600; display: none; white-space: nowrap; }
 #sun-info.visible { display: block; }
@@ -146,8 +148,24 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Map ── */
-#map { flex: 1; z-index: 1; }
+#map { flex: 1; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
+
+/* Shown until the map tiles finish their first load, then faded out in map.js — masks
+   the blank/white flash of the tile layer initializing (also doubles as PWA-launch splash). */
+#map-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0e120a;
+  color: rgba(216,219,200,0.7);
+  font-size: 0.9rem;
+  transition: opacity 0.4s ease;
+}
+#map-splash.hidden { opacity: 0; pointer-events: none; }
 
 /* ── Status toast ── */
 #status {

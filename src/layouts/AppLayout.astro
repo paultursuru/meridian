@@ -59,7 +59,10 @@ const urls: Record<Lang, string> = {
 
 <div id="app">
   <div id="header">
-    <h1><span class="meri">Meridian</span><span class="way">Way</span></h1>
+    <div id="header-title">
+      <h1><span class="meri">Meridian</span><span class="way">Way</span></h1>
+      <p id="navbar-tagline">{t.navbar_tagline}</p>
+    </div>
     <div id="header-right">
       <div id="sun-info"></div>
       <button id="about-btn" aria-label={t.aria_about}>i</button>
@@ -83,7 +86,9 @@ const urls: Record<Lang, string> = {
       <button id="search-btn">{t.btn_search}</button>
     </div>
   </div>
-  <div id="map"></div>
+  <div id="map">
+    <div id="map-splash"><span>{t.map_loading}</span></div>
+  </div>
 </div>
 
 <div id="status"></div>
