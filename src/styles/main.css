@@ -24,19 +24,59 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   z-index: 1000;
   flex-shrink: 0;
 }
-#header-title { display: flex; flex-direction: column; gap: 1px; }
-#header h1 { font-size: 1.3rem; font-weight: 700; color: #d8dbc8; letter-spacing: -0.5px; font-family: 'BricolageGrotesqueMedium'; }
+/* Never shrinks: the app name stays intact, sun-info gives up the space instead. */
+#header h1 { font-size: 1.3rem; font-weight: 700; color: #d8dbc8; letter-spacing: -0.5px; font-family: 'BricolageGrotesqueMedium'; flex-shrink: 0; }
 #header h1 .meri { color: #f0f2a0; }
 #header h1 .way  { color: #e8c8f0; font-style: italic; }
-#navbar-tagline { font-size: 0.72rem; color: rgba(216,219,200,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; }
-#header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; flex-shrink: 0; }
-#sun-info { font-size: 0.82rem; font-weight: 600; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45vw; cursor: pointer; border-radius: 4px; }
-#sun-info.visible { display: block; }
-#sun-info.day  { color: #f0f2a0; }
+#header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; min-width: 0; }
+
+/* Tagline, then — once a search has run — a 3-beat loop with the plain-
+   language sun position and the exact degrees (review 3.2 + 3.3). Pure-CSS
+   animation: ping-pongs 1→2→3→2→1→… via `alternate`, so the loop point
+   never has to jump between mismatched lines. JS only fills the text and
+   flips on `.cycling` once there's real data for lines 2 and 3.
+   No fixed width: shrinks first under pressure (h1 and the about button
+   never do) and ellipsizes rather than pushing the button off-screen. */
+#sun-info {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(216,219,200,0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+  max-width: 50vw;
+  height: 1.3em;
+  line-height: 1.3em;
+}
+#sun-info.day   { color: #f0f2a0; }
 #sun-info.night { color: #e8c8f0; }
-#sun-info:hover, #sun-info:focus-visible { opacity: 0.75; }
-#sun-info:active { opacity: 0.55; }
-@media (max-width: 600px) { #sun-info { font-size: 0.7rem; } }
+#sun-info.cycling .sun-info-track {
+  animation: sun-info-cycle 9s ease-in-out infinite alternate;
+}
+@keyframes sun-info-cycle {
+  0%, 27%   { transform: translateY(0); }
+  33%, 60%  { transform: translateY(-1.3em); }
+  66%, 100% { transform: translateY(-2.6em); }
+}
+.sun-info-line {
+  display: block;
+  height: 1.3em;
+  line-height: 1.3em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+@media (max-width: 600px) {
+  #header { align-items: start; }
+  #header-right {
+    flex-direction: column-reverse;
+    justify-content: end;
+    align-items: end;
+    gap: 4px;
+  }
+  #sun-info { font-size: 0.7rem; }
+}
 
 /* ── Search panel ── */
 #search-panel {
