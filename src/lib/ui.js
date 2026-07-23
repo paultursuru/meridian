@@ -1,3 +1,4 @@
+import { fmtDist, fmtDur } from './helpers.js';
 
 export function setStatus(msg) {
   const el = document.getElementById('status');
@@ -22,15 +23,6 @@ export function showToast(msg, type = 'error') {
   toastTimer = setTimeout(() => el.classList.remove('on'), 4500);
 }
 
-function fmtDist(m) {
-  return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m';
-}
-
-function fmtDur(sec) {
-  const min = Math.round(sec / 60);
-  return min + ' min';
-}
-
 // Extra walking time from climbing: ~4 min per 100 m of ascent (Naismith-style,
 // conservative — strong walkers feel little of it). Only the uphill counts.
 function climbSeconds(rt) {
@@ -39,7 +31,7 @@ function climbSeconds(rt) {
 }
 
 // Flat-walking time plus the ascent supplement, folded into a single total.
-function fmtDurWithClimb(rt) {
+export function fmtDurWithClimb(rt) {
   return fmtDur(rt.duration + climbSeconds(rt));
 }
 
