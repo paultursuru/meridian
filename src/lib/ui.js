@@ -31,7 +31,7 @@ function climbSeconds(rt) {
 }
 
 // Flat-walking time plus the ascent supplement, folded into a single total.
-function fmtDurWithClimb(rt) {
+export function fmtDurWithClimb(rt) {
   return fmtDur(rt.duration + climbSeconds(rt));
 }
 
