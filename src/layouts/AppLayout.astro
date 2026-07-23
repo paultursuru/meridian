@@ -348,8 +348,10 @@ const urls: Record<Lang, string> = {
         // At night every route scores 0 — shadow geometry is pointless,
         // so skip the two Overpass round trips entirely.
         setStatus(tr('status_buildings'));
-        buildings = await fetchBuildings(bbox);
-        ({ trees, forests } = await fetchVegetation(bbox));
+        [buildings, { trees, forests }] = await Promise.all([
+          fetchBuildings(bbox),
+          fetchVegetation(bbox),
+        ]);
         leafFrac = deciduousLeafFrac(tDate, midLat);
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       }
