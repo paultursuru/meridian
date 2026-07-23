@@ -59,9 +59,19 @@ const urls: Record<Lang, string> = {
 
 <div id="app">
   <div id="header">
-    <h1><span class="meri">Meridian</span><span class="way">Way</span></h1>
+    <h1>
+      <a href="/">
+        <span class="meri">Meridian</span><span class="way">Way</span>
+      </a>
+    </h1>
     <div id="header-right">
-      <div id="sun-info"></div>
+      <div id="sun-info">
+        <div class="sun-info-track">
+          <span class="sun-info-line">{t.navbar_tagline}</span>
+          <span class="sun-info-line"></span>
+          <span class="sun-info-line"></span>
+        </div>
+      </div>
       <button id="about-btn" aria-label={t.aria_about}>i</button>
     </div>
   </div>
@@ -83,7 +93,9 @@ const urls: Record<Lang, string> = {
       <button id="search-btn">{t.btn_search}</button>
     </div>
   </div>
-  <div id="map"></div>
+  <div id="map">
+    <div id="map-splash"><span>{t.map_loading}</span></div>
+  </div>
 </div>
 
 <div id="status"></div>
@@ -220,21 +232,21 @@ const urls: Record<Lang, string> = {
 
 <script>
   import { initMap, displayRoutes, setActiveRoute, setPreviewPin, swapPreviewPins } from '../lib/map.js';
-  import { getSun, makeSunSampler }      from '../lib/sun.js';
+  import { getSun, getSunTimes, compassDir, makeSunSampler } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
   import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
-  import { resolveTimeZone, zonedTimeToUtc } from '../lib/timezone.js';
+  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone } from '../lib/timezone.js';
   import { fetchWeather }                from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
   import { drawCompass }                 from '../lib/compass.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
-  import { tr }                          from '../lib/i18n.js';
+  import { tr, type TranslationKey }     from '../lib/i18n.js';
   import { localDateValue }              from '../lib/helpers.js';
 
 
@@ -260,26 +272,31 @@ const urls: Record<Lang, string> = {
   startAC = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('start', p), getAnchor: () => endAC?.getPlace() });
   endAC   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => setPreviewPin('end',   p), getAnchor: () => startAC.getPlace() });
 
-  // Default map center (Lausanne) — used for sun-info at page load
-  const MAP_LAT = 46.5197, MAP_LNG = 6.6323;
-
   // Cloud cover (%) above which the sunny/shady distinction stops mattering
   const OVERCAST_PCT = 60;
 
-  function updateSunInfo(sun: { azDeg: number; altDeg: number }) {
+  // Header's sun-info slot: the tagline (rendered server-side, see the
+  // markup above) alone until the first search; from then on a 3-beat
+  // loop — tagline, plain-language sun position, exact degrees (review
+  // 3.3 — nobody knows what azimuth is, but this app is as much about
+  // exploring the sky as it is about routing, so keep both). The timing
+  // and slide are a pure-CSS animation (`.cycling`, see main.css); this
+  // only fills the text and switches the animation on.
+  function updateSunInfo(sun: { azDeg: number; altDeg: number }, times: { sunrise: Date; sunset: Date }, timeZone: string) {
     const infoEl = el('sun-info');
     infoEl.classList.toggle('day',   sun.altDeg > 0);
     infoEl.classList.toggle('night', sun.altDeg <= 0);
-    infoEl.classList.add('visible');
-    if (sun.altDeg <= 0) {
-      infoEl.textContent = tr('status_night', { alt: sun.altDeg.toFixed(1) });
-    } else {
-      infoEl.textContent = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
-    }
+
+    const human = sun.altDeg <= 0
+      ? tr('night_position', { time: formatTimeInZone(times.sunrise, timeZone) })
+      : tr('sun_position', { dir: tr(('dir_' + compassDir(sun.azDeg)) as TranslationKey), time: formatTimeInZone(times.sunset, timeZone) });
+    const technical = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
+    const lines = infoEl.querySelectorAll<HTMLSpanElement>('.sun-info-line');
+    lines[1].textContent = human;
+    lines[2].textContent = technical;
+    infoEl.classList.add('cycling');
   }
 
-  // Show sun position immediately on load
-  updateSunInfo(getSun(now, MAP_LAT, MAP_LNG));
 
   function logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes }: {
     startQ: string; endQ: string;
@@ -316,9 +333,9 @@ const urls: Record<Lang, string> = {
 
       // Date/time inputs are wall-clock values for the route's location, not
       // the browser's — resolve the destination's IANA zone and convert.
+      const destTz = resolveTimeZone(midLat, midLng);
       let tDate = new Date();
       if (dateV) {
-        const destTz = resolveTimeZone(midLat, midLng);
         tDate = zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz);
       }
 
@@ -332,7 +349,7 @@ const urls: Record<Lang, string> = {
       // to null when the date is beyond the forecast horizon or on error.
       const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
 
-      updateSunInfo(sun);
+      updateSunInfo(sun, getSunTimes(tDate, midLat, midLng), destTz);
       drawCompass(sun.azDeg, sun.altDeg);
       el('compass-wrap').classList.toggle('on', !night);
 

@@ -9,6 +9,19 @@ export function getSun(date, lat, lng) {
   return { azDeg, altDeg };
 }
 
+// Sunrise/sunset for the day of `date` at (lat, lng).
+export function getSunTimes(date, lat, lng) {
+  const { sunrise, sunset } = SunCalc.getTimes(date, lat, lng);
+  return { sunrise, sunset };
+}
+
+const COMPASS_DIRS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
+
+// 8-point compass direction key ('n'…'nw') for an azimuth (N=0, clockwise).
+export function compassDir(azDeg) {
+  return COMPASS_DIRS[Math.round(azDeg / 45) % 8];
+}
+
 // Returns (elapsedS) => { azDeg, altDeg }: the sun's position `elapsedS`
 // seconds after `date`, quantized to `stepS` buckets and memoized — the sun
 // moves ~0.25°/min, so finer resolution changes nothing while a bucket keeps
