@@ -58,6 +58,9 @@ export const translations = {
     about_privacy: 'Confidentialité',
     share_btn_title: 'Partager cet itinéraire',
     toast_link_copied: 'Lien copié dans le presse-papier.',
+    install_banner_android: '📲 Installez MeridianWay sur votre écran d\'accueil pour un accès plus rapide.',
+    install_banner_ios: '📲 Installez MeridianWay : appuyez sur Partager puis « Sur l\'écran d\'accueil ».',
+    install_banner_btn: 'Installer',
   },
   de: {
     title: 'MeridianWay : Sonnennavigation',
@@ -116,6 +119,9 @@ export const translations = {
     about_privacy: 'Datenschutz',
     share_btn_title: 'Route teilen',
     toast_link_copied: 'Link in die Zwischenablage kopiert.',
+    install_banner_android: '📲 MeridianWay auf dem Startbildschirm installieren für schnelleren Zugriff.',
+    install_banner_ios: '📲 MeridianWay installieren: Tippen Sie auf Teilen und dann auf «Zum Home-Bildschirm».',
+    install_banner_btn: 'Installieren',
   },
   it: {
     title: 'MeridianWay : Navigazione solare',
@@ -174,6 +180,9 @@ export const translations = {
     about_privacy: 'Privacy',
     share_btn_title: 'Condividi il percorso',
     toast_link_copied: 'Link copiato negli appunti.',
+    install_banner_android: '📲 Installa MeridianWay sulla schermata Home per un accesso più rapido.',
+    install_banner_ios: '📲 Installa MeridianWay: tocca Condividi poi «Aggiungi a Home».',
+    install_banner_btn: 'Installa',
   },
   en: {
     title: 'MeridianWay : Solar navigation',
@@ -232,6 +241,9 @@ export const translations = {
     about_privacy: 'Privacy',
     share_btn_title: 'Share this route',
     toast_link_copied: 'Link copied to clipboard.',
+    install_banner_android: '📲 Install MeridianWay on your home screen for faster access.',
+    install_banner_ios: '📲 Install MeridianWay: tap Share, then "Add to Home Screen".',
+    install_banner_btn: 'Install',
   },
 } as const;
 

@@ -26,6 +26,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 /* Never shrinks: the app name stays intact, sun-info gives up the space instead. */
 #header h1 { font-size: 1.3rem; font-weight: 700; color: #d8dbc8; letter-spacing: -0.5px; font-family: 'BricolageGrotesqueMedium'; flex-shrink: 0; }
+#header h1 a { text-decoration: none; }
 #header h1 .meri { color: #f0f2a0; }
 #header h1 .way  { color: #e8c8f0; font-style: italic; }
 #header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; min-width: 0; }
@@ -77,6 +78,55 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   }
   #sun-info { font-size: 0.7rem; }
 }
+
+/* ── Install banner (review 6.1: nobody knows the app is installable) ── */
+#install-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #161b12;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(240,242,160,0.13);
+  flex-shrink: 0;
+}
+#install-banner.on { display: flex; }
+#install-banner-text {
+  font-size: 0.82rem;
+  color: #d8dbc8;
+  line-height: 1.3;
+}
+#install-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#install-banner-btn {
+  padding: 6px 14px;
+  background: #f0f2a0;
+  color: #0e120a;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+#install-banner-btn:hover { background: #e4e698; }
+#install-banner-close {
+  width: 26px; height: 26px;
+  border: none;
+  background: none;
+  color: rgba(216,219,200,0.6);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+#install-banner-close:hover { color: #d8dbc8; background: rgba(240,242,160,0.08); }
 
 /* ── Search panel ── */
 #search-panel {
