@@ -255,11 +255,12 @@ const urls: Record<Lang, string> = {
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { tr, type TranslationKey }     from '../lib/i18n.js';
   import { localDateValue }              from '../lib/helpers.js';
-  import { initInstallPrompt }           from '../lib/pwa.js';
+  import { initInstallPrompt, registerServiceWorker } from '../lib/pwa.js';
 
 
   initMap();
   initTabs((type: string) => setActiveRoute(type));
+  registerServiceWorker();
   initInstallPrompt();
 
   window.addEventListener('route-select', (e: Event) => {

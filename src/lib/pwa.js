@@ -25,6 +25,15 @@ function dismissBanner() {
   localStorage.setItem(DISMISS_KEY, '1');
 }
 
+// Chrome only fires beforeinstallprompt once a service worker with a fetch
+// handler is registered — service-worker.js is a pure passthrough, registered purely to
+// satisfy that check, not for offline support.
+export function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  }
+}
+
 // Custom install banner (review 6.1): the app is installable but neither
 // Android nor iOS tells the user on its own — Chrome only shows its native
 // mini-infobar once per site, and Safari never fires beforeinstallprompt at
