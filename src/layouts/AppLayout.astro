@@ -75,6 +75,13 @@ const urls: Record<Lang, string> = {
       <button id="about-btn" aria-label={t.aria_about}>i</button>
     </div>
   </div>
+  <div id="install-banner">
+    <span id="install-banner-text"></span>
+    <div id="install-banner-actions">
+      <button id="install-banner-btn">{t.install_banner_btn}</button>
+      <button id="install-banner-close" aria-label={t.aria_close}>×</button>
+    </div>
+  </div>
   <div id="search-panel">
     <div class="route-inputs">
       <div class="input-wrap">
@@ -248,10 +255,12 @@ const urls: Record<Lang, string> = {
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { tr, type TranslationKey }     from '../lib/i18n.js';
   import { localDateValue }              from '../lib/helpers.js';
+  import { initInstallPrompt }           from '../lib/pwa.js';
 
 
   initMap();
   initTabs((type: string) => setActiveRoute(type));
+  initInstallPrompt();
 
   window.addEventListener('route-select', (e: Event) => {
     const type = (e as CustomEvent<{ type: string }>).detail.type;
