@@ -358,7 +358,8 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   flex-direction: column;
   gap: 2px;
 }
-.ac-item:hover { background: rgba(240,242,160,0.06); }
+.ac-item:hover,
+.ac-item.active { background: rgba(240,242,160,0.06); }
 .ac-line1 {
   font-size: 0.84rem;
   font-weight: 600;
