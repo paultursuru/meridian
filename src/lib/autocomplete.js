@@ -1,17 +1,31 @@
 import { suggest } from './geocode.js';
 
+let acInstanceCount = 0;
+
 // Creates and manages an autocomplete dropdown for a given input.
 // Returns { getPlace() } — call getPlace() in handleSearch to skip re-geocoding
 // when the user picked a suggestion.
 export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
   let selectedPlace = null;
   let debounceTimer = null;
+  let results = [];
+  let activeIndex = -1;
+
+  const dropdownId = `ac-dropdown-${++acInstanceCount}`;
 
   // Dropdown element, appended to body so it escapes flex/overflow constraints
   const dropdown = document.createElement('ul');
   dropdown.className = 'ac-dropdown';
+  dropdown.id = dropdownId;
+  dropdown.setAttribute('role', 'listbox');
   dropdown.style.display = 'none';
   document.body.appendChild(dropdown);
+
+  inputEl.setAttribute('role', 'combobox');
+  inputEl.setAttribute('aria-autocomplete', 'list');
+  inputEl.setAttribute('aria-haspopup', 'listbox');
+  inputEl.setAttribute('aria-expanded', 'false');
+  inputEl.setAttribute('aria-controls', dropdownId);
 
   function reposition() {
     const r = inputEl.getBoundingClientRect();
@@ -20,17 +34,58 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
     dropdown.style.width = r.width + 'px';
   }
 
-  function hide() {
-    dropdown.style.display = 'none';
+  function isOpen() {
+    return dropdown.style.display !== 'none';
   }
 
-  function show(results) {
+  function hide() {
+    dropdown.style.display = 'none';
+    results = [];
+    activeIndex = -1;
+    inputEl.setAttribute('aria-expanded', 'false');
+    inputEl.removeAttribute('aria-activedescendant');
+  }
+
+  // Moves the highlighted item to `index`, updating classes + ARIA state.
+  function setActive(index) {
+    const items = dropdown.children;
+    if (activeIndex >= 0 && items[activeIndex]) {
+      items[activeIndex].classList.remove('active');
+      items[activeIndex].setAttribute('aria-selected', 'false');
+    }
+    activeIndex = index;
+    const item = items[activeIndex];
+    if (item) {
+      item.classList.add('active');
+      item.setAttribute('aria-selected', 'true');
+      item.scrollIntoView({ block: 'nearest' });
+      inputEl.setAttribute('aria-activedescendant', item.id);
+    } else {
+      inputEl.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  function selectResult(index) {
+    const place = results[index];
+    if (!place) return;
+    inputEl.value = place.short;
+    selectedPlace = place;
+    onSelect?.(place);
+    hide();
+  }
+
+  function show(newResults) {
+    results = newResults;
     dropdown.innerHTML = '';
+    activeIndex = -1;
     if (!results.length) { hide(); return; }
 
-    results.forEach(place => {
+    results.forEach((place, index) => {
       const li = document.createElement('li');
       li.className = 'ac-item';
+      li.id = `${dropdownId}-opt-${index}`;
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', 'false');
       li.title = place.label; // full name on hover
 
       const strong = document.createElement('strong');
@@ -48,10 +103,7 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
       li.addEventListener('mousedown', e => {
         // mousedown fires before blur — prevent input losing focus before we fill it
         e.preventDefault();
-        inputEl.value = place.short;
-        selectedPlace = place;
-        onSelect?.(place);
-        hide();
+        selectResult(index);
       });
 
       dropdown.appendChild(li);
@@ -59,6 +111,7 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
 
     reposition();
     dropdown.style.display = 'block';
+    inputEl.setAttribute('aria-expanded', 'true');
   }
 
   inputEl.addEventListener('input', () => {
@@ -68,15 +121,48 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
     if (q.length < 3) { hide(); return; }
     debounceTimer = setTimeout(async () => {
       const anchor = getAnchor?.();
-      const results = await suggest(q, anchor ? { near: anchor } : {});
-      show(results);
+      const found = await suggest(q, anchor ? { near: anchor } : {});
+      show(found);
     }, 300);
+  });
+
+  inputEl.addEventListener('keydown', e => {
+    if (!isOpen()) return; // no suggestions on screen — let other handlers (e.g. search-on-Enter) run
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setActive(activeIndex < results.length - 1 ? activeIndex + 1 : 0);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setActive(activeIndex > 0 ? activeIndex - 1 : results.length - 1);
+        break;
+      case 'Enter':
+        if (activeIndex >= 0) {
+          // A suggestion is highlighted — Enter picks it. stopImmediatePropagation
+          // keeps the search-on-Enter handler in AppLayout.astro (bound on the
+          // same input) from also firing and searching the raw typed string.
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          selectResult(activeIndex);
+        } else {
+          // Nothing highlighted — close the dropdown and let Enter search the
+          // raw typed text as before.
+          hide();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        hide();
+        break;
+    }
   });
 
   inputEl.addEventListener('blur', hide);
 
   // Reposition on scroll/resize in case the panel moved
-  window.addEventListener('resize', () => { if (dropdown.style.display !== 'none') reposition(); });
+  window.addEventListener('resize', () => { if (isOpen()) reposition(); });
 
   return {
     // Returns the pre-resolved {lat, lng} if the user picked a suggestion, null otherwise
