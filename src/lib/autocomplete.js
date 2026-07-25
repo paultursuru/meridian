@@ -10,6 +10,7 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
   let debounceTimer = null;
   let results = [];
   let activeIndex = -1;
+  let requestId = 0; // bumped on every hide()/new query — invalidates in-flight suggest() fetches
 
   const dropdownId = `ac-dropdown-${++acInstanceCount}`;
 
@@ -39,6 +40,8 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
   }
 
   function hide() {
+    clearTimeout(debounceTimer);
+    requestId++; // any suggest() fetch still in flight is now stale — its result must not reopen the dropdown
     dropdown.style.display = 'none';
     results = [];
     activeIndex = -1;
@@ -119,9 +122,11 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
     clearTimeout(debounceTimer);
     const q = inputEl.value.trim();
     if (q.length < 3) { hide(); return; }
+    const myId = ++requestId;
     debounceTimer = setTimeout(async () => {
       const anchor = getAnchor?.();
       const found = await suggest(q, anchor ? { near: anchor } : {});
+      if (myId !== requestId) return; // field was cleared/changed/closed since this fetch started
       show(found);
     }, 300);
   });
@@ -177,6 +182,12 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
     setState: ({ value, place }) => {
       inputEl.value = value;
       selectedPlace = place;
+    },
+    // Resets the field to empty (e.g. the ✕ clear button)
+    clear: () => {
+      selectedPlace = null;
+      inputEl.value = '';
+      hide();
     },
   };
 }

@@ -178,7 +178,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #search-panel input[type="text"] {
   width: 100%;
-  padding: 8px 36px 8px 12px;
+  padding: 8px 60px 8px 12px;
   border: 1.5px solid rgba(240,242,160,0.2);
   border-radius: 8px;
   font-size: 0.88rem;
@@ -198,20 +198,42 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   border: none;
   background: none;
   padding: 0;
-  font-size: 0.9rem;
-  line-height: 1;
+  color: #d8dbc8;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   opacity: 0.5;
-  transition: opacity 0.2s, background 0.2s;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
 }
-.geo-btn:hover { opacity: 1; background: rgba(240,242,160,0.08); }
+.geo-btn svg { display: block; }
+.geo-btn:hover { opacity: 1; background: rgba(240,242,160,0.08); color: #f0f2a0; }
 .geo-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 .geo-btn.loading { animation: geo-pulse 0.8s ease-in-out infinite; opacity: 1; }
 @keyframes geo-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+.clear-btn {
+  display: none;
+  position: absolute;
+  right: 34px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px; height: 22px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #d8dbc8;
+  opacity: 0.5;
+  transition: opacity 0.2s, background 0.2s;
+}
+.clear-btn:hover { opacity: 1; background: rgba(240,242,160,0.08); }
+.input-wrap.has-value .clear-btn { display: flex; }
 .dt-row { display: flex; gap: 8px; align-items: center; }
 #search-panel input[type="date"],
 #search-panel input[type="time"] {

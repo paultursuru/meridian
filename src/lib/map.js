@@ -99,6 +99,11 @@ export function setPreviewPin(role, coords) {
   _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
+// Removes a preview pin without adding a replacement (e.g. clearing an address field).
+export function clearPreviewPin(role) {
+  if (previewMarkers[role]) { _map.removeLayer(previewMarkers[role]); previewMarkers[role] = null; }
+}
+
 // Swap start/end preview pins: positions are unchanged, only the colors and
 // role references switch. Tolerates either pin being absent.
 export function swapPreviewPins() {
