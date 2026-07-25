@@ -323,16 +323,6 @@ const urls: Record<Lang, string> = {
   }
 
 
-  function logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes }: {
-    startQ: string; endQ: string;
-    startC: { lat: number; lng: number }; endC: { lat: number; lng: number };
-    tDate: Date; sun: { azDeg: number; altDeg: number };
-    bbox: number[]; buildings: unknown[]; trees: unknown[]; leafFrac: number;
-    routes: { distance: number; sunScore: number; segShade: { i: number; shade: boolean }[]; geometry: { coordinates: number[][] } }[];
-  }) {
-    // console.log('SHADOW_DEBUG_JSON ' + JSON.stringify({ query: { from: startQ, to: endQ }, start: startC, end: endC, datetime: tDate.toISOString(), sun: { altDeg: +sun.altDeg.toFixed(2), azDeg: +sun.azDeg.toFixed(1) }, bbox: bbox.map(v => +v.toFixed(5)), buildingCount: buildings.length, treeCount: trees.length, leafFrac, routes: routes.map((rt, idx) => ({ index: idx, distanceM: Math.round(rt.distance), sunScore: +rt.sunScore.toFixed(4), shadedSegments: rt.segShade.filter(s => s.shade).length, totalSegments: rt.segShade.length })) }));
-  }
-
   async function handleSearch() {
     const startQ = input('inp-start').value.trim();
     const endQ   = input('inp-end').value.trim();
@@ -443,8 +433,6 @@ const urls: Record<Lang, string> = {
       setActiveTab(preselect);
       setActiveRoute(preselect);
       setStatus(null);
-
-      logShadowDebug({ startQ, endQ, startC, endC, tDate, sun, bbox, buildings, trees, leafFrac, routes });
 
     } catch (err) {
       setStatus(null);
