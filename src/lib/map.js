@@ -13,9 +13,10 @@ let markerLayers  = [];
 let previewMarkers = { start: null, end: null };
 let hereMarker = null;
 
-// Gradient endpoints: dark red (sun) → dark blue (shade) — readable on a light map in daylight
-const SUN_RGB   = [183, 28, 28];
-const SHADE_RGB = [13, 71, 161];
+// Gradient endpoints: following brand light yellow (sun, #f0f2a0) → brand violet/lilac (shade, #e8c8f0) 
+// but a little bit less pale for contrast purposes
+const SUN_RGB   = [255, 253, 123];
+const SHADE_RGB = [231, 135, 255];
 
 function lerpColor(t) {
   const r = Math.round(SUN_RGB[0] + (SHADE_RGB[0] - SUN_RGB[0]) * t);
@@ -82,10 +83,10 @@ const LocateControl = L.Control.extend({
 
 export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
-  // OSM Bright GL vector style (openmaptiles/osm-bright-gl-style), hosted by Stadia Maps.
+  // OSM Bright GL vector style (openmaptiles/alidade-smooth-dark-gl-style), hosted by Stadia Maps.
   // Keyless on localhost; for production add a Stadia API key or domain auth.
   const glLayer = L.maplibreGL({
-    style: 'https://tiles.stadiamaps.com/styles/osm_bright.json',
+    style: 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
     attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(_map);
 
@@ -174,8 +175,8 @@ export function swapPreviewPins() {
 
 // type: 'sunny' | 'shady' — full opacity for the active route, dimmed for the other.
 export function setActiveRoute(type) {
-  sunnyLayers.forEach(l => l.setStyle({ opacity: type === 'sunny' ? 0.9 : 0.25 }));
-  shadyLayers.forEach(l => l.setStyle({ opacity: type === 'shady' ? 0.85 : 0.25 }));
+  sunnyLayers.forEach(l => l.setStyle({ opacity: type === 'sunny' ? 1 : 0.5 }));
+  shadyLayers.forEach(l => l.setStyle({ opacity: type === 'shady' ? 1 : 0.5 }));
 }
 
 export function displayRoutes(startC, endC, sunny, shady) {
@@ -186,13 +187,13 @@ export function displayRoutes(startC, endC, sunny, shady) {
 
   // Shady route — gradient, drawn below sunny
   if (shady) {
-    drawGradientRoute(shady.geometry.coordinates, shady.segShade ?? [], 5.5, 0.85, dispatch('shady'))
+    drawGradientRoute(shady.geometry.coordinates, shady.segShade ?? [], 5.5, 1, dispatch('shady'))
       .forEach(l => shadyLayers.push(l));
   }
 
   // Sunny route — gradient, drawn on top
   if (sunny) {
-    drawGradientRoute(sunny.geometry.coordinates, sunny.segShade ?? [], 5.5, 0.9, dispatch('sunny'))
+    drawGradientRoute(sunny.geometry.coordinates, sunny.segShade ?? [], 5.5, 1, dispatch('sunny'))
       .forEach(l => sunnyLayers.push(l));
   }
 
