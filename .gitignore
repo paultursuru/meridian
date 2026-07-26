@@ -24,8 +24,10 @@ pnpm-debug.log*
 .idea/
 
 .agents
-skills-lock.json
+.claude 
 
 # cloudflare worker — état local de `wrangler dev` (cache KV simulé, logs)
 overpass-cache/.wrangler/
 docs/
+
+tmp/

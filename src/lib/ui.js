@@ -67,7 +67,8 @@ export function renderTab(id, rt) {
 
   g('shade-pct').textContent   = shadePct + '%';
   g('sun-pct').textContent     = sunPct + '%';
-  g('ratio-fill').style.width  = sunPct + '%';
+  g('shade-fill').style.width  = shadePct + '%';
+  g('sun-fill').style.width    = sunPct + '%';
   g('dist').textContent        = fmtDist(rt.distance);
   g('dur').textContent         = fmtDurWithClimb(rt);
   g('shaded-dist').textContent = fmtDist(shadedM);
