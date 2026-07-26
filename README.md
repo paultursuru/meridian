@@ -80,6 +80,7 @@ meridian/
 ├── tests/                    # Vitest unit tests
 ├── ors-proxy/                # Cloudflare Worker: ORS API key + response cache (KV)
 ├── overpass-cache/           # Cloudflare Worker: Overpass response cache (KV)
+├── swisstopo-etl/            # offline ETL prototype: swisstopo building data → app's building shape (see below)
 ├── docs/                     # product review notes
 ├── Dockerfile, nginx.conf, fly.toml   # production build/deploy (Fly.io)
 └── package.json
@@ -167,3 +168,32 @@ Reopening the installed app tries to prefill the "start" field from the device's
 | Route deduplication by geometry overlap may still merge or split edge cases | Tune the grid-cell resolution and overlap threshold in `routing.js` |
 | Flat-roof assumption | Extend to pitched roofs using OSM `roof:shape` |
 | ORS's built-in elevation has coarse horizontal resolution in some regions | Use a higher-res DEM (e.g. swisstopo DHM25 for Switzerland) for accurate urban D+/D− |
+
+---
+
+## Swiss building-height data (work in progress)
+
+OSM building-height coverage varies a lot by city — a real showcase route
+through Lausanne only had real height data (vs. a generic fallback guess)
+for 26% of buildings, well behind Paris (70%) or New York (98%). For
+Switzerland specifically, swisstopo publishes **swissBUILDINGS3D 3.0**, an
+authoritative per-building 3D dataset with real geometry-derived heights for
+every building — no fallback guessing needed.
+
+This isn't a live API swap: swisstopo only distributes this data as bulk
+FileGDB archives (no per-request bbox endpoint like Overpass), so it needs
+an offline conversion step first. `swisstopo-etl/collapse.py` is a working
+prototype of that conversion — it takes a swisstopo GeoJSON export and
+reduces each building to exactly the `{ centroid, height, verts, radius }`
+shape `buildings.js` already produces for OSM data, so the rest of the app
+(`scoreRoute`, `shadow.js`, the height-coverage hint) needs zero changes
+once this is wired in. Validated on a real tile (Lausanne-area, ~2700
+buildings): plausible height histogram, and a live in-app check confirmed
+the height-coverage hint reaching 100% for a route using the converted data.
+
+**Not done yet**: converting all of Switzerland (the prototype above only
+covers one small area), storing the result somewhere bbox-queryable (likely
+Cloudflare R2 + a Worker, same pattern as `overpass-cache/`), and adding the
+Switzerland branch to `fetchBuildings()` that actually switches routes over
+to this data. `swisstopo-etl/collapse.py` is safe to read/run today — it has
+no effect on the running app until that wiring exists.
