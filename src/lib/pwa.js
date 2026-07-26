@@ -2,7 +2,7 @@ import { tr } from './i18n.js';
 
 const DISMISS_KEY = 'mw_install_dismissed';
 
-function isStandalone() {
+export function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 }
 
