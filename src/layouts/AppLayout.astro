@@ -264,7 +264,8 @@ const urls: Record<Lang, string> = {
   import { TZ_CENTERS } from '../lib/tzCenters.js';
   import { tr, type TranslationKey }     from '../lib/i18n.js';
   import { localDateValue, fmtHm }        from '../lib/helpers.js';
-  import { initInstallPrompt, registerServiceWorker } from '../lib/pwa.js';
+  import { initInstallPrompt, registerServiceWorker, isStandalone } from '../lib/pwa.js';
+  import { saveLastPosition, getLastPosition } from '../lib/lastPosition.js';
 
 
   initMap();
@@ -504,6 +505,7 @@ const urls: Record<Lang, string> = {
       ac.setPlace({ lat, lng, label });
       setPreviewPin(role, { lat, lng });
       syncInputState();
+      saveLastPosition(lat, lng);
       setStatus(null);
     } catch (err: unknown) {
       setStatus(null);
@@ -573,15 +575,56 @@ const urls: Record<Lang, string> = {
   syncInputState();
   if (shared.start && shared.end) {
     handleSearch();
+  } else if (isStandalone()) {
+    // Installed-app relaunch (review 6.2): try to prefill "start" from the
+    // phone's position first — if that gives us nothing (denied, and no
+    // cached fix either), fall back to the same passive centering a regular
+    // browser tab gets.
+    prefillFromRelaunch().then((filled) => { if (!filled) initInitialMapCenter(); });
   } else {
     initInitialMapCenter();
   }
 
-  // No shared link to restore: give the initial view a better guess than the
-  // Lausanne default (review 3.2/4.1). Two passive sources, neither of which
-  // is an explicit action in this session, so neither shows the "my location"
-  // dot (that's reserved for an explicit locate — see the 'locate-me'
-  // listener below):
+  // Standalone-only: reopening the installed app still shows two empty
+  // inputs even though the phone's position is right there. A permission
+  // prompt here is expected — this is an app-like relaunch, not a passive
+  // browser-tab visit (contrast with initInitialMapCenter below, which never
+  // prompts). Silent on failure: nothing was explicitly requested this
+  // session, so no toast — just leaves the field empty as before.
+  async function prefillFromRelaunch(): Promise<boolean> {
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
+      });
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      const label = await reverseGeocode(lat, lng);
+      startAC.setPlace({ lat, lng, label });
+      setPreviewPin('start', { lat, lng });
+      syncInputState();
+      saveLastPosition(lat, lng);
+      return true;
+    } catch {
+      // Denied, timed out, or reverse-geocode failed — try the last known
+      // fix (persisted from any earlier successful precise geolocation).
+      const cached = getLastPosition();
+      if (!cached) return false;
+      try {
+        const label = await reverseGeocode(cached.lat, cached.lng);
+        startAC.setPlace({ lat: cached.lat, lng: cached.lng, label });
+        setPreviewPin('start', cached);
+        syncInputState();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  // No shared link to restore, and not a standalone relaunch (or that gave us
+  // nothing): give the initial view a better guess than the Lausanne default
+  // (review 3.2/4.1). Two passive sources, neither of which is an explicit
+  // action in this session, so neither shows the "my location" dot (that's
+  // reserved for an explicit locate — see the 'locate-me' listener below):
   //  1. If geolocation permission was already granted (e.g. a past visit, or
   //     the locate control below earlier this session) — precise, and no
   //     fresh permission prompt, since the browser already has consent.
@@ -615,6 +658,7 @@ const urls: Record<Lang, string> = {
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
       });
       showMyLocation(pos.coords.latitude, pos.coords.longitude, tr('my_location_title'));
+      saveLastPosition(pos.coords.latitude, pos.coords.longitude);
       setStatus(null);
     } catch (err: unknown) {
       setStatus(null);
