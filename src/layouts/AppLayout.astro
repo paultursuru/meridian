@@ -149,6 +149,11 @@ const urls: Record<Lang, string> = {
   <div id="compass-label">{t.compass_label}</div>
 </div>
 
+<div id="time-scrubber">
+  <span id="scrubber-time"></span>
+  <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} />
+</div>
+
 <div id="results">
   <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
     <div id="drawer-bar"></div>
@@ -249,15 +254,15 @@ const urls: Record<Lang, string> = {
   import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
-  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone } from '../lib/timezone.js';
+  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather }                from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
   import { drawCompass }                 from '../lib/compass.js';
-  import { setStatus, showToast, initTabs, showResults, setActiveTab } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { tr, type TranslationKey }     from '../lib/i18n.js';
-  import { localDateValue }              from '../lib/helpers.js';
+  import { localDateValue, fmtHm }        from '../lib/helpers.js';
   import { initInstallPrompt, registerServiceWorker } from '../lib/pwa.js';
 
 
@@ -335,6 +340,7 @@ const urls: Record<Lang, string> = {
     btn.disabled = true;
     el('results').classList.remove('on');
     el('compass-wrap').classList.remove('on');
+    hideScrubber();
 
     try {
       setStatus(tr('status_geocoding'));
@@ -364,7 +370,8 @@ const urls: Record<Lang, string> = {
       // to null when the date is beyond the forecast horizon or on error.
       const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
 
-      updateSunInfo(sun, getSunTimes(tDate, midLat, midLng), destTz);
+      const sunTimes = getSunTimes(tDate, midLat, midLng);
+      updateSunInfo(sun, sunTimes, destTz);
       drawCompass(sun.azDeg, sun.altDeg);
       el('compass-wrap').classList.toggle('on', !night);
 
@@ -387,25 +394,37 @@ const urls: Record<Lang, string> = {
         leafFrac = deciduousLeafFrac(tDate, midLat);
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       }
-      // The sun moves ~11° azimuth over a 45-min walk — enough to flip which
-      // side of a street is shaded. Score each segment with the sun at its
-      // estimated arrival time instead of freezing it at departure.
-      const sunSampler = makeSunSampler(tDate, midLat, midLng);
-      routes.forEach(rt => {
-        const { score, segShade } = scoreRoute(rt, buildings, trees, sunSampler, leafFrac, forests);
-        rt.sunScore = score;
-        rt.segShade = segShade;
-      });
-      routes.sort((a, b) => b.sunScore - a.sunScore);
-
-      let sunny = routes[0];
-      const shady = routes[routes.length - 1];
-      // Night collapses the sunny/shady distinction: show only the shortest route.
-      if (night) sunny = routes.reduce((a, b) => (b.distance < a.distance ? b : a));
       const single = night || routes.length === 1;
 
-      displayRoutes(startC, endC, sunny, single ? null : shady);
-      showResults(sunny, shady, single, night);
+      // Re-scores every already-fetched route for a given instant and re-renders
+      // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole
+      // search (same corridor all day); only the sun's position changes, so this
+      // is pure client-side math — cheap enough to call on every scrubber tick
+      // (review 3.4: the drag-through-the-day interaction, scoped to re-scoring
+      // the routes ORS already returned, not re-fetching new route alternatives
+      // per hour — that would be a much heavier, separate feature).
+      function renderAt(atDate: Date) {
+        // The sun moves ~11° azimuth over a 45-min walk — enough to flip which
+        // side of a street is shaded. Score each segment with the sun at its
+        // estimated arrival time instead of freezing it at departure.
+        const sunSampler = makeSunSampler(atDate, midLat, midLng);
+        routes.forEach(rt => {
+          const { score, segShade } = scoreRoute(rt, buildings, trees, sunSampler, leafFrac, forests);
+          rt.sunScore = score;
+          rt.segShade = segShade;
+        });
+        routes.sort((a, b) => b.sunScore - a.sunScore);
+
+        let sunnyRt = routes[0];
+        const shadyRt = routes[routes.length - 1];
+        // Night collapses the sunny/shady distinction: show only the shortest route.
+        if (night) sunnyRt = routes.reduce((a, b) => (b.distance < a.distance ? b : a));
+
+        displayRoutes(startC, endC, sunnyRt, single ? null : shadyRt);
+        showResults(sunnyRt, shadyRt, single, night);
+      }
+
+      renderAt(tDate);
 
       const weather = await weatherP;
       const weatherEl = el('weather-note');
@@ -433,6 +452,29 @@ const urls: Record<Lang, string> = {
       setActiveTab(preselect);
       setActiveRoute(preselect);
       setStatus(null);
+
+      // Time scrubber: bounded to sunrise..sunset (outside that, "night" already
+      // means no shadow computation at all — see above). Dragging shifts the
+      // instant by a plain minute delta from the searched time, so it's immune
+      // to any wall-clock/DST parsing ambiguity across the day.
+      if (night) {
+        hideScrubber();
+      } else {
+        const initialMinutes = minutesInZone(tDate, destTz);
+        showScrubber({
+          min: minutesInZone(sunTimes.sunrise, destTz),
+          max: minutesInZone(sunTimes.sunset, destTz),
+          value: initialMinutes,
+          label: fmtHm(initialMinutes),
+        }, (minutes: number) => {
+          const atDate = new Date(tDate.getTime() + (minutes - initialMinutes) * 60_000);
+          renderAt(atDate);
+          setScrubberLabel(fmtHm(minutes));
+          const active = (document.querySelector<HTMLButtonElement>('.tab-btn.active')?.dataset.tab ?? 'sunny') as 'sunny' | 'shady';
+          setActiveTab(active);
+          setActiveRoute(active);
+        });
+      }
 
     } catch (err) {
       setStatus(null);

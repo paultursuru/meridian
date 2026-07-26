@@ -109,6 +109,7 @@ function initDrawer() {
     } else if (dy < -40) {
       drawer.classList.remove('expanded');
     }
+    updateScrubberPosition();
   }
 
   handle.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), { passive: true });
@@ -119,7 +120,11 @@ function initDrawer() {
   document.addEventListener('mouseup',   e => dragEnd(e.clientY));
 
   handle.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); drawer.classList.toggle('expanded'); }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      drawer.classList.toggle('expanded');
+      updateScrubberPosition();
+    }
   });
 }
 
@@ -143,4 +148,59 @@ export function showResults(sunny, shady, single = false, night = false) {
   drawer.classList.toggle('night', night);
   drawer.classList.add('on');
   initDrawer();
+}
+
+// ── Time scrubber ──
+// A floating bar docked just above the results drawer (never inside it, so
+// it stays put even though the drawer's own content scrolls when expanded).
+// It has no notion of routes/sun/shade itself — AppLayout.astro supplies the
+// bounds and re-scoring callback; this module only owns its DOM/positioning.
+const SCRUBBER_GAP = 8; // px between the drawer's visible top edge and the scrubber
+
+function drawerPeekPx(drawer) {
+  return parseFloat(getComputedStyle(drawer).getPropertyValue('--drawer-peek')) || 144;
+}
+
+// Keeps the scrubber docked to the drawer's actual visible top edge. The
+// collapsed height is the fixed CSS peek; the expanded height is content-driven
+// (offsetHeight), which the transform-based expand/collapse doesn't change.
+function updateScrubberPosition() {
+  const scrubber = document.getElementById('time-scrubber');
+  if (!scrubber.classList.contains('on')) return;
+  const drawer = document.getElementById('results');
+  const visibleH = drawer.classList.contains('expanded') ? drawer.offsetHeight : drawerPeekPx(drawer);
+  scrubber.style.bottom = `${visibleH + SCRUBBER_GAP}px`;
+}
+
+let scrubberInited = false;
+let scrubOnChange = () => {};
+
+function initScrubber() {
+  if (scrubberInited) return;
+  scrubberInited = true;
+  const range = document.getElementById('scrubber-range');
+  range.addEventListener('input', () => scrubOnChange(Number(range.value)));
+  window.addEventListener('resize', updateScrubberPosition);
+}
+
+// bounds: { min, max, value, label } in minutes-since-local-midnight (see
+// timezone.js#minutesInZone / helpers.js#fmtHm). onScrub(minutes) fires on every drag tick.
+export function showScrubber(bounds, onScrub) {
+  initScrubber();
+  scrubOnChange = onScrub;
+  const range = document.getElementById('scrubber-range');
+  range.min   = String(bounds.min);
+  range.max   = String(bounds.max);
+  range.value = String(bounds.value);
+  setScrubberLabel(bounds.label);
+  document.getElementById('time-scrubber').classList.add('on');
+  updateScrubberPosition();
+}
+
+export function setScrubberLabel(label) {
+  document.getElementById('scrubber-time').textContent = label;
+}
+
+export function hideScrubber() {
+  document.getElementById('time-scrubber').classList.remove('on');
 }

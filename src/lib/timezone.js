@@ -30,3 +30,9 @@ export function zonedTimeToUtc(wallTime, timeZone) {
 export function formatTimeInZone(date, timeZone) {
   return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
 }
+
+// Minutes since local midnight (0-1439) for `date`'s wall-clock reading in `timeZone`.
+export function minutesInZone(date, timeZone) {
+  const [h, m] = formatTimeInZone(date, timeZone).split(':').map(Number);
+  return h * 60 + m;
+}
