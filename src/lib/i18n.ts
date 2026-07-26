@@ -205,6 +205,7 @@ export const translations = {
     aria_about: 'About',
     aria_close: 'Close',
     aria_drawer_toggle: 'Show / hide details',
+    aria_scrubber: 'Simulation time',
     alert_empty: 'Please enter a start and end point.',
     status_geocoding: '📍 Geocoding addresses…',
     status_night: '🌙 Night ({alt}° below the horizon)',

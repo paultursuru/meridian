@@ -254,15 +254,15 @@ const urls: Record<Lang, string> = {
   import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
-  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone } from '../lib/timezone.js';
+  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather }                from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
   import { drawCompass }                 from '../lib/compass.js';
-  import { setStatus, showToast, initTabs, showResults, setActiveTab } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { tr, type TranslationKey }     from '../lib/i18n.js';
-  import { localDateValue }              from '../lib/helpers.js';
+  import { localDateValue, fmtHm }        from '../lib/helpers.js';
   import { initInstallPrompt, registerServiceWorker } from '../lib/pwa.js';
 
 
