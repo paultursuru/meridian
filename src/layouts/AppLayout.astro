@@ -246,7 +246,7 @@ const urls: Record<Lang, string> = {
 </div>
 
 <script>
-  import { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins } from '../lib/map.js';
+  import { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation } from '../lib/map.js';
   import { getSun, getSunTimes, compassDir, makeSunSampler } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
@@ -261,6 +261,7 @@ const urls: Record<Lang, string> = {
   import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
+  import { TZ_CENTERS } from '../lib/tzCenters.js';
   import { tr, type TranslationKey }     from '../lib/i18n.js';
   import { localDateValue, fmtHm }        from '../lib/helpers.js';
   import { initInstallPrompt, registerServiceWorker } from '../lib/pwa.js';
@@ -570,7 +571,60 @@ const urls: Record<Lang, string> = {
   if (shared.start) { startAC.setPlace(shared.start); setPreviewPin('start', shared.start); }
   if (shared.end)   { endAC.setPlace(shared.end);     setPreviewPin('end',   shared.end); }
   syncInputState();
-  if (shared.start && shared.end) handleSearch();
+  if (shared.start && shared.end) {
+    handleSearch();
+  } else {
+    initInitialMapCenter();
+  }
+
+  // No shared link to restore: give the initial view a better guess than the
+  // Lausanne default (review 3.2/4.1). Two passive sources, neither of which
+  // is an explicit action in this session, so neither shows the "my location"
+  // dot (that's reserved for an explicit locate — see the 'locate-me'
+  // listener below):
+  //  1. If geolocation permission was already granted (e.g. a past visit, or
+  //     the locate control below earlier this session) — precise, and no
+  //     fresh permission prompt, since the browser already has consent.
+  //  2. Otherwise, the browser's IANA timezone — coarse, but zero permission
+  //     and zero network call. See src/lib/tzCenters.js for its known limits.
+  async function initInitialMapCenter() {
+    try {
+      const status = await navigator.permissions?.query({ name: 'geolocation' as PermissionName });
+      if (status?.state === 'granted') {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        centerMap(pos.coords.latitude, pos.coords.longitude, 14);
+        return;
+      }
+    } catch {
+      // Permissions API unsupported (older Safari), or the silent fetch
+      // failed despite 'granted' — fall through to the timezone guess.
+    }
+    const tzCenter = TZ_CENTERS[Intl.DateTimeFormat().resolvedOptions().timeZone];
+    if (tzCenter) centerMap(tzCenter[0], tzCenter[1], 10);
+  }
+
+  // "Center on my location" map control (map.js) — unlike the geo-start/geo-end
+  // buttons, this never touches an address field or pin; it's purely "show me
+  // where I am," so it's the one place the "my location" dot appears.
+  window.addEventListener('locate-me', async () => {
+    setStatus(tr('geo_loading'));
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+      });
+      showMyLocation(pos.coords.latitude, pos.coords.longitude, tr('my_location_title'));
+      setStatus(null);
+    } catch (err: unknown) {
+      setStatus(null);
+      if ((err as GeolocationPositionError)?.code === 1) {
+        showToast(tr('error_geo_denied'));
+      } else {
+        showToast(tr('error_geo_timeout'));
+      }
+    }
+  });
 
   const drawer  = el('about-drawer');
   const overlay = el('about-overlay');
