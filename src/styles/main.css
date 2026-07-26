@@ -557,11 +557,12 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #single-route-note.on { display: block; }
 
-/* ── Weather note (overcast forecast — shown above the tabs) ── */
+/* ── Weather note (overcast forecast — shown at the bottom of the drawer, below
+   the shade/sun split, so it doesn't compete with the headline stat) ── */
 #weather-note {
   display: none;
-  padding: 9px 16px 11px;
-  border-bottom: 1.5px solid rgba(240,242,160,0.1);
+  padding: 11px 16px 9px;
+  border-top: 1.5px solid rgba(240,242,160,0.1);
   font-size: 0.82rem;
   color: rgba(216,219,200,0.55);
   text-align: center;
@@ -621,17 +622,18 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .ratio-shade-num { color: #e8c8f0; }
 .ratio-sun-num   { color: #f0f2a0; }
 .ratio-track {
+  display: flex;
   height: 14px;
   background: rgba(240,242,160,0.08);
   border-radius: 8px;
   overflow: hidden;
 }
-.ratio-fill {
+.ratio-seg {
   height: 100%;
-  background: linear-gradient(90deg, #e8c8f0 0%, #f0f2a0 60%, #f0e060 100%);
-  border-radius: 8px;
   transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.ratio-seg-shade { background: #e8c8f0; }
+.ratio-seg-sun   { background: #f0f2a0; }
 
 /* ── Route details (visible only when drawer is expanded) ── */
 .route-details {
