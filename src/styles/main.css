@@ -16,7 +16,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Header ── */
 #header {
   background: #0e120a;
-  padding: 10px 20px;
+  padding: 8px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -31,6 +31,12 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #header h1 .way  { color: #e8c8f0; font-style: italic; }
 #header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; min-width: 0; }
 
+#app-description {
+  padding: 10px 16px 0 20px;
+  font-size: 0.85rem;
+  color: #d8dbc8;
+  line-height: 1.3;
+}
 /* Tagline, then — once a search has run — a 3-beat loop with the plain-
    language sun position and the exact degrees (review 3.2 + 3.3). Pure-CSS
    animation: ping-pongs 1→2→3→2→1→… via `alternate`, so the loop point
@@ -69,11 +75,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   text-align: right;
 }
 @media (max-width: 600px) {
-  #header { align-items: start; }
+  #header h1 { font-size: 1rem; }
   #header-right {
-    flex-direction: column-reverse;
     justify-content: end;
-    align-items: end;
     gap: 4px;
   }
   #sun-info { font-size: 0.7rem; }
@@ -134,7 +138,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   padding: 10px 16px;
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
   border-bottom: 1px solid rgba(240,242,160,0.13);
   z-index: 999;
@@ -152,10 +156,16 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   min-width: 160px;
   position: relative;
 }
+.input-label {
+  font-size: 0.65rem;
+  color: #d8dbc8;
+  margin-bottom: 4px;
+  padding-left: 4px;
+}
 #swap-btn {
   position: absolute;
-  right: 24px;
-  top: 24px;
+  right: 50%;
+  top: 52px;
   z-index: 2;
   width: 30px; height: 30px;
   border-radius: 50%;
@@ -166,9 +176,8 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  line-height: 1;
-  transition: all 1s;
+  font-size: 0.85rem;
+  transition: transform 1s;
 }
 #swap-btn:hover  { background: #2a3320; }
 #swap-btn:active { transform: scale(0.88);  }
@@ -192,7 +201,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .geo-btn {
   position: absolute;
   right: 6px;
-  top: 50%;
+  bottom: -8px;
   transform: translateY(-50%);
   width: 26px; height: 26px;
   border: none;
@@ -216,7 +225,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   display: none;
   position: absolute;
   right: 34px;
-  top: 50%;
+  bottom: -5px;
   transform: translateY(-50%);
   width: 22px; height: 22px;
   border: none;
@@ -234,7 +243,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 .clear-btn:hover { opacity: 1; background: rgba(240,242,160,0.08); }
 .input-wrap.has-value .clear-btn { display: flex; }
-.dt-row { display: flex; gap: 8px; align-items: center; }
 #search-panel input[type="date"],
 #search-panel input[type="time"] {
   padding: 8px 10px;
@@ -246,12 +254,17 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: #d8dbc8;
   color-scheme: dark;
 }
+
+/* ── Departure control: split button ("leave now" + dropdown to schedule
+   later), modelled on GitHub's "Update branch ▾" split button. ── */
+.depart-row { position: relative; padding-bottom: 2px;}
+.split-btn { display: flex; }
 #search-btn {
   padding: 8px 20px;
   background: #f0f2a0;
   color: #0e120a;
   border: none;
-  border-radius: 8px;
+  border-radius: 8px 0 0 8px;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
@@ -260,6 +273,72 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #search-btn:hover   { background: #e4e698; }
 #search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#depart-toggle {
+  padding: 0 10px;
+  background: #f0f2a0;
+  color: #0e120a;
+  border: none;
+  border-left: 1px solid rgba(14,18,10,0.2);
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, opacity 0.2s;
+}
+#depart-toggle:hover   { background: #e4e698; }
+#depart-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.depart-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1001;
+  min-width: 240px;
+  padding: 14px;
+  background: #161b12;
+  border: 1.5px solid rgba(240,242,160,0.2);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+.depart-popover.open { display: block; }
+.depart-popover-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(216,219,200,0.7);
+  margin-bottom: 10px;
+}
+.depart-popover-fields { display: flex; gap: 8px; margin-bottom: 10px; }
+.depart-popover-fields input[type="date"],
+.depart-popover-fields input[type="time"] { flex: 1; min-width: 0; }
+#depart-confirm {
+  width: 100%;
+  padding: 8px;
+  background: #f0f2a0;
+  color: #0e120a;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#depart-confirm:hover { background: #e4e698; }
+
+/* ── Desktop: start/swap/end and the departure control share one line
+   instead of stacking (DOM order already puts swap between the two
+   address fields, so switching to a row just works). ── */
+@media (min-width: 601px) {
+  .route-inputs {
+    flex-direction: row;
+    align-items: center;
+    flex: 1 1 380px;
+  }
+  .input-wrap { min-width: 160px; }
+  #swap-btn { position: static; flex-shrink: 0; transform: rotate(90deg); margin-top: 18px;   top: 24px;  }
+  .depart-row { flex-shrink: 0; }
+}
 
 /* ── Map ── */
 #map { flex: 1; z-index: 1; position: relative; }
@@ -344,36 +423,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   background: rgba(20,38,16,0.94);
   color: #ddf0d2;
   border: 1px solid rgba(140,220,110,0.35);
-}
-
-/* ── Compass ── */
-#compass-wrap {
-  position: fixed;
-  top: 120px;
-  right: 16px;
-  z-index: 2000;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-#compass-wrap.on { display: flex; }
-#compass-box {
-  width: 72px; height: 72px;
-  background: #161b12;
-  border-radius: 50%;
-  border: 1px solid rgba(240,242,160,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#compass-label {
-  font-size: 0.68rem;
-  color: rgba(216,219,200,0.6);
-  background: #161b12;
-  border: 1px solid rgba(240,242,160,0.15);
-  padding: 2px 8px;
-  border-radius: 4px;
 }
 
 /* ── Autocomplete dropdown ── */
@@ -840,8 +889,9 @@ p.opensource-badge {
     flex: 0 0 100%;
     min-width: 0;
   }
-  .dt-row { width: 100%; }
-  #search-btn { width: 100%; }
+  .depart-row { width: 100%; }
+  .split-btn { width: 100%; }
+  #search-btn { flex: 1; }
+  .depart-popover { left: 0; right: 0; }
   #about-drawer { width: 100vw; }
-  #compass-wrap { top: 200px; }
 }
