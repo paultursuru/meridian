@@ -62,9 +62,11 @@ meridian/
 │   │   ├── geocode.js        # Photon autocomplete + Nominatim geocode/reverse geocode
 │   │   ├── helpers.js        # haversine, bearing, fmtDist, fmtDur
 │   │   ├── i18n.ts           # translations (fr/de/it/en)
-│   │   ├── map.js            # Leaflet + MapLibre init, gradient route drawing, pins
+│   │   ├── lastPosition.js   # localStorage cache of the last precise geolocation fix
+│   │   ├── map.js            # Leaflet + MapLibre init, gradient route drawing, pins, locate-me control
 │   │   ├── overpass.js       # Overpass proxy fetch with retry/backoff
 │   │   ├── preselect.js      # sunny/shady tab preselection (temperature or season heuristic)
+│   │   ├── pwa.js            # install-prompt banner, standalone-mode detection, service worker registration
 │   │   ├── routing.js        # ORS proxy fetch, alternative routes, dedup by geometry overlap
 │   │   ├── season.js         # leaf-coverage fraction by date (deciduous vs evergreen)
 │   │   ├── shadow.js         # per-segment shadow scoring (sun-ray vs polygon)
@@ -72,6 +74,7 @@ meridian/
 │   │   ├── sun.js            # SunCalc wrapper -> {azDeg, altDeg} + memoized time sampler
 │   │   ├── timezone.js       # IANA timezone lookup + wall-clock <-> UTC conversion
 │   │   ├── trees.js          # tree footprint fetch + seasonal canopy shadow scoring
+│   │   ├── tzCenters.js      # IANA timezone -> approximate [lat, lng], for the first-load map center
 │   │   ├── ui.js             # status toast, tabs, swipeable results drawer
 │   │   └── weather.js        # Open-Meteo cloud cover / temperature fetch
 │   └── styles/main.css
@@ -127,6 +130,8 @@ A conservative bounding-radius pre-filter (`|point - centroid| > sLen + radius`)
 
 The app uses OSM-based services everywhere (Nominatim, Photon, ORS, Overpass), so it works for any city in the world, not just Switzerland. The core shadow model, sun position, and routing logic are fully geography-agnostic.
 
+The initial map view adapts to the visitor's location: before any search, it centers on the browser's IANA timezone (`src/lib/tzCenters.js`), or on precise geolocation if that permission was already granted in an earlier visit — either way, silently, with no permission prompt shown to a first-time visitor.
+
 The main variable across regions is **building height data quality**: OSM coverage is excellent in dense European cities but sparse elsewhere. The table below shows the main limitations and how they could be improved.
 
 ## Results drawer
@@ -141,6 +146,16 @@ The displayed walking duration includes a **climb-time supplement** when the rou
 A share button copies (or opens the native share sheet for) a URL that encodes the search: start/end coordinates and labels plus the destination-local date/time, so a route can be bookmarked or sent to someone else.
 
 The drawer is driven by touch/mouse drag events and snaps to either state with a CSS `transform` transition (no layout reflow).
+
+A **time scrubber** sits just above the drawer once results are shown: dragging it re-scores every route ORS already returned for a different time of day (bounded to sunrise–sunset) and redraws the map and stats live. This is pure client-side re-scoring — buildings and trees are already fetched, so scrubbing makes zero new network calls.
+
+---
+
+## Progressive Web App
+
+MeridianWay is installable (Add to Home Screen / Chrome's install prompt): a manifest (`public/site.webmanifest`) plus a minimal service worker (`public/service-worker.js`, registered from `pwa.js`) exist solely to satisfy the browser's installability requirements — there is no offline support or asset caching. A custom banner walks Android/Chrome users through the native `beforeinstallprompt` flow, and shows manual "Share → Add to Home Screen" instructions on iOS, where that event never fires.
+
+Reopening the installed app tries to prefill the "start" field from the device's current position — a permission prompt here is expected, unlike the passive map-centering above. If geolocation is denied or unavailable, it falls back to the last known fix cached in `localStorage` (`src/lib/lastPosition.js`), so a relaunch still starts from somewhere useful rather than two empty fields.
 
 ---
 
