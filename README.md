@@ -58,7 +58,6 @@ meridian/
 │   ├── lib/
 │   │   ├── autocomplete.js   # address dropdown (Photon suggest, debounced)
 │   │   ├── buildings.js      # building polygon parsing + bbox helper
-│   │   ├── compass.js        # canvas compass showing sun direction
 │   │   ├── geocode.js        # Photon autocomplete + Nominatim geocode/reverse geocode
 │   │   ├── helpers.js        # haversine, bearing, fmtDist, fmtDur
 │   │   ├── i18n.ts           # translations (fr/de/it/en)

@@ -76,6 +76,9 @@ const urls: Record<Lang, string> = {
       <button id="about-btn" aria-label={t.aria_about}>i</button>
     </div>
   </div>
+  <div id="app-description">
+    <p>{t.meta_description}</p>
+  </div>
   <div id="install-banner">
     <span id="install-banner-text"></span>
     <div id="install-banner-actions">
@@ -86,21 +89,39 @@ const urls: Record<Lang, string> = {
   <div id="search-panel">
     <div class="route-inputs">
       <div class="input-wrap">
+        <label for="inp-start"><span class="input-label">{t.label_start}</span></label>
         <input type="text" id="inp-start" placeholder={t.placeholder_start} />
         <button class="clear-btn" id="clear-start" type="button" title={t.clear_btn_title} aria-label={t.clear_btn_title}>✕</button>
         <button class="geo-btn" id="geo-start" type="button" title={t.geo_btn_title} aria-label={t.geo_btn_title} set:html={targetIcon} />
       </div>
       <button id="swap-btn" type="button" title={t.swap_btn_title} aria-label={t.swap_btn_title}><span class="swap-ico">⇅</span></button>
       <div class="input-wrap">
+        <label for="inp-end"><span class="input-label">{t.label_end}</span></label>
         <input type="text" id="inp-end" placeholder={t.placeholder_end} />
         <button class="clear-btn" id="clear-end" type="button" title={t.clear_btn_title} aria-label={t.clear_btn_title}>✕</button>
         <button class="geo-btn" id="geo-end" type="button" title={t.geo_btn_title} aria-label={t.geo_btn_title} set:html={targetIcon} />
       </div>
     </div>
-    <div class="dt-row">
-      <input type="date" id="inp-date" />
-      <input type="time" id="inp-time" />
-      <button id="search-btn">{t.btn_search}</button>
+    <div class="depart-row">
+      <div class="split-btn">
+        <button id="search-btn" type="button">{t.btn_leave_now}</button>
+        <button id="depart-toggle" type="button" aria-haspopup="true" aria-expanded="false" title={t.depart_toggle_title} aria-label={t.depart_toggle_title}>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 3.5L5 7L8.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="depart-popover" id="depart-popover" role="dialog" aria-label={t.depart_later_label}>
+        <div class="depart-popover-fields">
+          <div class="">
+            <label for="inp-date"><span class="input-label">{t.label_date}</span></label>
+            <input type="date" id="inp-date" />
+          </div>
+          <div class="">
+            <label for="inp-time"><span class="input-label">{t.label_time}</span></label>
+            <input type="time" id="inp-time" />
+          </div>
+        </div>
+        <button id="depart-confirm" type="button">{t.btn_search}</button>
+      </div>
     </div>
   </div>
   <div id="map">
@@ -140,13 +161,6 @@ const urls: Record<Lang, string> = {
     <span class="footer-link">-</span>
     <a href={lang === 'fr' ? '/privacy' : `/${lang}/privacy`} class="footer-link">{t.about_privacy}</a>
   </div>
-</div>
-
-<div id="compass-wrap">
-  <div id="compass-box">
-    <canvas id="compass-cv" width="60" height="60"></canvas>
-  </div>
-  <div id="compass-label">{t.compass_label}</div>
 </div>
 
 <div id="time-scrubber">
@@ -257,7 +271,6 @@ const urls: Record<Lang, string> = {
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather }                from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
-  import { drawCompass }                 from '../lib/compass.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
@@ -294,7 +307,10 @@ const urls: Record<Lang, string> = {
     const eVal = input('inp-end').value.trim();
     input('inp-start').closest('.input-wrap')!.classList.toggle('has-value', !!sVal);
     input('inp-end').closest('.input-wrap')!.classList.toggle('has-value', !!eVal);
-    button('search-btn').disabled = !(sVal && eVal);
+    const ready = !!(sVal && eVal);
+    button('search-btn').disabled = !ready;
+    button('depart-toggle').disabled = !ready;
+    button('depart-confirm').disabled = !ready;
   }
 
   let startAC: ReturnType<typeof initAutocomplete>;
@@ -340,8 +356,10 @@ const urls: Record<Lang, string> = {
 
     const btn = button('search-btn');
     btn.disabled = true;
+    button('depart-toggle').disabled = true;
+    button('depart-confirm').disabled = true;
+    closeDepartPopover();
     el('results').classList.remove('on');
-    el('compass-wrap').classList.remove('on');
     hideScrubber();
 
     try {
@@ -363,8 +381,8 @@ const urls: Record<Lang, string> = {
       }
 
       const sun = getSun(tDate, midLat, midLng);
-      // Night: sun exposure doesn't apply — no weather badge, no compass,
-      // no shadow computation; just show the shortest route and say so.
+      // Night: sun exposure doesn't apply — no weather badge, no shadow
+      // computation; just show the shortest route and say so.
       const night = sun.altDeg <= 0;
 
       // Fired now, awaited only before rendering results: the routing +
@@ -374,8 +392,6 @@ const urls: Record<Lang, string> = {
 
       const sunTimes = getSunTimes(tDate, midLat, midLng);
       updateSunInfo(sun, sunTimes, destTz);
-      drawCompass(sun.azDeg, sun.altDeg);
-      el('compass-wrap').classList.toggle('on', !night);
 
       const routes = await buildRoutes(startC, endC, setStatus);
       if (!routes.length) throw new Error(tr('error_no_route'));
@@ -488,6 +504,8 @@ const urls: Record<Lang, string> = {
       console.error(err);
     } finally {
       button('search-btn').disabled = false;
+      button('depart-toggle').disabled = false;
+      button('depart-confirm').disabled = false;
     }
   }
 
@@ -547,7 +565,46 @@ const urls: Record<Lang, string> = {
   }
   button('swap-btn').addEventListener('click', swapEndpoints);
 
-  button('search-btn').addEventListener('click', handleSearch);
+  // Departure control (review 7.2): "Partir maintenant" always resets the
+  // date/time fields to this instant before searching, so a stale time left
+  // over from a previous session never silently gets reused. Scheduling a
+  // later departure instead goes through the popover below, which leaves
+  // whatever the user picked untouched.
+  function leaveNow() {
+    const n = new Date();
+    input('inp-date').value = localDateValue(n);
+    input('inp-time').value = n.toTimeString().slice(0, 5);
+    handleSearch();
+  }
+
+  const departPopover = el('depart-popover');
+  const departToggle  = button('depart-toggle');
+
+  function openDepartPopover() {
+    departPopover.classList.add('open');
+    departToggle.setAttribute('aria-expanded', 'true');
+    input('inp-date').focus();
+  }
+  function closeDepartPopover() {
+    departPopover.classList.remove('open');
+    departToggle.setAttribute('aria-expanded', 'false');
+  }
+  function toggleDepartPopover() {
+    if (departPopover.classList.contains('open')) closeDepartPopover();
+    else openDepartPopover();
+  }
+
+  button('search-btn').addEventListener('click', leaveNow);
+  departToggle.addEventListener('click', (e: MouseEvent) => { e.stopPropagation(); toggleDepartPopover(); });
+  button('depart-confirm').addEventListener('click', () => handleSearch());
+  document.addEventListener('click', (e: MouseEvent) => {
+    if (!departPopover.classList.contains('open')) return;
+    const target = e.target as Node;
+    if (departPopover.contains(target) || departToggle.contains(target)) return;
+    closeDepartPopover();
+  });
+  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeDepartPopover(); });
+
   ['inp-start', 'inp-end'].forEach(id =>
     input(id).addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') handleSearch(); })
   );
