@@ -102,6 +102,17 @@ describe('fetchWeather', () => {
     expect(await fetchWeather(46.52, 6.63, target, NOW)).toBeNull();
   });
 
+  it('returns null when the request is aborted (e.g. a timeout)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('The operation was aborted', 'AbortError')));
+    expect(await fetchWeather(46.52, 6.63, target, NOW)).toBeNull();
+  });
+
+  it('passes an abortable signal so a hung request cannot block the caller forever', async () => {
+    const spy = stubFetch({ ok: true, json: async () => ({ hourly: { time: [T12], cloud_cover: [50] } }) });
+    await fetchWeather(46.52, 6.63, target, NOW);
+    expect(spy.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+
   it('returns null on an empty or malformed payload', async () => {
     stubFetch({ ok: true, json: async () => ({ hourly: { time: [], cloud_cover: [] } }) });
     expect(await fetchWeather(46.52, 6.63, target, NOW)).toBeNull();

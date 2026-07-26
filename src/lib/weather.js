@@ -23,17 +23,22 @@ export function closestHourIndex(unixTimes, targetDate) {
   return best;
 }
 
+// Weather is pure decoration (a badge + a tie-breaker for the default tab) —
+// never worth making the user wait on. Bounded so a slow/hung Open-Meteo
+// response can't stall the rest of the search past this.
+const FETCH_TIMEOUT_MS = 4000;
+
 // Cloud cover (0-100 %) and air temperature (°C) at the given point and
 // instant, or null when the date is outside the forecast window or the
-// request fails. Weather is best-effort decoration: every failure path
-// returns null and the search continues without it.
+// request fails (including a timeout). Weather is best-effort decoration:
+// every failure path returns null and the search continues without it.
 export async function fetchWeather(lat, lng, date, now = new Date()) {
   if (!isForecastable(date, now)) return null;
   const day = date.toISOString().split('T')[0]; // UTC day containing `date`
   const url = `${OM_BASE}?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}`
     + `&hourly=cloud_cover,temperature_2m&timeformat=unixtime&start_date=${day}&end_date=${day}`;
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!r.ok) return null;
     const d = await r.json();
     const times  = d?.hourly?.time;
