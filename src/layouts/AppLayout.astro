@@ -149,6 +149,11 @@ const urls: Record<Lang, string> = {
   <div id="compass-label">{t.compass_label}</div>
 </div>
 
+<div id="time-scrubber">
+  <span id="scrubber-time"></span>
+  <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} />
+</div>
+
 <div id="results">
   <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
     <div id="drawer-bar"></div>

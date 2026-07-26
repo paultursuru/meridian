@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveTimeZone, zonedTimeToUtc } from '../src/lib/timezone.js';
+import { resolveTimeZone, zonedTimeToUtc, minutesInZone } from '../src/lib/timezone.js';
 
 describe('resolveTimeZone', () => {
   it('resolves the IANA zone for a given point', () => {
@@ -26,5 +26,18 @@ describe('zonedTimeToUtc', () => {
     const nyc = zonedTimeToUtc('2026-07-05T10:00', 'America/New_York');
     const paris = zonedTimeToUtc('2026-07-05T10:00', 'Europe/Paris');
     expect(nyc.getTime()).not.toBe(paris.getTime());
+  });
+});
+
+describe('minutesInZone', () => {
+  it('reads minutes-since-midnight in the given zone, not UTC', () => {
+    // 14:00 UTC = 10:00 in New York (EDT, UTC-4) in July -> 600 minutes
+    const d = new Date('2026-07-05T14:00:00.000Z');
+    expect(minutesInZone(d, 'America/New_York')).toBe(600);
+  });
+
+  it('matches the instant used to build it via zonedTimeToUtc', () => {
+    const d = zonedTimeToUtc('2026-01-05T08:45', 'Europe/Paris');
+    expect(minutesInZone(d, 'Europe/Paris')).toBe(8 * 60 + 45);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { haversine, bearing, angleDiff, fmtDist, fmtDur, localDateValue } from '../src/lib/helpers.js';
+import { haversine, bearing, angleDiff, fmtDist, fmtDur, fmtHm, localDateValue } from '../src/lib/helpers.js';
 
 describe('haversine', () => {
   it('returns 0 for identical points', () => {
@@ -70,6 +70,17 @@ describe('fmtDur', () => {
   it('shows h+mm from one hour, zero-padding minutes', () => {
     expect(fmtDur(3600)).toBe('1h00');
     expect(fmtDur(3660)).toBe('1h01');
+  });
+});
+
+describe('fmtHm', () => {
+  it('zero-pads hours and minutes', () => {
+    expect(fmtHm(5)).toBe('00:05');
+    expect(fmtHm(60)).toBe('01:00');
+  });
+
+  it('formats a typical afternoon value', () => {
+    expect(fmtHm(14 * 60 + 32)).toBe('14:32');
   });
 });
 

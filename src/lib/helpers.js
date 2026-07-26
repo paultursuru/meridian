@@ -34,3 +34,8 @@ export function fmtDur(s) {
   const m = Math.round(s / 60);
   return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0');
 }
+
+// "HH:mm" for a minutes-since-midnight value (0-1439) — the time scrubber's own unit.
+export function fmtHm(minutes) {
+  return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
+}

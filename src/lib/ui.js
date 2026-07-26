@@ -109,6 +109,7 @@ function initDrawer() {
     } else if (dy < -40) {
       drawer.classList.remove('expanded');
     }
+    updateScrubberPosition();
   }
 
   handle.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), { passive: true });
