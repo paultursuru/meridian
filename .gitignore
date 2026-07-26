@@ -31,3 +31,10 @@ overpass-cache/.wrangler/
 docs/
 
 tmp/
+
+# swisstopo raw source data (national FileGDB, tens of GB) — never commit
+*.gdb/
+*.gdb.zip
+swisstopo-etl/extracted/
+swisstopo-etl/*.gdb.zip
+swisstopo-etl/*.geojson
