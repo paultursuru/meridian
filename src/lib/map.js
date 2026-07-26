@@ -3,12 +3,15 @@ import 'leaflet/dist/leaflet.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-leaflet';
 import { collapseDrawer } from './ui.js';
+import { tr } from './i18n.js';
+import targetIcon from '../icons/target.svg?raw';
 
 let _map = null;
 let sunnyLayers   = [];
 let shadyLayers   = [];
 let markerLayers  = [];
 let previewMarkers = { start: null, end: null };
+let hereMarker = null;
 
 // Gradient endpoints: dark red (sun) → dark blue (shade) — readable on a light map in daylight
 const SUN_RGB   = [183, 28, 28];
@@ -58,6 +61,25 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
   return layers;
 }
 
+// "Center on my location" control, Leaflet-native (stacks under the default
+// zoom control, top-left) — deliberately separate from the start/end
+// "ma position" input buttons: clicking it doesn't touch any address field,
+// it only asks AppLayout.astro (via the 'locate-me' event, same pattern as
+// 'route-select' below) to fetch precise geolocation and show it.
+const LocateControl = L.Control.extend({
+  options: { position: 'topleft' },
+  onAdd() {
+    const btn = L.DomUtil.create('button', 'leaflet-bar locate-control');
+    btn.type = 'button';
+    btn.title = tr('locate_btn_title');
+    btn.setAttribute('aria-label', tr('locate_btn_title'));
+    btn.innerHTML = targetIcon;
+    L.DomEvent.disableClickPropagation(btn);
+    L.DomEvent.on(btn, 'click', () => window.dispatchEvent(new CustomEvent('locate-me')));
+    return btn;
+  },
+});
+
 export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
   // OSM Bright GL vector style (openmaptiles/osm-bright-gl-style), hosted by Stadia Maps.
@@ -70,6 +92,8 @@ export function initMap() {
   glLayer.getMaplibreMap().once('load', () => {
     document.getElementById('map-splash')?.classList.add('hidden');
   });
+
+  new LocateControl().addTo(_map);
 
   _map.on('click', collapseDrawer);
 }
@@ -90,13 +114,46 @@ export function clearMap() {
   for (const role of ['start', 'end']) {
     if (previewMarkers[role]) { _map.removeLayer(previewMarkers[role]); previewMarkers[role] = null; }
   }
+  clearApproxLocation();
 }
 
 export function setPreviewPin(role, coords) {
+  // A real pin supersedes the rough "my location" marker, if one is showing.
+  clearApproxLocation();
   if (previewMarkers[role]) _map.removeLayer(previewMarkers[role]);
   const color = role === 'start' ? '#22c55e' : '#ef4444';
   previewMarkers[role] = L.marker([coords.lat, coords.lng], { icon: pinIcon(color) }).addTo(_map);
   _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
+}
+
+// Recenters only — no marker. Used for the passive, permission-free initial
+// view (timezone guess, or a silently-already-granted precise position —
+// see review 3.2/4.1): neither is the result of an explicit action in this
+// session, so neither gets the "my location" dot (that's reserved for
+// showMyLocation below, kept deliberately separate).
+export function centerMap(lat, lng, zoom) {
+  _map.setView([lat, lng], zoom);
+}
+
+// Recenters AND drops a translucent "my location" dot (deliberately not a
+// solid pin like start/end) — used only as the direct result of an explicit
+// geolocation action: the locate-me control above, or (in future) an
+// already-known position surfaced from a user gesture.
+export function showMyLocation(lat, lng, title) {
+  clearApproxLocation();
+  hereMarker = L.circleMarker([lat, lng], {
+    radius: 8,
+    color: '#3b82f6',
+    weight: 2,
+    fillColor: '#3b82f6',
+    fillOpacity: 0.35,
+  }).addTo(_map);
+  if (title) hereMarker.bindTooltip(title, { direction: 'top' });
+  _map.setView([lat, lng], 15);
+}
+
+export function clearApproxLocation() {
+  if (hereMarker) { _map.removeLayer(hereMarker); hereMarker = null; }
 }
 
 // Removes a preview pin without adding a replacement (e.g. clearing an address field).

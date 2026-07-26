@@ -265,6 +265,22 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #map { flex: 1; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
 
+/* "Center on my location" Leaflet control — sized/centered to match the
+   default (unstyled) zoom control it stacks under; icon inherits Leaflet's
+   default control color via currentColor. */
+.locate-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px; height: 34px;
+  padding: 0;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+}
+.locate-control:hover { background: #f4f4f4; }
+.locate-control svg { display: block; }
+
 /* Shown until the map tiles finish their first load, then faded out in map.js — masks
    the blank/white flash of the tile layer initializing (also doubles as PWA-launch splash). */
 #map-splash {
