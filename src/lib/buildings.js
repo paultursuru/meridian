@@ -30,6 +30,15 @@ export function buildingHeight(tags) {
   return fallback;
 }
 
+// Whether buildingHeight() above actually used a real OSM measurement for this
+// building rather than falling back to a type/default guess — the raw signal
+// behind the "height data: N% of buildings" confidence hint (review 3.5).
+export function hasHeightData(tags) {
+  if (tags.height && !Number.isNaN(parseFloat(tags.height))) return true;
+  if (tags['building:levels'] && !Number.isNaN(parseInt(tags['building:levels']))) return true;
+  return false;
+}
+
 function parseBuildings(els) {
   const nodes = {};
   els.filter(e => e.type === 'node').forEach(nd => { nodes[nd.id] = { lat: nd.lat, lng: nd.lon }; });
@@ -54,9 +63,17 @@ function parseBuildings(els) {
       return Math.max(max, Math.sqrt(dlat * dlat + dlng * dlng));
     }, 0);
 
-    out.push({ centroid, height, verts: pts, radius });
+    out.push({ centroid, height, verts: pts, radius, hasHeight: hasHeightData(way.tags) });
   });
   return out;
+}
+
+// Fraction (0..1) of buildings whose height came from a real OSM tag rather
+// than a fallback guess. null when there's nothing to report (no buildings
+// fetched for this route) — used to render the review-3.5 confidence hint.
+export function heightCoverage(buildings) {
+  if (!buildings.length) return null;
+  return buildings.filter(b => b.hasHeight).length / buildings.length;
 }
 
 

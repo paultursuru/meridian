@@ -259,6 +259,7 @@ const urls: Record<Lang, string> = {
     </div>
   </div>
   <div id="weather-note"></div>
+  <div id="quality-note"></div>
 </div>
 
 <script>
@@ -266,14 +267,14 @@ const urls: Record<Lang, string> = {
   import { getSun, getSunTimes, compassDir, makeSunSampler } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
-  import { routesBbox, fetchBuildings }  from '../lib/buildings.js';
+  import { routesBbox, fetchBuildings, heightCoverage } from '../lib/buildings.js';
   import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather }                from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
-  import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { TZ_CENTERS } from '../lib/tzCenters.js';
@@ -415,6 +416,9 @@ const urls: Record<Lang, string> = {
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       }
       const single = night || routes.length === 1;
+
+      const coverage = heightCoverage(buildings);
+      showQualityNote(coverage == null ? null : tr('height_data_note', { pct: String(Math.round(coverage * 100)) }));
 
       // Re-scores every already-fetched route for a given instant and re-renders
       // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole

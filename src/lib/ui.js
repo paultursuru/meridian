@@ -23,6 +23,16 @@ export function showToast(msg, type = 'error') {
   toastTimer = setTimeout(() => el.classList.remove('on'), 4500);
 }
 
+// OSM building-height confidence hint (review 3.5): honest disclosure of how
+// much of the shade computation rests on real data vs. type/default guesses,
+// so sparse-coverage areas read as "data gap" rather than "broken app".
+// msg falsy (e.g. no buildings fetched, night search) hides the note.
+export function showQualityNote(msg) {
+  const el = document.getElementById('quality-note');
+  el.textContent = msg || '';
+  el.classList.toggle('on', !!msg);
+}
+
 // Extra walking time from climbing: ~4 min per 100 m of ascent (Naismith-style,
 // conservative — strong walkers feel little of it). Only the uphill counts.
 function climbSeconds(rt) {
