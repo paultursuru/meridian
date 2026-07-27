@@ -211,3 +211,5 @@ than a drop-in API swap:
   `fetchBuildings(bbox, { switzerland })` (`buildings.js`) calls
   `swissbuildings-lookup` when both route endpoints resolve to `ch`; every
   other route is unaffected, byte-for-byte the same Overpass path as before.
+
+Data: [swissBUILDINGS3D 3.0](https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta), © [swisstopo](https://github.com/swisstopo) — Federal Office of Topography.
