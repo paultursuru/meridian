@@ -3,6 +3,7 @@ import '../styles/main.css';
 import { translations, type Lang } from '../lib/i18n';
 import AboutContent from '../components/AboutContent.astro';
 import targetIcon from '../icons/target.svg?raw';
+import arrowIcon from '../icons/arrow.svg?raw';
 
 interface Props {
   lang: Lang;
@@ -76,9 +77,6 @@ const urls: Record<Lang, string> = {
       <button id="about-btn" aria-label={t.aria_about}>i</button>
     </div>
   </div>
-  <div id="app-description">
-    <p>{t.meta_description}</p>
-  </div>
   <div id="install-banner">
     <span id="install-banner-text"></span>
     <div id="install-banner-actions">
@@ -125,6 +123,13 @@ const urls: Record<Lang, string> = {
     </div>
   </div>
   <div id="map">
+    <div id="app-description">
+      <div id="app-description-arrow" set:html={arrowIcon} />
+      <div id="app-description-content">
+        <p set:html={t.app_description}></p>
+      </div>
+      <button id="app-description-close" aria-label={t.aria_close}>×</button>
+    </div>
     <div id="map-splash"><span>{t.map_loading}</span></div>
   </div>
 </div>
@@ -299,6 +304,14 @@ const urls: Record<Lang, string> = {
   const input  = (id: string) => el<HTMLInputElement>(id);
   const button = (id: string) => el<HTMLButtonElement>(id);
 
+  // App description bubble: intro shown over the map on load, dismissed by
+  // its own close button or, automatically, the moment a search starts —
+  // it's onboarding, not something worth keeping around once the user acts.
+  function hideAppDescription() {
+    el('app-description').classList.add('hidden');
+  }
+  button('app-description-close').addEventListener('click', hideAppDescription);
+
   const now = new Date();
   input('inp-date').value = localDateValue(now);
   input('inp-time').value = now.toTimeString().slice(0, 5);
@@ -362,6 +375,7 @@ const urls: Record<Lang, string> = {
     button('depart-toggle').disabled = true;
     button('depart-confirm').disabled = true;
     closeDepartPopover();
+    hideAppDescription();
     el('results').classList.remove('on');
     hideScrubber();
 
