@@ -79,11 +79,35 @@ export function heightCoverage(buildings) {
 }
 
 
+// swissbuildings-lookup returns the raw union of every tile overlapping the
+// bbox, unfiltered and un-deduped — it deliberately never parses building
+// JSON server-side (that's what was blowing the Workers Free plan's 10ms/
+// request CPU budget). So the exact-bbox filter and the tile-boundary dedup
+// (adjacent swisstopo map sheets overlap slightly, so a building near a tile
+// edge can appear in two tiles' data) both happen here instead, where CPU
+// time isn't capped.
+function insideBbox(building, bbox) {
+  const [s, w, n, e] = bbox;
+  const { lat, lng } = building.centroid;
+  return lng >= w && lng <= e && lat >= s && lat <= n;
+}
+
+function dedupeSwissBuildings(buildings) {
+  const seen = new Set();
+  return buildings.filter(b => {
+    const key = `${b.centroid.lat.toFixed(6)},${b.centroid.lng.toFixed(6)},${b.height.toFixed(2)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 async function fetchSwissBuildings(bbox) {
   const [s, w, n, e] = bbox;
   const r = await fetch(`${SWISSBUILDINGS_ENDPOINT}/?bbox=${w},${s},${e},${n}`);
   if (!r.ok) throw new Error(`swissbuildings-lookup HTTP ${r.status}`);
-  return r.json();
+  const raw = await r.json();
+  return dedupeSwissBuildings(raw).filter(b => insideBbox(b, bbox));
 }
 
 // switzerland: true when both route endpoints resolved to Switzerland (see

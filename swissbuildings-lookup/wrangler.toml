@@ -5,3 +5,7 @@ compatibility_date = "2025-01-01"
 [[r2_buckets]]
 binding = "TILES"
 bucket_name = "swissbuildings-tiles"
+
+[[kv_namespaces]]
+binding = "SWISSBUILDINGS_CACHE"
+id = "96740bd6ad9144cfbcf6dfcd42a8dfdc"
