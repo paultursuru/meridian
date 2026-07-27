@@ -35,7 +35,7 @@ pnpm-debug.log*
 swisstopo-etl/extracted/
 swisstopo-etl/*.gdb.zip
 swisstopo-etl/*.geojson
-# step 8 nationwide run: per-chunk outputs (already uploaded to R2) and its log
+swisstopo-etl/*.json
 swisstopo-etl/chunks/
 swisstopo-etl/build_log.jsonl
 

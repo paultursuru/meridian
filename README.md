@@ -211,9 +211,3 @@ than a drop-in API swap:
   `fetchBuildings(bbox, { switzerland })` (`buildings.js`) calls
   `swissbuildings-lookup` when both route endpoints resolve to `ch`; every
   other route is unaffected, byte-for-byte the same Overpass path as before.
-
-Full write-up, including the real data-quality bugs found along the way
-(a swisstopo attribute that turned out to always be null, a rare
-merged-building artifact, and the tile-overlap duplicate-building bug above),
-in `docs/swisstopo-building-heights-onepager.md` and
-`docs/swisstopo-phase-a-etl-tutorial.md`.
