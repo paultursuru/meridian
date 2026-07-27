@@ -1,8 +1,8 @@
 // Worker de lookup bbox devant R2 pour les bâtiments suisses (swissBUILDINGS3D).
 // Reçoit une bbox WGS84, trouve les tuiles (feuilles de carte swisstopo) qui la
-// recoupent, les récupère depuis R2, et renvoie les bâtiments dans la bbox
-// exacte — même forme { centroid, height, verts, radius, hasHeight } que ce
-// que buildings.js produit déjà pour OSM, donc aucun changement en aval.
+// recoupent, et renvoie l'union brute des bâtiments de ces tuiles — jamais
+// parsés en objets JS côté Worker (voir plus bas pourquoi). buildings.js fait
+// le filtre bbox exact + la dédup côté client, où le CPU n'est pas limité.
 
 import grid from './output_grid.json';
 
@@ -40,28 +40,26 @@ function overlaps(bbox, tileBbox) {
   return qw < te && qe > tw && qs < tn && qn > ts;
 }
 
-function insideBbox(building, bbox) {
-  const [w, s, e, n] = bbox;
-  const { lat, lng } = building.centroid;
-  return lng >= w && lng <= e && lat >= s && lat <= n;
-}
-
-// Adjacent swisstopo map sheets overlap slightly at their edges, so a
-// building near a tile boundary gets extracted into both neighbours' chunks
-// during the national ETL run — a query spanning that boundary would
-// otherwise return it twice. Same building = same centroid + height to a
-// few decimal places (no stable id survives into the collapsed output).
-function dedupe(buildings) {
-  const seen = new Set();
-  return buildings.filter(b => {
-    const key = `${b.centroid.lat.toFixed(6)},${b.centroid.lng.toFixed(6)},${b.height.toFixed(2)}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+// Strips the outer [ ] from each tile's raw JSON-array text and rejoins them
+// as one array, entirely as string operations — no JSON.parse/stringify of
+// building data anywhere. That parsing (megabytes of it, for a typical
+// multi-tile route bbox) is what was blowing the Workers Free plan's
+// 10ms/request CPU budget (non-negotiable, unlike the Paid plan's 30s) and
+// causing intermittent 503s ("Worker exceeded CPU time limit").
+function concatRawJsonArrays(texts) {
+  const bodies = texts
+    .map(t => t.trim())
+    .filter(t => t.length > 2) // drop "[]"/empty — an overlapping tile can be one of the confirmed-empty chunks that was never uploaded
+    .map(t => t.slice(1, -1));
+  return `[${bodies.join(',')}]`;
 }
 
 const CACHE_TTL = 60 * 60 * 24 * 30; // 30 days, matches overpass-cache — swisstopo data only updates ~yearly
+// KV rejects values over 25 MiB (26_214_400 bytes) — hit for real on a bbox
+// spanning enough/dense-enough tiles (confirmed: a 0.1°x0.1° box near Zürich
+// produced a 46 MB union). Skip the cache write rather than 500 on a bbox
+// that happens to be unusually large — the response itself still goes out.
+const KV_MAX_VALUE_SIZE = 20_000_000;
 
 export default {
   async fetch(request, env) {
@@ -87,34 +85,35 @@ export default {
       return withCors(json({ error: 'bbox must be west,south,east,north' }, 400), origin);
     }
 
-    // Cache key = the exact bbox string. A hit skips R2 entirely and returns
-    // the stored JSON text as-is (no JSON.parse/stringify) — this is the
-    // actual fix for the CPU-time-limit 503s on the Workers Free plan
-    // (10ms/request, non-negotiable): parsing megabytes of R2 JSON plus
-    // re-serializing the filtered result is what blows the budget, and a
-    // cache hit does neither.
-    const cached = await env.SWISSBUILDINGS_CACHE.get(bboxParam);
+    const sheets = grid.filter(t => overlaps(bbox, t.bbox));
+    if (sheets.length === 0) {
+      return withCors(rawJson('[]'), origin);
+    }
+
+    // Cache key = the sorted set of overlapping tiles, not the (near-always
+    // unique) exact bbox — two different routes through the same
+    // neighbourhood touch the same tiles, so this is what actually repeats
+    // across searches. The cached value is the raw union of those tiles'
+    // buildings, unfiltered and un-deduped (see buildings.js for why that's
+    // fine to send to the client as-is).
+    const cacheKey = sheets.map(t => t.sheet).sort().join(',');
+    const cached = await env.SWISSBUILDINGS_CACHE.get(cacheKey);
     if (cached) {
       return withCors(rawJson(cached), origin);
     }
 
-    const sheets = grid.filter(t => overlaps(bbox, t.bbox));
-
-    const chunks = await Promise.all(
-      sheets.map(async t => {
-        const obj = await env.TILES.get(`swissbuildings3d_3_0_${t.sheet}.json`);
-        if (!obj) return [];
-        return obj.json();
-      }),
+    const texts = await Promise.all(
+      sheets.map(t =>
+        env.TILES.get(`swissbuildings3d_3_0_${t.sheet}.json`).then(obj => (obj ? obj.text() : null)),
+      ),
     );
+    const body = concatRawJsonArrays(texts.filter(Boolean));
 
-    // Dedup only matters when >=2 tiles are merged (see dedupe() above) — a
-    // guaranteed no-op, and extra CPU cost, when the bbox falls in one tile.
-    const merged = sheets.length > 1 ? dedupe(chunks.flat()) : chunks.flat();
-    const buildings = merged.filter(b => insideBbox(b, bbox));
-
-    const body = JSON.stringify(buildings);
-    await env.SWISSBUILDINGS_CACHE.put(bboxParam, body, { expirationTtl: CACHE_TTL });
+    if (body.length < KV_MAX_VALUE_SIZE) {
+      await env.SWISSBUILDINGS_CACHE.put(cacheKey, body, { expirationTtl: CACHE_TTL });
+    } else {
+      console.warn(`swissbuildings-lookup: skipping cache, ${body.length} bytes for [${cacheKey}]`);
+    }
 
     return withCors(rawJson(body), origin);
   },
@@ -128,7 +127,7 @@ function json(data, status = 200) {
 }
 
 // Same as json(), but for a body that's already a JSON string (a cache hit,
-// or one we just built ourselves) — skips a redundant JSON.stringify.
+// or the concatenated tile text) — skips a redundant JSON.stringify.
 function rawJson(body) {
   return new Response(body, {
     status: 200,
