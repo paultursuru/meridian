@@ -26,11 +26,8 @@ pnpm-debug.log*
 .agents
 .claude 
 
-# cloudflare worker — état local de `wrangler dev` (cache KV simulé, logs)
-overpass-cache/.wrangler/
-docs/
-
-tmp/
+# cloudflare worker — état local de `wrangler dev`/`wrangler r2` (cache KV/R2 simulé, logs)
+.wrangler/
 
 # swisstopo raw source data (national FileGDB, tens of GB) — never commit
 *.gdb/
@@ -38,3 +35,9 @@ tmp/
 swisstopo-etl/extracted/
 swisstopo-etl/*.gdb.zip
 swisstopo-etl/*.geojson
+# step 8 nationwide run: per-chunk outputs (already uploaded to R2) and its log
+swisstopo-etl/chunks/
+swisstopo-etl/build_log.jsonl
+
+docs/
+tmp/

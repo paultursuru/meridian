@@ -39,15 +39,20 @@ function formatPhotonFeature(feature) {
   const short = line2 ? `${line1}, ${line2}` : line1;
   const label = [line1, line2].filter(Boolean).join(', ');
   const [lng, lat] = feature.geometry.coordinates;
-  return { label, line1, line2, short, lat, lng };
+  const countryCode = p.countrycode ? p.countrycode.toLowerCase() : undefined;
+  return { label, line1, line2, short, lat, lng, countryCode };
 }
 
+// countryCode: lowercase ISO 3166-1 alpha-2 (e.g. 'ch'), or undefined when
+// unknown — used to route Swiss searches to the swissBUILDINGS3D pipeline
+// instead of Overpass (see buildings.js's fetchBuildings).
 export async function geocode(q) {
-  const url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=${getLang()}`;
+  const url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1&accept-language=${getLang()}`;
   const r = await fetch(url);
   const d = await r.json();
   if (!d.length) throw new Error(tr('error_address_not_found', { q }));
-  return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+  const countryCode = d[0].address?.country_code;
+  return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), countryCode };
 }
 
 export async function reverseGeocode(lat, lng) {
@@ -56,7 +61,7 @@ export async function reverseGeocode(lat, lng) {
   const d = await r.json();
   if (!d.display_name) throw new Error(tr('error_position_unknown'));
   const { short } = formatAddress(d);
-  return short;
+  return { short, countryCode: d.address?.country_code };
 }
 
 // Returns up to 5 suggestions for the autocomplete dropdown.

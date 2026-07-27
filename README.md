@@ -11,7 +11,7 @@ Live at [meridian-way.ch](https://meridian-way.ch), available in French, German,
 1. **Geocoding:** address autocomplete via Photon (komoot.io); the final address-to-coordinates lookup on search uses Nominatim (OSM). Reverse geocoding (for the geolocation buttons) also uses Nominatim.
 2. **Sun position:** altitude and azimuth computed with [SunCalc](https://github.com/mourner/suncalc) for the chosen date, time and route midpoint. The date/time inputs are interpreted as wall-clock time at the destination (via `tz-lookup`), not the browser's local time. The sun is not frozen at departure: shadow scoring moves it along the walk (see 5).
 3. **Route generation:** OpenRouteService (`foot-walking`, GeoJSON) returns up to 3 alternative routes per query (`alternative_routes`, capped by ORS itself), tuned for diversity with `weight_factor`/`share_factor`. Requests go through a Cloudflare Worker proxy (`ors-proxy/`) that holds the ORS API key server-side and caches responses in KV for 7 days, so the key never ships in the client bundle and repeat searches are free.
-4. **Building & vegetation data:** the Overpass API (via a caching Cloudflare Worker, `overpass-cache/`, 30-day KV TTL) fetches all building footprints in the route bounding box, with real heights from OSM tags (`height`, `building:levels`) and per-type defaults otherwise (10 m for ordinary buildings, ~2.5 m for garages/sheds/huts, 22 m for churches and towers), plus trees (`natural=tree`, `natural=tree_row`) and forest polygons (`landuse=forest`, `natural=wood`) with seasonal leaf-coverage modelling (deciduous vs evergreen, based on the chosen date and hemisphere). Forest canopy counts as fractional shade (~85% dense), so a route through a wood scores shady in summer but mostly sunny under bare winter branches.
+4. **Building & vegetation data:** for routes fully within Switzerland (both endpoints resolve to country code `ch`), building footprints and heights come from swisstopo's **swissBUILDINGS3D 3.0** dataset instead — offline-converted nationwide (see [Swiss building-height data](#swiss-building-height-data) below) and served from Cloudflare R2 through a bbox-lookup Worker (`swissbuildings-lookup/`), so every building has a real geometry-derived height, no fallback guessing. Everywhere else, the Overpass API (via a caching Cloudflare Worker, `overpass-cache/`, 30-day KV TTL) fetches building footprints in the route bounding box, with real heights from OSM tags (`height`, `building:levels`) and per-type defaults otherwise (10 m for ordinary buildings, ~2.5 m for garages/sheds/huts, 22 m for churches and towers). Vegetation — trees (`natural=tree`, `natural=tree_row`) and forest polygons (`landuse=forest`, `natural=wood`), with seasonal leaf-coverage modelling (deciduous vs evergreen, based on the chosen date and hemisphere) — always comes from Overpass, everywhere, regardless of country. Forest canopy counts as fractional shade (~85% dense), so a route through a wood scores shady in summer but mostly sunny under bare winter branches.
 5. **Shadow scoring:** for each route segment (sampled at 25/50/75%), every building's and tree's shadow is evaluated with a geometrically exact model: the sun ray from the sample point toward the sun is tested against each polygon (point-in-polygon plus edge-intersection), correctly handling buildings anywhere between the ground point and the shadow-tip, not just at the exact shadow length. Each segment is scored with the sun at its **estimated arrival time** (cumulative distance ÷ walking pace, SunCalc memoized per minute of walking) — over a 45-min walk the sun moves ~11° of azimuth, enough to flip which side of a street is shaded, and a mid-route sunset shades the remaining segments.
 6. **Ranking:** routes are deduplicated by geometry overlap (not by distance) so that two similar-length routes on different streets both survive, then sorted by sun fraction; the sunniest and shadiest are highlighted. At night (sun below the horizon) shadow scoring is skipped entirely and only the shortest route is shown.
 7. **Display:** both routes are drawn with a per-segment orange-to-blue gradient matching the actual sun/shade pattern; the recommended tab is pre-selected using forecast temperature when available (Open-Meteo, up to 15 days out), falling back to a season/altitude heuristic otherwise.
@@ -29,7 +29,8 @@ Live at [meridian-way.ch](https://meridian-way.ch), available in French, German,
 | Geocoding (autocomplete) | [Photon](https://photon.komoot.io) (komoot.io) |
 | Geocoding (search / reverse) | [Nominatim](https://nominatim.org) (OSM) |
 | Sun position | [SunCalc](https://github.com/mourner/suncalc) |
-| Building & tree footprints | [Overpass API](https://overpass-api.de) (OSM), proxied and cached through a Cloudflare Worker |
+| Building footprints & heights (Switzerland) | [swisstopo swissBUILDINGS3D 3.0](https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta), offline-converted nationwide, served via Cloudflare R2 + a bbox-lookup Worker (`swissbuildings-lookup/`) |
+| Building footprints & heights (elsewhere) + tree/forest footprints (everywhere) | [Overpass API](https://overpass-api.de) (OSM), proxied and cached through a Cloudflare Worker |
 | Weather (tab preselection) | [Open-Meteo](https://open-meteo.com) cloud cover / temperature forecast |
 | Timezone resolution | `tz-lookup` |
 | Error monitoring | [Sentry](https://sentry.io) (`@sentry/astro`) |
@@ -80,7 +81,8 @@ meridian/
 ├── tests/                    # Vitest unit tests
 ├── ors-proxy/                # Cloudflare Worker: ORS API key + response cache (KV)
 ├── overpass-cache/           # Cloudflare Worker: Overpass response cache (KV)
-├── swisstopo-etl/            # offline ETL prototype: swisstopo building data → app's building shape (see below)
+├── swissbuildings-lookup/    # Cloudflare Worker: bbox lookup over the converted swisstopo data (R2)
+├── swisstopo-etl/            # offline ETL: swisstopo FileGDB → app's building shape → R2 (see below)
 ├── docs/                     # product review notes
 ├── Dockerfile, nginx.conf, fly.toml   # production build/deploy (Fly.io)
 └── package.json
@@ -108,7 +110,7 @@ npm run preview    # preview the build locally
 npm test           # run the Vitest suite
 ```
 
-The Cloudflare Workers in `ors-proxy/` and `overpass-cache/` are separate deployables (each with its own `wrangler.toml` and KV namespace); they are not part of the Astro build and only need redeploying when their own code changes.
+The Cloudflare Workers in `ors-proxy/`, `overpass-cache/` and `swissbuildings-lookup/` are separate deployables (each with its own `wrangler.toml`; the first two bind a KV namespace, `swissbuildings-lookup/` binds the `swissbuildings-tiles` R2 bucket instead); they are not part of the Astro build and only need redeploying when their own code changes.
 
 ---
 
@@ -132,7 +134,7 @@ The app uses OSM-based services everywhere (Nominatim, Photon, ORS, Overpass), s
 
 The initial map view adapts to the visitor's location: before any search, it centers on the browser's IANA timezone (`src/lib/tzCenters.js`), or on precise geolocation if that permission was already granted in an earlier visit — either way, silently, with no permission prompt shown to a first-time visitor.
 
-The main variable across regions is **building height data quality**: OSM coverage is excellent in dense European cities but sparse elsewhere. The table below shows the main limitations and how they could be improved.
+The main variable across regions is **building height data quality**: OSM coverage is excellent in dense European cities but sparse elsewhere — Switzerland is now the one exception with authoritative, complete coverage (see [Swiss building-height data](#swiss-building-height-data) below). The table below shows the main limitations elsewhere and how they could be improved.
 
 ## Results drawer
 
@@ -163,7 +165,7 @@ Reopening the installed app tries to prefill the "start" field from the device's
 
 | Limitation | Potential improvement |
 |---|---|
-| OSM building heights are incomplete in many areas | Integrate authoritative 3D building datasets per country (e.g. swisstopo swissBUILDINGS3D / swissSURFACE3D for Switzerland, IGN BD TOPO for France, OS Building Height Attribute for the UK) |
+| OSM building heights are incomplete in many areas outside Switzerland | Integrate authoritative 3D building datasets per country, the way Switzerland already got swissBUILDINGS3D (e.g. IGN BD TOPO for France, OS Building Height Attribute for the UK) |
 | ORS `alternative_routes` is capped at 3 by the API | No workaround short of a different routing backend for more variety |
 | Route deduplication by geometry overlap may still merge or split edge cases | Tune the grid-cell resolution and overlap threshold in `routing.js` |
 | Flat-roof assumption | Extend to pitched roofs using OSM `roof:shape` |
@@ -171,29 +173,47 @@ Reopening the installed app tries to prefill the "start" field from the device's
 
 ---
 
-## Swiss building-height data (work in progress)
+## Swiss building-height data
 
 OSM building-height coverage varies a lot by city — a real showcase route
 through Lausanne only had real height data (vs. a generic fallback guess)
 for 26% of buildings, well behind Paris (70%) or New York (98%). For
 Switzerland specifically, swisstopo publishes **swissBUILDINGS3D 3.0**, an
 authoritative per-building 3D dataset with real geometry-derived heights for
-every building — no fallback guessing needed.
+every building — no fallback guessing needed. As of July 2026, MeridianWay
+uses it for every route fully within Switzerland.
 
-This isn't a live API swap: swisstopo only distributes this data as bulk
-FileGDB archives (no per-request bbox endpoint like Overpass), so it needs
-an offline conversion step first. `swisstopo-etl/collapse.py` is a working
-prototype of that conversion — it takes a swisstopo GeoJSON export and
-reduces each building to exactly the `{ centroid, height, verts, radius }`
-shape `buildings.js` already produces for OSM data, so the rest of the app
-(`scoreRoute`, `shadow.js`, the height-coverage hint) needs zero changes
-once this is wired in. Validated on a real tile (Lausanne-area, ~2700
-buildings): plausible height histogram, and a live in-app check confirmed
-the height-coverage hint reaching 100% for a route using the converted data.
+swisstopo doesn't expose a live per-bbox API the way Overpass does — it only
+distributes bulk FileGDB archives — so this is a two-phase pipeline rather
+than a drop-in API swap:
 
-**Not done yet**: converting all of Switzerland (the prototype above only
-covers one small area), storing the result somewhere bbox-queryable (likely
-Cloudflare R2 + a Worker, same pattern as `overpass-cache/`), and adding the
-Switzerland branch to `fetchBuildings()` that actually switches routes over
-to this data. `swisstopo-etl/collapse.py` is safe to read/run today — it has
-no effect on the running app until that wiring exists.
+- **Offline ETL** (`swisstopo-etl/`, run once against the national
+  `SWISSBUILDINGS3D_3_0.gdb` archive, re-run roughly yearly as swisstopo
+  updates it): `build_national.py` loops over Switzerland's 3230 map-sheet
+  chunks (the same tiling swisstopo's own STAC API uses, deduplicated across
+  vintages), extracts each with GDAL (`ogr2ogr -spat`), reprojects LV95 →
+  WGS84, and collapses every building to exactly the `{ centroid, height,
+  verts, radius }` shape `buildings.js` already produces for OSM data — so
+  the rest of the app (`scoreRoute`, `shadow.js`, the height-coverage hint)
+  needed zero changes. `collapse.py` holds the per-building conversion logic
+  (see `docs/collapse-py-explained.md` and `docs/build-national-py-explained.md`
+  for line-by-line walkthroughs). The full national run produced **2,667,844
+  buildings** across 3222 non-empty chunks, uploaded to a Cloudflare R2
+  bucket (`swissbuildings-tiles`).
+- **Runtime lookup** (`swissbuildings-lookup/`, a Cloudflare Worker bound to
+  that R2 bucket): given a bbox, finds the overlapping chunks, fetches them
+  from R2, deduplicates buildings that fall in the slight overlap margin
+  between adjacent map sheets, and returns those inside the exact bbox —
+  same response shape Overpass-derived data already has downstream.
+- **Country detection** (`geocode.js`): `geocode()`/`suggest()`/
+  `reverseGeocode()` all resolve a `countryCode` alongside coordinates
+  (Nominatim `addressdetails=1`, Photon's `properties.countrycode`).
+  `fetchBuildings(bbox, { switzerland })` (`buildings.js`) calls
+  `swissbuildings-lookup` when both route endpoints resolve to `ch`; every
+  other route is unaffected, byte-for-byte the same Overpass path as before.
+
+Full write-up, including the real data-quality bugs found along the way
+(a swisstopo attribute that turned out to always be null, a rare
+merged-building artifact, and the tile-overlap duplicate-building bug above),
+in `docs/swisstopo-building-heights-onepager.md` and
+`docs/swisstopo-phase-a-etl-tutorial.md`.
