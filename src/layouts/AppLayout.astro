@@ -375,6 +375,12 @@ const urls: Record<Lang, string> = {
       const midLat = (startC.lat + endC.lat) / 2;
       const midLng = (startC.lng + endC.lng) / 2;
 
+      // Both endpoints must resolve to Switzerland — a route with only one
+      // Swiss endpoint might still cross the border, so treat that case as
+      // OSM (the safe default when a countryCode is missing, e.g. geolocation
+      // or a restored shared link that skipped geocode()).
+      const switzerland = startC.countryCode === 'ch' && endC.countryCode === 'ch';
+
       // Date/time inputs are wall-clock values for the route's location, not
       // the browser's — resolve the destination's IANA zone and convert.
       const destTz = resolveTimeZone(midLat, midLng);
@@ -409,7 +415,7 @@ const urls: Record<Lang, string> = {
         // so skip the two Overpass round trips entirely.
         setStatus(tr('status_buildings'));
         [buildings, { trees, forests }] = await Promise.all([
-          fetchBuildings(bbox),
+          fetchBuildings(bbox, { switzerland }),
           fetchVegetation(bbox),
         ]);
         leafFrac = deciduousLeafFrac(tDate, midLat);
@@ -418,7 +424,8 @@ const urls: Record<Lang, string> = {
       const single = night || routes.length === 1;
 
       const coverage = heightCoverage(buildings);
-      showQualityNote(coverage == null ? null : tr('height_data_note', { pct: String(Math.round(coverage * 100)) }));
+      const heightNoteKey = switzerland ? 'height_data_note_swisstopo' : 'height_data_note_osm';
+      showQualityNote(coverage == null ? null : tr(heightNoteKey, { pct: String(Math.round(coverage * 100)) }));
 
       // Re-scores every already-fetched route for a given instant and re-renders
       // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole
@@ -524,9 +531,9 @@ const urls: Record<Lang, string> = {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
       });
-      const label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+      const { short: label, countryCode } = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      ac.setPlace({ lat, lng, label });
+      ac.setPlace({ lat, lng, label, countryCode });
       setPreviewPin(role, { lat, lng });
       syncInputState();
       saveLastPosition(lat, lng);
@@ -637,6 +644,16 @@ const urls: Record<Lang, string> = {
   if (shared.end)   { endAC.setPlace(shared.end);     setPreviewPin('end',   shared.end); }
   syncInputState();
   if (shared.start && shared.end) {
+    // A shared link only carries lat/lng/label, not country — resolve it now
+    // so a Swiss link reliably uses swissBUILDINGS3D on reload instead of
+    // silently falling back to Overpass (which is flaky enough on its own
+    // that the coverage note was coming back empty).
+    const [startCC, endCC] = await Promise.all([
+      reverseGeocode(shared.start.lat, shared.start.lng).then(r => r.countryCode).catch(() => undefined),
+      reverseGeocode(shared.end.lat, shared.end.lng).then(r => r.countryCode).catch(() => undefined),
+    ]);
+    startAC.setPlace({ ...shared.start, countryCode: startCC });
+    endAC.setPlace({ ...shared.end, countryCode: endCC });
     handleSearch();
   } else if (isStandalone()) {
     // Installed-app relaunch (review 6.2): try to prefill "start" from the
@@ -660,8 +677,8 @@ const urls: Record<Lang, string> = {
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
       });
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      const label = await reverseGeocode(lat, lng);
-      startAC.setPlace({ lat, lng, label });
+      const { short: label, countryCode } = await reverseGeocode(lat, lng);
+      startAC.setPlace({ lat, lng, label, countryCode });
       setPreviewPin('start', { lat, lng });
       syncInputState();
       saveLastPosition(lat, lng);
@@ -672,8 +689,8 @@ const urls: Record<Lang, string> = {
       const cached = getLastPosition();
       if (!cached) return false;
       try {
-        const label = await reverseGeocode(cached.lat, cached.lng);
-        startAC.setPlace({ lat: cached.lat, lng: cached.lng, label });
+        const { short: label, countryCode } = await reverseGeocode(cached.lat, cached.lng);
+        startAC.setPlace({ lat: cached.lat, lng: cached.lng, label, countryCode });
         setPreviewPin('start', cached);
         syncInputState();
         return true;

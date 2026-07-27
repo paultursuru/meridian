@@ -172,9 +172,12 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
   return {
     // Returns the pre-resolved {lat, lng} if the user picked a suggestion, null otherwise
     getPlace: () => selectedPlace,
-    // Inject a pre-resolved place (e.g. from geolocation) without re-geocoding
-    setPlace: ({ lat, lng, label }) => {
-      selectedPlace = { lat, lng, label, line1: label, line2: '', short: label };
+    // Inject a pre-resolved place (e.g. from geolocation) without re-geocoding.
+    // countryCode is optional — absent for shared-link restores, which don't
+    // re-geocode; treated as "not confirmed Switzerland" downstream (see
+    // AppLayout.astro's `switzerland` check).
+    setPlace: ({ lat, lng, label, countryCode = undefined }) => {
+      selectedPlace = { lat, lng, label, line1: label, line2: '', short: label, countryCode };
       inputEl.value = label;
     },
     // Snapshot of the field (text + cached place) — used to swap start/end

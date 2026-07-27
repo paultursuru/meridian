@@ -1,5 +1,7 @@
 import { overpassFetch } from './overpass.js';
 
+const SWISSBUILDINGS_ENDPOINT = 'https://swissbuildings-lookup.meridianway.workers.dev';
+
 export function routesBbox(routes) {
   let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity;
   routes.forEach(rt => rt.geometry.coordinates.forEach(([lng, lat]) => {
@@ -77,7 +79,28 @@ export function heightCoverage(buildings) {
 }
 
 
-export async function fetchBuildings(bbox) {
+async function fetchSwissBuildings(bbox) {
+  const [s, w, n, e] = bbox;
+  const r = await fetch(`${SWISSBUILDINGS_ENDPOINT}/?bbox=${w},${s},${e},${n}`);
+  if (!r.ok) throw new Error(`swissbuildings-lookup HTTP ${r.status}`);
+  return r.json();
+}
+
+// switzerland: true when both route endpoints resolved to Switzerland (see
+// geocode()'s countryCode) — swaps Overpass for the pre-converted
+// swissBUILDINGS3D data (docs/swisstopo-building-heights-onepager.md),
+// already in the exact { centroid, height, verts, radius, hasHeight } shape
+// parseBuildings() produces below, so nothing downstream changes.
+export async function fetchBuildings(bbox, { switzerland = false } = {}) {
+  if (switzerland) {
+    try {
+      return await fetchSwissBuildings(bbox);
+    } catch (err) {
+      console.warn('swissbuildings-lookup failed, shadows disabled for this query', err);
+      return [];
+    }
+  }
+
   const [s, w, n, e] = bbox;
   const q = `[out:json][timeout:25];(way["building"](${s},${w},${n},${e}););out body;>;out skel qt;`;
   try {
