@@ -391,6 +391,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Map ── */
 #map { flex: 1; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
+/* Blurred shadow under the sun/shade route gradient (see drawGradientRoute in map.js) —
+   a soft glow reads as a shadow, unlike a crisp parallel outline. */
+#map .route-casing { filter: blur(2px); }
 
 /* "Center on my location" Leaflet control — sized/centered to match the
    default (unstyled) zoom control it stacks under; icon inherits Leaflet's
