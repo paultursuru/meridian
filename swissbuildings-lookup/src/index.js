@@ -61,6 +61,8 @@ function dedupe(buildings) {
   });
 }
 
+const CACHE_TTL = 60 * 60 * 24 * 30; // 30 days, matches overpass-cache — swisstopo data only updates ~yearly
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin');
@@ -85,6 +87,17 @@ export default {
       return withCors(json({ error: 'bbox must be west,south,east,north' }, 400), origin);
     }
 
+    // Cache key = the exact bbox string. A hit skips R2 entirely and returns
+    // the stored JSON text as-is (no JSON.parse/stringify) — this is the
+    // actual fix for the CPU-time-limit 503s on the Workers Free plan
+    // (10ms/request, non-negotiable): parsing megabytes of R2 JSON plus
+    // re-serializing the filtered result is what blows the budget, and a
+    // cache hit does neither.
+    const cached = await env.SWISSBUILDINGS_CACHE.get(bboxParam);
+    if (cached) {
+      return withCors(rawJson(cached), origin);
+    }
+
     const sheets = grid.filter(t => overlaps(bbox, t.bbox));
 
     const chunks = await Promise.all(
@@ -95,15 +108,30 @@ export default {
       }),
     );
 
-    const buildings = dedupe(chunks.flat()).filter(b => insideBbox(b, bbox));
+    // Dedup only matters when >=2 tiles are merged (see dedupe() above) — a
+    // guaranteed no-op, and extra CPU cost, when the bbox falls in one tile.
+    const merged = sheets.length > 1 ? dedupe(chunks.flat()) : chunks.flat();
+    const buildings = merged.filter(b => insideBbox(b, bbox));
 
-    return withCors(json(buildings), origin);
+    const body = JSON.stringify(buildings);
+    await env.SWISSBUILDINGS_CACHE.put(bboxParam, body, { expirationTtl: CACHE_TTL });
+
+    return withCors(rawJson(body), origin);
   },
 };
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+// Same as json(), but for a body that's already a JSON string (a cache hit,
+// or one we just built ourselves) — skips a redundant JSON.stringify.
+function rawJson(body) {
+  return new Response(body, {
+    status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
 }
