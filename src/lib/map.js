@@ -15,7 +15,7 @@ let hereMarker = null;
 
 // Gradient endpoints: following brand light yellow (sun, #f0f2a0) → brand violet/lilac (shade, #e8c8f0) 
 // but a little bit less pale for contrast purposes
-const SUN_RGB   = [255, 253, 123];
+const SUN_RGB   = [247, 245, 109];
 const SHADE_RGB = [231, 135, 255];
 
 function lerpColor(t) {
@@ -42,8 +42,30 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
     if (ptShade[j] === null) ptShade[j] = 0.5;
   }
 
-  // Draw each individual sub-segment with the average shade of its two endpoints.
   const layers = [];
+
+  // Soft dark shadow under the gradient, drawn as a single full-length polyline
+  // (not per-segment, to avoid seams at the joints) — needed since switching back
+  // to a light basemap made the pale yellow/violet gradient hard to read in direct
+  // sunlight. Blurred via the .route-casing CSS class (main.css) rather than a
+  // crisp parallel outline, so it reads as a shadow, not a second line. Leaflet's
+  // SVG renderer only ever writes known style props (stroke/opacity/width/...) to
+  // the path, so `filter` has to go through a class, not an option here.
+  // Non-interactive so it never steals clicks from the colored line on top of it
+  // or from the map click below.
+  const casing = L.polyline(coords.map(([lng, lat]) => [lat, lng]), {
+    color: '#444444',
+    weight: weight + 3,
+    opacity,
+    lineCap: 'round',
+    lineJoin: 'round',
+    interactive: false,
+    className: 'route-casing',
+  });
+  casing._baseOpacity = opacity * 0.75;
+  layers.push(casing.addTo(_map));
+
+  // Draw each individual sub-segment with the average shade of its two endpoints.
   for (let j = 0; j < N - 1; j++) {
     const t = (ptShade[j] + ptShade[j + 1]) / 2;
     const [lng1, lat1] = coords[j];
@@ -56,6 +78,7 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
       lineJoin: 'round',
       bubblingMouseEvents: false, // keep route clicks from also closing the drawer via the map click below
     });
+    seg._baseOpacity = opacity;
     if (onClick) seg.on('click', onClick);
     layers.push(seg.addTo(_map));
   }
@@ -83,10 +106,10 @@ const LocateControl = L.Control.extend({
 
 export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
-  // OSM Bright GL vector style (openmaptiles/alidade-smooth-dark-gl-style), hosted by Stadia Maps.
+  // OSM Bright GL vector style (openmaptiles/alidade-smooth-gl-style), hosted by Stadia Maps.
   // Keyless on localhost; for production add a Stadia API key or domain auth.
   const glLayer = L.maplibreGL({
-    style: 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
+    style: 'https://tiles.stadiamaps.com/styles/alidade_smooth.json',
     attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(_map);
 
@@ -174,9 +197,14 @@ export function swapPreviewPins() {
 }
 
 // type: 'sunny' | 'shady' — full opacity for the active route, dimmed for the other.
+// Scales each layer's own base opacity (colored segments vs. their dimmer casing)
+// rather than a flat 1/0.5, so the casing stays proportionally subtler.
+function scaleOpacity(layer, active) {
+  layer.setStyle({ opacity: (layer._baseOpacity ?? 1) * (active ? 1 : 0.5) });
+}
 export function setActiveRoute(type) {
-  sunnyLayers.forEach(l => l.setStyle({ opacity: type === 'sunny' ? 1 : 0.5 }));
-  shadyLayers.forEach(l => l.setStyle({ opacity: type === 'shady' ? 1 : 0.5 }));
+  sunnyLayers.forEach(l => scaleOpacity(l, type === 'sunny'));
+  shadyLayers.forEach(l => scaleOpacity(l, type === 'shady'));
 }
 
 export function displayRoutes(startC, endC, sunny, shady) {
