@@ -11,6 +11,29 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:4321', // dev Astro
 ]);
 
+// In-memory per-IP fixed-window limiter — no Cloudflare rate-limiting product
+// needed (those are zone-level and this Worker lives on the shared
+// workers.dev domain, not a zone we own). Known limitation: state is local to
+// one isolate, so it resets on cold start and isn't shared across Cloudflare's
+// edge locations — a deterrent against a single scripted client hammering R2
+// reads, not a hard global cap.
+const RATE_LIMIT = 60; // requests
+const RATE_WINDOW_MS = 60_000; // per IP, per minute
+const MAX_TRACKED_IPS = 10_000; // safety valve against unbounded growth on a long-lived isolate
+const hits = new Map();
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  if (hits.size > MAX_TRACKED_IPS) hits.clear();
+  const entry = hits.get(ip);
+  if (!entry || now > entry.resetAt) {
+    hits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT;
+}
+
 function overlaps(bbox, tileBbox) {
   const [qw, qs, qe, qn] = bbox;
   const [tw, ts, te, tn] = tileBbox;
@@ -44,6 +67,11 @@ export default {
 
     if (request.method === 'OPTIONS') {
       return withCors(new Response(null, { status: 204 }), origin);
+    }
+
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (isRateLimited(ip)) {
+      return withCors(json({ error: 'rate limited' }, 429), origin);
     }
 
     const url = new URL(request.url);
