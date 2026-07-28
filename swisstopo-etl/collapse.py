@@ -62,11 +62,16 @@ def collapse_feature(feature):
     if len(hull) < 3:
         return None, None
 
-    verts = [{'lat': y, 'lng': x} for x, y in hull]
+    # 5 dp ~= 1.1m at Swiss latitudes. swisstopo states +/-30-50cm accuracy for
+    # this dataset, so 5dp's quantization error is in the same ballpark as the
+    # source's own noise rather than free precision — a deliberate tradeoff
+    # for a bigger gzip win, judged fine at pedestrian-route scale (see
+    # docs/2-search-latency-onepager.md step 2).
+    verts = [{'lat': round(y, 5), 'lng': round(x, 5)} for x, y in hull]
 
     centroid = {
-        'lat': sum(p['lat'] for p in verts) / len(verts),
-        'lng': sum(p['lng'] for p in verts) / len(verts),
+        'lat': round(sum(p['lat'] for p in verts) / len(verts), 5),
+        'lng': round(sum(p['lng'] for p in verts) / len(verts), 5),
     }
 
     cos_lat = math.cos(centroid['lat'] * math.pi / 180)
@@ -83,9 +88,9 @@ def collapse_feature(feature):
 
     return {
         'centroid': centroid,
-        'height': height,
+        'height': round(height, 1),
         'verts': verts,
-        'radius': radius,
+        'radius': round(radius, 1),
         'hasHeight': True,
     }, None
 
@@ -111,7 +116,7 @@ def main():
         out.append(b)
 
     with open(sys.argv[2], 'w') as f:
-        json.dump(out, f)
+        json.dump(out, f, separators=(',', ':'))
 
     print(f"collapsed {len(out)} buildings, skipped {skipped}, from {len(data['features'])} features")
 
