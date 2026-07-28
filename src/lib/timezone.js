@@ -1,7 +1,8 @@
-import tzlookup from 'tz-lookup';
-
-// IANA zone name (e.g. "America/New_York") for a given point.
-export function resolveTimeZone(lat, lng) {
+// IANA zone name (e.g. "America/New_York") for a given point. tz-lookup embeds
+// a ~150 KB coordinate table only needed once a search actually runs, so it's
+// loaded on demand instead of bundled into the first-load script (review #2 §2.3).
+export async function resolveTimeZone(lat, lng) {
+  const { default: tzlookup } = await import('tz-lookup');
   return tzlookup(lat, lng);
 }
 
