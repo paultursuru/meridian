@@ -268,7 +268,6 @@ const urls: Record<Lang, string> = {
 </div>
 
 <script>
-  import { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation } from '../lib/map.js';
   import { getSun, getSunTimes, compassDir, makeSunSampler } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
@@ -296,6 +295,12 @@ const urls: Record<Lang, string> = {
       umami?: { track: (event: string, data?: Record<string, unknown>) => void };
     }
   }
+
+  // Leaflet + MapLibre are ~330 KB of the first-load bundle and aren't needed
+  // until the map itself renders (the splash covers it until then), so they're
+  // split into their own chunk instead of blocking the whole app script
+  // (review #2 §2.3).
+  const { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation } = await import('../lib/map.js');
 
   initMap();
   initTabs((type: string) => setActiveRoute(type));
@@ -414,7 +419,7 @@ const urls: Record<Lang, string> = {
 
       // Date/time inputs are wall-clock values for the route's location, not
       // the browser's — resolve the destination's IANA zone and convert.
-      const destTz = resolveTimeZone(midLat, midLng);
+      const destTz = await resolveTimeZone(midLat, midLng);
       let tDate = new Date();
       if (dateV) {
         tDate = zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz);

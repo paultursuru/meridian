@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { resolveTimeZone, zonedTimeToUtc, minutesInZone } from '../src/lib/timezone.js';
 
 describe('resolveTimeZone', () => {
-  it('resolves the IANA zone for a given point', () => {
-    expect(resolveTimeZone(40.7128, -74.0060)).toBe('America/New_York');
-    expect(resolveTimeZone(48.8566, 2.3522)).toBe('Europe/Paris');
+  it('resolves the IANA zone for a given point', async () => {
+    expect(await resolveTimeZone(40.7128, -74.0060)).toBe('America/New_York');
+    expect(await resolveTimeZone(48.8566, 2.3522)).toBe('Europe/Paris');
   });
 });
 
