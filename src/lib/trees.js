@@ -124,9 +124,9 @@ export async function fetchVegetation(bbox) {
   const q = `[out:json][timeout:25];(node["natural"="tree"]${bb};way["natural"="tree_row"]${bb};way["landuse"="forest"]${bb};way["natural"="wood"]${bb};relation["landuse"="forest"]${bb};relation["natural"="wood"]${bb};);out body;>;out skel qt;`;
   try {
     const d = await overpassFetch(q);
-    return parseVegetation(d.elements || []);
+    return { ...parseVegetation(d.elements || []), status: 'ok' };
   } catch (err) {
     console.warn('Overpass vegetation failed', err);
-    return { trees: [], forests: [] };
+    return { trees: [], forests: [], status: 'failed' };
   }
 }

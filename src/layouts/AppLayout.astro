@@ -272,7 +272,7 @@ const urls: Record<Lang, string> = {
   import { getSun, getSunTimes, compassDir, makeSunSampler } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
-  import { routesBbox, fetchBuildings, heightStats } from '../lib/buildings.js';
+  import { routesBbox, fetchBuildings, heightStats, resolveHeightNoteState } from '../lib/buildings.js';
   import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
@@ -420,39 +420,59 @@ const urls: Record<Lang, string> = {
       if (!routes.length) throw new Error(tr('error_no_route'));
 
       const bbox = routesBbox(routes);
-      let buildings: Awaited<ReturnType<typeof fetchBuildings>> = [];
+      let buildings: Awaited<ReturnType<typeof fetchBuildings>>['buildings'] = [];
       let trees: Awaited<ReturnType<typeof fetchVegetation>>['trees'] = [];
       let forests: Awaited<ReturnType<typeof fetchVegetation>>['forests'] = [];
       let leafFrac = 1;
+      let buildingsStatus: Awaited<ReturnType<typeof fetchBuildings>>['status'] = 'ok';
+      let buildingsSource: Awaited<ReturnType<typeof fetchBuildings>>['source'] = switzerland ? 'swisstopo' : 'osm';
+      let vegStatus: Awaited<ReturnType<typeof fetchVegetation>>['status'] = 'ok';
       if (!night) {
         // At night every route scores 0 — shadow geometry is pointless,
         // so skip the two Overpass round trips entirely.
         setStatus(tr('status_buildings'));
-        [buildings, { trees, forests }] = await Promise.all([
+        const [buildingsRes, vegRes] = await Promise.all([
           fetchBuildings(bbox, { switzerland }),
           fetchVegetation(bbox),
         ]);
+        buildings = buildingsRes.buildings;
+        buildingsStatus = buildingsRes.status;
+        buildingsSource = buildingsRes.source;
+        trees = vegRes.trees;
+        forests = vegRes.forests;
+        vegStatus = vegRes.status;
         leafFrac = deciduousLeafFrac(tDate, midLat);
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
       }
       const single = night || routes.length === 1;
 
-      const stats = heightStats(buildings);
-      if (stats == null) {
+      // Night: no fetch was attempted at all, so there is nothing to report —
+      // the night note already explains the lack of a sun/shade split.
+      if (night) {
         showQualityNote(null);
       } else {
-        const heightNoteKey = switzerland ? 'height_data_note_swisstopo' : 'height_data_note_osm';
-        const pct = Math.round(stats.pct * 100);
-        const avgPart = stats.avgHeight == null ? '' : tr('height_data_avg_suffix', { avg: String(Math.round(stats.avgHeight)) });
-        const lines = [
-          tr(heightNoteKey),
-          tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
-        ];
-        // Only show the "rest estimated" breakdown when there actually is a
-        // rest — gated on the displayed (rounded) pct, not the raw fraction,
-        // so a note never reads "100% measured" right above "rest estimated".
-        if (pct < 100) lines.push(tr('height_data_line_estimated'));
-        showQualityNote(lines.join('\n'));
+        const heightState = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
+        if (heightState === 'failed') {
+          showQualityNote(tr('height_data_failed') + ' ' + tr('height_data_retry'));
+        } else if (heightState === 'empty') {
+          showQualityNote(tr('height_data_none'));
+        } else if (heightState === 'partial') {
+          showQualityNote(tr('vegetation_failed'));
+        } else {
+          const stats = heightStats(buildings)!;
+          const heightNoteKey = buildingsSource === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm';
+          const pct = Math.round(stats.pct * 100);
+          const avgPart = stats.avgHeight == null ? '' : tr('height_data_avg_suffix', { avg: String(Math.round(stats.avgHeight)) });
+          const lines = [
+            tr(heightNoteKey),
+            tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
+          ];
+          // Only show the "rest estimated" breakdown when there actually is a
+          // rest — gated on the displayed (rounded) pct, not the raw fraction,
+          // so a note never reads "100% measured" right above "rest estimated".
+          if (pct < 100) lines.push(tr('height_data_line_estimated'));
+          showQualityNote(lines.join('\n'));
+        }
       }
 
       // Re-scores every already-fetched route for a given instant and re-renders
