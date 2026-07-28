@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import math
 import os
 import subprocess
 import sys
@@ -12,13 +13,57 @@ from collapse import collapse_feature
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GDB = os.path.join(HERE, "..", "SWISSBUILDINGS3D_3_0.gdb")
-GRID_FILE = os.path.join(HERE, "output_grid.json")
+GRID_FILE = os.path.join(HERE, "output_grid.json")  # today's swisstopo map sheets — subdivided below, no longer the chunk list itself
 CHUNKS_DIR = os.path.join(HERE, "chunks")
 TMP_DIR = os.path.join(HERE, "tmp")
 LOG_FILE = os.path.join(HERE, "build_log.jsonl")
 BUCKET = "swissbuildings-tiles"
+# The wrangler *binary*, not `npx wrangler` — measured live during a
+# --workers 20 run (2026-07-28): even with wrangler installed as a
+# devDependency, `npx`/`npm exec` still does an npm-registry revalidation
+# fetch on every single invocation (confirmed in ~/.npm/_logs's debug output:
+# "http fetch GET .../registry.npmjs.org/wrangler"). At 51k invocations, 20
+# of those hitting the shared npm cache/registry concurrently is what caused
+# 3 adjacent cells to each take ~470s instead of ~1-30s. Calling the resolved
+# binary directly skips npm's resolution machinery entirely, not just the
+# slow path within it.
+WRANGLER_BIN = os.path.join(HERE, "..", "node_modules", ".bin", "wrangler")
+
+# docs/2-search-latency-onepager.md step 5: re-tile from swisstopo's own
+# ~0.058x0.028deg map sheets to a uniform 0.01deg grid, so a route's bbox
+# pulls only the buildings near it instead of whole sheets (13345 buildings
+# fetched for the 2088 actually used, measured on the Lausanne route).
+TILE_DEG = 0.01
 
 log_lock = threading.Lock()
+
+
+def swiss_cells_from_sheets(sheets):
+    """Subdivides today's swisstopo map-sheet grid into uniform TILE_DEG
+    cells, deduped by id. Derived from the sheets' own coverage rather than a
+    rectangular sweep over Switzerland's bounding box, so cells outside real
+    Swiss territory (most of a bounding rectangle, given the country's shape)
+    are never even considered — this is what keeps the candidate count close
+    to the doc's ~47k estimate instead of the ~98k a blind sweep would try."""
+    cells = {}
+    for sh in sheets:
+        w, s, e, n = sh["bbox"]
+        lat_lo, lat_hi = math.floor(s * 100), math.floor(n * 100)
+        lng_lo, lng_hi = math.floor(w * 100), math.floor(e * 100)
+        for lat_idx in range(lat_lo, lat_hi + 1):
+            for lng_idx in range(lng_lo, lng_hi + 1):
+                cell_id = f"{lat_idx}_{lng_idx}"
+                if cell_id in cells:
+                    continue
+                cells[cell_id] = {
+                    # "sheet" kept as the field name throughout (append_log,
+                    # load_done_sheets, R2 key, --sheets filter) to minimize
+                    # the diff — it's a grid-cell id now, not a real
+                    # swisstopo sheet, but it plays exactly the same role.
+                    "sheet": cell_id,
+                    "bbox": (lng_idx / 100, lat_idx / 100, (lng_idx + 1) / 100, (lat_idx + 1) / 100),
+                }
+    return list(cells.values())
 
 
 def batch_transform_wgs84_to_lv95(chunks):
@@ -43,6 +88,12 @@ def batch_transform_wgs84_to_lv95(chunks):
 
 
 def load_done_sheets():
+    # Last status per sheet wins, not "ok/empty seen at any point in this
+    # append-only, cumulative-across-every-run log" — the previous version of
+    # this function had exactly that bug: a sheet that succeeded once, long
+    # ago, then failed on a later re-run (e.g. a stale temp file from a
+    # Ctrl+C) stayed marked "done" forever, silently leaving the old R2
+    # object in place. Confirmed live on sheet 1032-31 during PR2's re-run.
     done = set()
     if os.path.exists(LOG_FILE):
         with open(LOG_FILE) as f:
@@ -51,8 +102,13 @@ def load_done_sheets():
                     rec = json.loads(line)
                 except ValueError:
                     continue
+                sheet = rec.get("sheet")
+                if sheet is None:
+                    continue
                 if rec.get("status") in ("ok", "empty"):
-                    done.add(rec["sheet"])
+                    done.add(sheet)
+                else:
+                    done.discard(sheet)
     return done
 
 
@@ -99,7 +155,7 @@ def process_chunk(chunk):
 
         if out:
             subprocess.run(
-                ["npx", "wrangler", "r2", "object", "put",
+                [WRANGLER_BIN, "r2", "object", "put",
                  f"{BUCKET}/swissbuildings3d_3_0_{sheet}.json",
                  "--file", out_path, "--remote"],
                 check=True, capture_output=True, text=True,
@@ -145,16 +201,25 @@ def main():
     os.makedirs(TMP_DIR, exist_ok=True)
 
     with open(GRID_FILE) as f:
-        grid = json.load(f)
+        sheets = json.load(f)
+    grid = swiss_cells_from_sheets(sheets)
 
     done = set() if args.rebuild_all else load_done_sheets()
     pending = [c for c in grid if c["sheet"] not in done]
+    # len(done) alone would be misleading now: it's every sheet ever marked
+    # done across this log's whole history, including the old swisstopo-
+    # sheet-name ids (e.g. "1011-34") from before this re-tile, which can
+    # never match a new "latIdx_lngIdx" grid cell — so on this grid's very
+    # first run, len(done) is ~3230 (all old-format history) while the
+    # actual overlap with the *new* grid is 0. len(grid) - len(pending) is
+    # the number that's actually true of this grid.
+    already_done_in_grid = len(grid) - len(pending)
     if args.sheets:
         pending = [c for c in pending if c["sheet"] in args.sheets]
     if args.limit:
         pending = pending[: args.limit]
 
-    print(f"{len(grid)} total chunks, {len(done)} already done, "
+    print(f"{len(grid)} total chunks, {already_done_in_grid} already done, "
           f"{len(pending)} to process ({args.workers} workers)")
 
     if not pending:
