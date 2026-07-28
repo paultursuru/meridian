@@ -288,6 +288,14 @@ const urls: Record<Lang, string> = {
   import { initInstallPrompt, registerServiceWorker, isStandalone } from '../lib/pwa.js';
   import { saveLastPosition, getLastPosition } from '../lib/lastPosition.js';
 
+  // Umami's script (loaded below) attaches this global; it's absent until the
+  // script loads (and never present at all if an ad/tracker blocker strips
+  // it), so every call site must go through the optional-chained window.umami.
+  declare global {
+    interface Window {
+      umami?: { track: (event: string, data?: Record<string, unknown>) => void };
+    }
+  }
 
   initMap();
   initTabs((type: string) => setActiveRoute(type));
@@ -363,6 +371,7 @@ const urls: Record<Lang, string> = {
 
 
   async function handleSearch() {
+    const searchStart = performance.now(); // review #2 §7: "ms" is wall-clock to first render
     const startQ = input('inp-start').value.trim();
     const endQ   = input('inp-end').value.trim();
     const dateV  = input('inp-date').value;
@@ -450,6 +459,9 @@ const urls: Record<Lang, string> = {
       // the night note already explains the lack of a sun/shade split.
       // Hoisted so renderAt (below) can dim the ratio bar for a 'failed' search.
       let heightState: ReturnType<typeof resolveHeightNoteState> = 'ok';
+      // Set inside renderAt below; read once after the initial render for the
+      // 'search' analytics event, not on later scrubber-triggered re-renders.
+      let delta = 0;
       if (night) {
         showQualityNote(null);
       } else {
@@ -500,12 +512,28 @@ const urls: Record<Lang, string> = {
         const shadyRt = routes[routes.length - 1];
         // Night collapses the sunny/shady distinction: show only the shortest route.
         if (night) sunnyRt = routes.reduce((a, b) => (b.distance < a.distance ? b : a));
+        delta = Math.round((sunnyRt.sunScore - shadyRt.sunScore) * 100);
 
         displayRoutes(startC, endC, sunnyRt, single ? null : shadyRt);
         showResults(sunnyRt, shadyRt, single, night, heightState === 'failed');
       }
 
       renderAt(tDate);
+
+      // review #2 §7: the §2 success metric (status) and the separate,
+      // uncomfortable question of whether the sunny/shady choice is even
+      // meaningful (delta). Fired once per search, right after first render —
+      // renderAt above also runs on every scrubber tick, which must not
+      // re-fire this.
+      window.umami?.track('search', {
+        status: heightState,
+        source: buildingsSource,
+        country: startC.countryCode,
+        buildings: buildings.length,
+        ms: Math.round(performance.now() - searchStart),
+        night, single,
+        delta,
+      });
 
       const weather = await weatherP;
       const weatherEl = el('weather-note');
@@ -565,6 +593,14 @@ const urls: Record<Lang, string> = {
         showToast(tr('error_prefix') + (err instanceof Error ? err.message : String(err)));
       }
       console.error(err);
+      // error messages can embed the user's typed query (error_address_not_found)
+      // — never send err.message itself, only the machine-readable code when
+      // there is one, so this stays as PII-free as the rest of the event.
+      window.umami?.track('search', {
+        status: 'error',
+        code: (err as { code?: string })?.code ?? 'unknown',
+        ms: Math.round(performance.now() - searchStart),
+      });
     } finally {
       button('search-btn').disabled = false;
       button('depart-toggle').disabled = false;
