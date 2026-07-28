@@ -94,7 +94,11 @@ test('note upgrades from the optimistic first pass once vegetation actually fail
   await expect(note).not.toContainText('Tree data unavailable');
 
   // Once the background vegetation fetch's own retry ladder gives up, the
-  // note must upgrade to the 'partial' state.
+  // note must upgrade to the 'partial' state — appending the vegetation
+  // warning to the existing buildings note, not replacing it (the exact
+  // regression: this line used to blank out the buildings stats already on
+  // screen instead of adding to them).
   await expect(note).toContainText('Tree data unavailable', { timeout: 10_000 });
+  await expect(note).toContainText('1 buildings'); // buildings stats line, still present
   await expect(note).not.toHaveClass(/warn/); // 'partial' is informational, not a warning
 });

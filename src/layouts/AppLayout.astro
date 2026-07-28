@@ -485,25 +485,34 @@ const urls: Record<Lang, string> = {
         heightState = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
         if (heightState === 'failed') {
           showQualityNote(tr('height_data_failed') + ' ' + tr('height_data_retry'), 'warn');
-        } else if (heightState === 'empty') {
-          showQualityNote(tr('height_data_none'));
-        } else if (heightState === 'partial') {
-          showQualityNote(tr('vegetation_failed'));
-        } else {
-          const stats = heightStats(buildings)!;
-          const heightNoteKey = buildingsSource === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm';
-          const pct = Math.round(stats.pct * 100);
-          const avgPart = stats.avgHeight == null ? '' : tr('height_data_avg_suffix', { avg: String(Math.round(stats.avgHeight)) });
-          const lines = [
-            tr(heightNoteKey),
-            tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
-          ];
-          // Only show the "rest estimated" breakdown when there actually is a
-          // rest — gated on the displayed (rounded) pct, not the raw fraction,
-          // so a note never reads "100% measured" right above "rest estimated".
-          if (pct < 100) lines.push(tr('height_data_line_estimated'));
-          showQualityNote(lines.join('\n'));
+          return;
         }
+        if (heightState === 'empty') {
+          showQualityNote(tr('height_data_none'));
+          return;
+        }
+        // 'ok' and 'partial' both have real building coverage to report —
+        // resolveHeightNoteState only reaches 'partial' once buildingsCount
+        // > 0. Build that note the same way for both, appending the
+        // vegetation-failed line for 'partial' instead of replacing the
+        // buildings note with it: with the two-pass render, this note can
+        // already be showing the full buildings stats by the time vegetation
+        // fails in the background, and swapping it out would erase
+        // information the user already saw rather than add to it.
+        const stats = heightStats(buildings)!;
+        const heightNoteKey = buildingsSource === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm';
+        const pct = Math.round(stats.pct * 100);
+        const avgPart = stats.avgHeight == null ? '' : tr('height_data_avg_suffix', { avg: String(Math.round(stats.avgHeight)) });
+        const lines = [
+          tr(heightNoteKey),
+          tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
+        ];
+        // Only show the "rest estimated" breakdown when there actually is a
+        // rest — gated on the displayed (rounded) pct, not the raw fraction,
+        // so a note never reads "100% measured" right above "rest estimated".
+        if (pct < 100) lines.push(tr('height_data_line_estimated'));
+        if (heightState === 'partial') lines.push(tr('vegetation_failed'));
+        showQualityNote(lines.join('\n'));
       }
       updateHeightNote();
 
