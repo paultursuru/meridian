@@ -370,7 +370,15 @@ const urls: Record<Lang, string> = {
   }
 
 
+  // Bumped once per handleSearch call. The vegetation continuation below
+  // fires after the button has already re-enabled (first render no longer
+  // waits on it), so a second search can genuinely start before the first
+  // one's vegetation lands — this lets that continuation detect it's stale
+  // and skip touching the DOM instead of clobbering the newer search.
+  let searchGeneration = 0;
+
   async function handleSearch() {
+    const mySearchGen = ++searchGeneration;
     const searchStart = performance.now(); // review #2 §7: "ms" is wall-clock to first render
     const startQ = input('inp-start').value.trim();
     const endQ   = input('inp-end').value.trim();
@@ -436,35 +444,44 @@ const urls: Record<Lang, string> = {
       let buildingsStatus: Awaited<ReturnType<typeof fetchBuildings>>['status'] = 'ok';
       let buildingsSource: Awaited<ReturnType<typeof fetchBuildings>>['source'] = switzerland ? 'swisstopo' : 'osm';
       let vegStatus: Awaited<ReturnType<typeof fetchVegetation>>['status'] = 'ok';
+      // Kicked off once buildings resolve, awaited only inside its own .then()
+      // below — never blocking the first render. Buildings dominate urban
+      // shade and land in ~1s from R2; vegetation is decorative and the one
+      // call that always hits Overpass, at up to ~13s including retries.
+      // Switzerland especially shouldn't pay that tax to see a result.
+      let vegP: ReturnType<typeof fetchVegetation> | null = null;
       if (!night) {
         // At night every route scores 0 — shadow geometry is pointless,
-        // so skip the two Overpass round trips entirely.
+        // so skip both Overpass round trips entirely.
         setStatus(tr('status_buildings'));
-        const [buildingsRes, vegRes] = await Promise.all([
-          fetchBuildings(bbox, { switzerland }),
-          fetchVegetation(bbox),
-        ]);
+        const buildingsRes = await fetchBuildings(bbox, { switzerland });
         buildings = buildingsRes.buildings;
         buildingsStatus = buildingsRes.status;
         buildingsSource = buildingsRes.source;
-        trees = vegRes.trees;
-        forests = vegRes.forests;
-        vegStatus = vegRes.status;
         leafFrac = deciduousLeafFrac(tDate, midLat);
         setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
+        vegP = fetchVegetation(bbox);
       }
       const single = night || routes.length === 1;
 
-      // Night: no fetch was attempted at all, so there is nothing to report —
-      // the night note already explains the lack of a sun/shade split.
-      // Hoisted so renderAt (below) can dim the ratio bar for a 'failed' search.
+      // Hoisted so renderAt (below) can dim the ratio bar for a 'failed'
+      // search, and so the vegetation continuation can refine it once known.
       let heightState: ReturnType<typeof resolveHeightNoteState> = 'ok';
-      // Set inside renderAt below; read once after the initial render for the
-      // 'search' analytics event, not on later scrubber-triggered re-renders.
+      // Set inside renderAt below; read once at first render for the 'search'
+      // analytics event (captured then, not re-read at track time — see
+      // msToFirstRender below).
       let delta = 0;
-      if (night) {
-        showQualityNote(null);
-      } else {
+
+      // Night: no fetch is attempted at all, so there is nothing to report —
+      // the night note already explains the lack of a sun/shade split. For a
+      // real search, vegStatus may still be its optimistic 'ok' default on
+      // this first call: resolveHeightNoteState checks buildingsStatus and
+      // buildingsCount before vegStatus, so 'failed'/'empty' are already
+      // correct here — only 'partial' (buildings ok, vegetation actually
+      // failed) can be wrong until the vegetation continuation re-runs this
+      // with the real vegStatus.
+      function updateHeightNote() {
+        if (night) { showQualityNote(null); return; }
         heightState = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
         if (heightState === 'failed') {
           showQualityNote(tr('height_data_failed') + ' ' + tr('height_data_retry'), 'warn');
@@ -488,6 +505,7 @@ const urls: Record<Lang, string> = {
           showQualityNote(lines.join('\n'));
         }
       }
+      updateHeightNote();
 
       // Re-scores every already-fetched route for a given instant and re-renders
       // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole
@@ -518,19 +536,28 @@ const urls: Record<Lang, string> = {
         showResults(sunnyRt, shadyRt, single, night, heightState === 'failed');
       }
 
+      // First render: buildings only (or nothing, at night) — the drawer must
+      // not sit inert waiting for vegetation's up-to-~13s Overpass round trip.
       renderAt(tDate);
+      let currentInstant = tDate;
+      // Captured once, here, so the 'search' event's ms keeps meaning
+      // "wall-clock to first render" even though for a real search it now
+      // fires later (once vegetation below has resolved), not read fresh at
+      // track time.
+      const msToFirstRender = Math.round(performance.now() - searchStart);
 
       // review #2 §7: the §2 success metric (status) and the separate,
       // uncomfortable question of whether the sunny/shady choice is even
-      // meaningful (delta). Fired once per search, right after first render —
-      // renderAt above also runs on every scrubber tick, which must not
-      // re-fire this.
-      window.umami?.track('search', {
+      // meaningful (delta). Fired once per search: immediately for night
+      // (nothing left to wait for), otherwise once the vegetation
+      // continuation below has resolved or failed and delta/status reflect
+      // the real, final state.
+      const trackSearch = () => window.umami?.track('search', {
         status: heightState,
         source: buildingsSource,
         country: startC.countryCode,
         buildings: buildings.length,
-        ms: Math.round(performance.now() - searchStart),
+        ms: msToFirstRender,
         night, single,
         delta,
       });
@@ -576,13 +603,42 @@ const urls: Record<Lang, string> = {
           value: initialMinutes,
           label: fmtHm(initialMinutes),
         }, (minutes: number) => {
-          const atDate = new Date(tDate.getTime() + (minutes - initialMinutes) * 60_000);
-          renderAt(atDate);
+          // Tracked in currentInstant (not re-derived from the range input)
+          // so the vegetation continuation below can re-render at wherever
+          // the user actually scrubbed to, not snap back to tDate.
+          currentInstant = new Date(tDate.getTime() + (minutes - initialMinutes) * 60_000);
+          renderAt(currentInstant);
           setScrubberLabel(fmtHm(minutes));
           const active = (document.querySelector<HTMLButtonElement>('.tab-btn.active')?.dataset.tab ?? 'sunny') as 'sunny' | 'shady';
           setActiveTab(active);
           setActiveRoute(active);
         });
+      }
+
+      if (vegP) {
+        vegP.then(vegRes => {
+          // A newer search may have started while this one's vegetation was
+          // still in flight — the button re-enables as soon as buildings
+          // render, well before this resolves. Its renderAt/note would be
+          // stale against whatever that newer search already drew: drop it.
+          if (mySearchGen !== searchGeneration) return;
+          trees = vegRes.trees;
+          forests = vegRes.forests;
+          vegStatus = vegRes.status;
+          updateHeightNote();
+          renderAt(currentInstant);
+          // renderAt -> displayRoutes redraws both route layers at full
+          // opacity (map.js), same as every scrubber tick — re-apply
+          // whichever tab is actually active (the user may have switched
+          // tabs while vegetation was in flight) or both routes look
+          // selected until the next interaction.
+          const active = (document.querySelector<HTMLButtonElement>('.tab-btn.active')?.dataset.tab ?? 'sunny') as 'sunny' | 'shady';
+          setActiveTab(active);
+          setActiveRoute(active);
+          trackSearch();
+        });
+      } else {
+        trackSearch();
       }
 
     } catch (err) {
