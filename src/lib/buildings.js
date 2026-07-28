@@ -91,6 +91,18 @@ export function heightStats(buildings) {
   };
 }
 
+// Resolves a search's fetch outcomes into one of four UI states (review #2
+// §1.1): ok/empty/failed/partial. buildingsStatus/vegStatus are 'ok' | 'failed'
+// as returned by fetchBuildings/fetchVegetation. A buildings failure wins over
+// everything else, including a simultaneous vegetation failure — one warning,
+// not two stacked notes.
+export function resolveHeightNoteState(buildingsStatus, buildingsCount, vegStatus) {
+  if (buildingsStatus === 'failed') return 'failed';
+  if (buildingsCount === 0) return 'empty';
+  if (vegStatus === 'failed') return 'partial';
+  return 'ok';
+}
+
 
 // swissbuildings-lookup returns the raw union of every tile overlapping the
 // bbox, unfiltered and un-deduped — it deliberately never parses building
@@ -131,10 +143,11 @@ async function fetchSwissBuildings(bbox) {
 export async function fetchBuildings(bbox, { switzerland = false } = {}) {
   if (switzerland) {
     try {
-      return await fetchSwissBuildings(bbox);
+      const buildings = await fetchSwissBuildings(bbox);
+      return { buildings, status: 'ok', source: 'swisstopo' };
     } catch (err) {
       console.warn('swissbuildings-lookup failed, shadows disabled for this query', err);
-      return [];
+      return { buildings: [], status: 'failed', source: 'swisstopo' };
     }
   }
 
@@ -142,9 +155,9 @@ export async function fetchBuildings(bbox, { switzerland = false } = {}) {
   const q = `[out:json][timeout:25];(way["building"](${s},${w},${n},${e}););out body;>;out skel qt;`;
   try {
     const d = await overpassFetch(q);
-    return parseBuildings(d.elements || []);
+    return { buildings: parseBuildings(d.elements || []), status: 'ok', source: 'osm' };
   } catch (err) {
     console.warn('Overpass buildings failed, shadows disabled for this query', err);
-    return [];
+    return { buildings: [], status: 'failed', source: 'osm' };
   }
 }

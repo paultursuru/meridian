@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildingHeight, hasHeightData, heightStats } from '../src/lib/buildings.js';
+import { buildingHeight, hasHeightData, heightStats, resolveHeightNoteState } from '../src/lib/buildings.js';
 
 describe('buildingHeight', () => {
   it('defaults ordinary untagged buildings to 10 m', () => {
@@ -72,5 +72,31 @@ describe('heightStats (review 3.5)', () => {
   it('returns avgHeight null when no building has real height data', () => {
     const buildings = [{ hasHeight: false, height: 10 }, { hasHeight: false, height: 2.5 }];
     expect(heightStats(buildings)).toEqual({ pct: 0, count: 2, avgHeight: null });
+  });
+});
+
+describe('resolveHeightNoteState (review #2 §1.1)', () => {
+  it('is "ok" when buildings fetched fine and vegetation fetched fine', () => {
+    expect(resolveHeightNoteState('ok', 5, 'ok')).toBe('ok');
+  });
+
+  it('is "empty" when the buildings fetch succeeded but found nothing', () => {
+    expect(resolveHeightNoteState('ok', 0, 'ok')).toBe('empty');
+  });
+
+  it('is "failed" when the buildings fetch threw', () => {
+    expect(resolveHeightNoteState('failed', 0, 'ok')).toBe('failed');
+  });
+
+  it('is "partial" when buildings are fine but vegetation failed', () => {
+    expect(resolveHeightNoteState('ok', 5, 'failed')).toBe('partial');
+  });
+
+  it('collapses a simultaneous buildings + vegetation failure into one "failed" state, not two notes', () => {
+    expect(resolveHeightNoteState('failed', 0, 'failed')).toBe('failed');
+  });
+
+  it('prioritises "empty" over a vegetation failure when there are simply no buildings', () => {
+    expect(resolveHeightNoteState('ok', 0, 'failed')).toBe('empty');
   });
 });
