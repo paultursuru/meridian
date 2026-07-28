@@ -620,17 +620,24 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #weather-note.on { display: block; }
 
-/* ── Quality note (OSM height-data coverage hint, review 3.5) ── */
+/* ── Quality note (OSM height-data coverage hint, review 3.5; data-failure
+   warning, review #2 §1.1) ── */
 #quality-note {
   display: none;
   padding: 9px 16px 11px;
   border-top: 1.5px solid rgba(240,242,160,0.1);
   font-size: 0.78rem;
-  color: rgba(216,219,200,0.4);
+  color: rgba(216,219,200,0.62);
   text-align: left;
   white-space: pre-line; /* renders the \n between header + bullet lines */
 }
 #quality-note.on { display: block; }
+/* A fetch outright failed: this isn't a footnote, it invalidates the ratio
+   above it, so it gets the app's one amber warning treatment instead of the
+   neutral note style. */
+#quality-note.warn {
+  color: #f0b84a;
+}
 
 /* ── Night note (sun below the horizon — sun/shade stats don't apply) ── */
 #night-note {
@@ -644,6 +651,11 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #night-note.on { display: block; }
 #results.night .ratio-wrap,
 #results.night .detail-split { display: none; }
+
+/* Building data failed (review #2 §1.1): the sun/shade split above is
+   real routing math but incomplete input — dim it rather than hide it
+   (a park route with genuinely no buildings is still a legitimate result). */
+#results.data-failed .ratio-track { opacity: 0.4; }
 
 /* ── Tabs ── */
 #tabs {
