@@ -627,7 +627,8 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   border-top: 1.5px solid rgba(240,242,160,0.1);
   font-size: 0.78rem;
   color: rgba(216,219,200,0.4);
-  text-align: center;
+  text-align: left;
+  white-space: pre-line; /* renders the \n between header + bullet lines */
 }
 #quality-note.on { display: block; }
 

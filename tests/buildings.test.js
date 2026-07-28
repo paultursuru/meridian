@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildingHeight, hasHeightData, heightCoverage } from '../src/lib/buildings.js';
+import { buildingHeight, hasHeightData, heightStats } from '../src/lib/buildings.js';
 
 describe('buildingHeight', () => {
   it('defaults ordinary untagged buildings to 10 m', () => {
@@ -52,17 +52,25 @@ describe('hasHeightData (review 3.5)', () => {
   });
 });
 
-describe('heightCoverage (review 3.5)', () => {
+describe('heightStats (review 3.5)', () => {
   it('returns null for an empty building list', () => {
-    expect(heightCoverage([])).toBeNull();
+    expect(heightStats([])).toBeNull();
   });
 
-  it('returns the fraction with real height data', () => {
-    const buildings = [{ hasHeight: true }, { hasHeight: true }, { hasHeight: false }, { hasHeight: false }];
-    expect(heightCoverage(buildings)).toBe(0.5);
+  it('returns pct, count and the mean height of just the measured buildings', () => {
+    const buildings = [
+      { hasHeight: true, height: 10 }, { hasHeight: true, height: 20 },
+      { hasHeight: false, height: 2.5 }, { hasHeight: false, height: 10 },
+    ];
+    expect(heightStats(buildings)).toEqual({ pct: 0.5, count: 4, avgHeight: 15 });
   });
 
-  it('returns 1 when every building has real height data', () => {
-    expect(heightCoverage([{ hasHeight: true }])).toBe(1);
+  it('returns pct 1 when every building has real height data', () => {
+    expect(heightStats([{ hasHeight: true, height: 8 }])).toEqual({ pct: 1, count: 1, avgHeight: 8 });
+  });
+
+  it('returns avgHeight null when no building has real height data', () => {
+    const buildings = [{ hasHeight: false, height: 10 }, { hasHeight: false, height: 2.5 }];
+    expect(heightStats(buildings)).toEqual({ pct: 0, count: 2, avgHeight: null });
   });
 });
