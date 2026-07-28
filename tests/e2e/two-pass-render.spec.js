@@ -34,9 +34,13 @@ async function mockCommon(page) {
 }
 
 test('drawer renders from buildings before slow vegetation resolves', async ({ page }) => {
-  const errors = [];
-  page.on('pageerror', e => errors.push('pageerror: ' + e.message));
-  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  // pageerror = uncaught exceptions in app code, worth failing on. Not
+  // console 'error' messages: those also catch Vite dev-server noise (e.g.
+  // "Outdated Optimize Dep" 504s when its dep cache reloads mid-request,
+  // seen under parallel CI workers hitting a cold `npm run dev`) that has
+  // nothing to do with app correctness.
+  const pageErrors = [];
+  page.on('pageerror', e => pageErrors.push(e.message));
 
   await mockCommon(page);
   await page.route('https://overpass-cache.meridianway.workers.dev/**', async route => {
@@ -69,7 +73,7 @@ test('drawer renders from buildings before slow vegetation resolves', async ({ p
   await expect(page.locator('#results')).toHaveClass(/on/);
   await expect(sunnyPath).toHaveCSS('stroke-opacity', '1');
 
-  expect(errors).toEqual([]);
+  expect(pageErrors).toEqual([]);
 });
 
 test('note upgrades from the optimistic first pass once vegetation actually fails', async ({ page }) => {
