@@ -18,12 +18,17 @@ const LOW_BUILDING_TYPES = new Set([
   'garage', 'garages', 'carport', 'shed', 'hut', 'cabin',
   'kiosk', 'garbage_shed', 'greenhouse', 'roof', 'service',
 ]);
-const LOW_BUILDING_HEIGHT = 2.5;
+// Exported: the quality-note "rest estimated" line in i18n.ts quotes these
+// two figures directly (hardcoded per-locale text, not a template var, since
+// the value itself needs no locale-aware decimal formatting once written
+// out) — keep that copy in sync if either default changes.
+export const LOW_BUILDING_HEIGHT = 2.5;
+export const DEFAULT_BUILDING_HEIGHT = 10;
 
 // Estimated height in metres from OSM tags. Explicit height wins, then
 // levels (~3.5 m each), then a per-type default (10 m for ordinary buildings).
 export function buildingHeight(tags) {
-  let fallback = 10;
+  let fallback = DEFAULT_BUILDING_HEIGHT;
   if (LOW_BUILDING_TYPES.has(tags.building)) fallback = LOW_BUILDING_HEIGHT;
   else if (['church', 'cathedral', 'tower'].includes(tags.building)) fallback = 22;
 
@@ -70,12 +75,20 @@ function parseBuildings(els) {
   return out;
 }
 
-// Fraction (0..1) of buildings whose height came from a real OSM tag rather
-// than a fallback guess. null when there's nothing to report (no buildings
-// fetched for this route) — used to render the review-3.5 confidence hint.
-export function heightCoverage(buildings) {
+// Coverage + descriptive stats behind the review-3.5 confidence hint: the
+// fraction of buildings whose height came from a real tag rather than a
+// fallback guess, the total building count, and the mean height among just
+// the measured ones (averaging in the type-default guesses would misrepresent
+// them as real building sizes). null when there's nothing to report (no
+// buildings fetched for this route).
+export function heightStats(buildings) {
   if (!buildings.length) return null;
-  return buildings.filter(b => b.hasHeight).length / buildings.length;
+  const known = buildings.filter(b => b.hasHeight);
+  return {
+    pct: known.length / buildings.length,
+    count: buildings.length,
+    avgHeight: known.length ? known.reduce((s, b) => s + b.height, 0) / known.length : null,
+  };
 }
 
 
