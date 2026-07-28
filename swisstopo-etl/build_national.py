@@ -95,7 +95,7 @@ def process_chunk(chunk):
             out.append(b)
 
         with open(out_path, "w") as f:
-            json.dump(out, f)
+            json.dump(out, f, separators=(',', ':'))
 
         if out:
             subprocess.run(
@@ -134,6 +134,11 @@ def main():
                      help="process only the first N pending chunks (testing)")
     ap.add_argument("--sheets", nargs="*",
                      help="process only these specific sheet ids (testing)")
+    ap.add_argument("--rebuild-all", action="store_true",
+                     help="ignore build_log.jsonl and reprocess every sheet — "
+                          "needed whenever collapse_feature()'s output changes "
+                          "(e.g. the coordinate rounding), since every sheet "
+                          "already marked done/empty was built with the old format")
     args = ap.parse_args()
 
     os.makedirs(CHUNKS_DIR, exist_ok=True)
@@ -142,7 +147,7 @@ def main():
     with open(GRID_FILE) as f:
         grid = json.load(f)
 
-    done = load_done_sheets()
+    done = set() if args.rebuild_all else load_done_sheets()
     pending = [c for c in grid if c["sheet"] not in done]
     if args.sheets:
         pending = [c for c in pending if c["sheet"] in args.sheets]

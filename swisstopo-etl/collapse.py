@@ -62,11 +62,13 @@ def collapse_feature(feature):
     if len(hull) < 3:
         return None, None
 
-    verts = [{'lat': y, 'lng': x} for x, y in hull]
+    # 6 dp ≈ 11cm — plenty for a shadow model, and most of what's shaved off
+    # the wire (see docs/2-search-latency-onepager.md step 2).
+    verts = [{'lat': round(y, 6), 'lng': round(x, 6)} for x, y in hull]
 
     centroid = {
-        'lat': sum(p['lat'] for p in verts) / len(verts),
-        'lng': sum(p['lng'] for p in verts) / len(verts),
+        'lat': round(sum(p['lat'] for p in verts) / len(verts), 6),
+        'lng': round(sum(p['lng'] for p in verts) / len(verts), 6),
     }
 
     cos_lat = math.cos(centroid['lat'] * math.pi / 180)
@@ -83,9 +85,9 @@ def collapse_feature(feature):
 
     return {
         'centroid': centroid,
-        'height': height,
+        'height': round(height, 1),
         'verts': verts,
-        'radius': radius,
+        'radius': round(radius, 1),
         'hasHeight': True,
     }, None
 
@@ -111,7 +113,7 @@ def main():
         out.append(b)
 
     with open(sys.argv[2], 'w') as f:
-        json.dump(out, f)
+        json.dump(out, f, separators=(',', ':'))
 
     print(f"collapsed {len(out)} buildings, skipped {skipped}, from {len(data['features'])} features")
 
