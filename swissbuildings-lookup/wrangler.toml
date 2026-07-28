@@ -6,6 +6,10 @@ compatibility_date = "2025-01-01"
 binding = "TILES"
 bucket_name = "swissbuildings-tiles"
 
-[[kv_namespaces]]
-binding = "SWISSBUILDINGS_CACHE"
-id = "96740bd6ad9144cfbcf6dfcd42a8dfdc"
+# KV binding removed (docs/2-search-latency-onepager.md step 5): finer tiles
+# make the tile-set cache key near-unique per route, which would hit Free
+# KV's 1000-distinct-key-writes/day cap. Replaced with caches.default (the
+# Cloudflare Cache API), which needs no binding here at all. The KV
+# namespace itself (SWISSBUILDINGS_CACHE, id 96740bd6ad9144cfbcf6dfcd42a8dfdc)
+# is left alone in the dashboard, just unused — deleting it is a separate,
+# deliberate cleanup, not done as part of this change.

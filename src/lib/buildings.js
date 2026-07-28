@@ -127,11 +127,102 @@ function dedupeSwissBuildings(buildings) {
   });
 }
 
-async function fetchSwissBuildings(bbox) {
+// swissbuildings-lookup's tiles are a uniform 0.01° grid (docs/2-search-
+// latency-onepager.md step 5) — the `* 100` below encodes that grid size
+// directly, same as the Worker's own overlappingCellIds(), and for the same
+// reason (see that function's comment): IEEE 754 multiplication by the
+// integer 100 is guaranteed consistent, division by 0.01 isn't guaranteed to
+// be. Workers Free caps a Worker invocation at 50 subrequests and each R2
+// tile .get() there counts as one — the Worker's own MAX_CELLS guard sits at
+// 45. A long route's bbox can span well past that (a 10 km walk is ~140
+// tiles unsplit, per the doc's own measurement), so split it into pieces
+// here, client-side, and fire them in parallel: each gets its own
+// subrequest budget, and parallel requests are faster than one large one.
+const MAX_TILES_PER_REQUEST = 40; // safety margin under the Worker's 45
+
+function estimateTileCount(bbox) {
+  const [s, w, n, e] = bbox;
+  const latCells = Math.floor(n * 100) - Math.floor(s * 100) + 1;
+  const lngCells = Math.floor(e * 100) - Math.floor(w * 100) + 1;
+  return latCells * lngCells;
+}
+
+// Splitting the *continuous* coordinate range into N equal pieces (the first
+// version of this function did that) rounds unevenly at cell boundaries —
+// verified on the doc's own 10 km/140-tile example: a naive 4-way split put
+// 50 tiles in the worst piece, over both the 40 target and the Worker's hard
+// 45. Splitting the *integer cell-index* range instead, and spreading the
+// remainder across the first chunks rather than dumping it all in the last
+// one, gets that same example to an exact [40,40,30,30].
+const EPS = 1e-7; // ~1cm — nudges an internal split boundary off an exact cell edge, see quadrants() below
+
+function integerChunks(lo, hi, pieces) {
+  const total = hi - lo + 1;
+  const base = Math.floor(total / pieces);
+  const extra = total % pieces;
+  const chunks = [];
+  let cur = lo;
+  for (let i = 0; i < pieces; i++) {
+    const size = base + (i < extra ? 1 : 0);
+    if (size === 0) continue;
+    chunks.push([cur, cur + size - 1]);
+    cur += size;
+  }
+  return chunks;
+}
+
+// latPieces x lngPieces grid, each cell-index-exact. Outer edges keep the
+// original bbox's exact coordinates (not snapped to a cell boundary);
+// internal split points sit exactly on a cell boundary, nudged by EPS so
+// that boundary cell belongs to one piece's count, not both (harmless if it
+// leaks into both anyway — dedupeSwissBuildings below merges it — this just
+// keeps estimateTileCount's per-piece budget check accurate).
+function quadrants(bbox, latPieces, lngPieces) {
+  const [s, w, n, e] = bbox;
+  const latChunks = integerChunks(Math.floor(s * 100), Math.floor(n * 100), latPieces);
+  const lngChunks = integerChunks(Math.floor(w * 100), Math.floor(e * 100), lngPieces);
+  const out = [];
+  latChunks.forEach(([cLo, cHi], i) => {
+    const pS = i === 0 ? s : cLo / 100;
+    const pN = i === latChunks.length - 1 ? n : (cHi + 1) / 100 - EPS;
+    lngChunks.forEach(([dLo, dHi], j) => {
+      const pW = j === 0 ? w : dLo / 100;
+      const pE = j === lngChunks.length - 1 ? e : (dHi + 1) / 100 - EPS;
+      out.push([pS, pW, pN, pE]);
+    });
+  });
+  return out;
+}
+
+// Tries the fewest pieces first, splitting along the longer axis (a walking
+// route's bbox is usually long and thin); falls back to a balanced 2x2 grid
+// if splitting one axis alone isn't enough. Capped at 4 total pieces per the
+// doc's "split large bboxes client-side into 2-4 sub-bboxes" — this targets
+// a "long-ish 10 km walk", not an unbounded route length. Genuinely longer
+// routes can still exceed the Worker's MAX_CELLS guard even after this; that
+// surfaces as the existing 'failed'/data-unavailable state (review #2 §1.1),
+// not a crash.
+function splitBbox(bbox) {
+  const [s, w, n, e] = bbox;
+  const longerIsLat = (n - s) >= (e - w);
+  const candidates = longerIsLat ? [[2, 1], [3, 1], [4, 1], [2, 2]] : [[1, 2], [1, 3], [1, 4], [2, 2]];
+  for (const [latN, lngN] of candidates) {
+    const pieces = quadrants(bbox, latN, lngN);
+    if (pieces.every(p => estimateTileCount(p) <= MAX_TILES_PER_REQUEST)) return pieces;
+  }
+  return quadrants(bbox, 2, 2);
+}
+
+async function fetchSwissBuildingsTile(bbox) {
   const [s, w, n, e] = bbox;
   const r = await fetch(`${SWISSBUILDINGS_ENDPOINT}/?bbox=${w},${s},${e},${n}`);
   if (!r.ok) throw new Error(`swissbuildings-lookup HTTP ${r.status}`);
-  const raw = await r.json();
+  return r.json();
+}
+
+async function fetchSwissBuildings(bbox) {
+  const pieces = estimateTileCount(bbox) > MAX_TILES_PER_REQUEST ? splitBbox(bbox) : [bbox];
+  const raw = (await Promise.all(pieces.map(fetchSwissBuildingsTile))).flat();
   return dedupeSwissBuildings(raw).filter(b => insideBbox(b, bbox));
 }
 
