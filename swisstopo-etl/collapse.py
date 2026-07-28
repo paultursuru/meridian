@@ -62,13 +62,16 @@ def collapse_feature(feature):
     if len(hull) < 3:
         return None, None
 
-    # 6 dp ≈ 11cm — plenty for a shadow model, and most of what's shaved off
-    # the wire (see docs/2-search-latency-onepager.md step 2).
-    verts = [{'lat': round(y, 6), 'lng': round(x, 6)} for x, y in hull]
+    # 5 dp ~= 1.1m at Swiss latitudes. swisstopo states +/-30-50cm accuracy for
+    # this dataset, so 5dp's quantization error is in the same ballpark as the
+    # source's own noise rather than free precision — a deliberate tradeoff
+    # for a bigger gzip win, judged fine at pedestrian-route scale (see
+    # docs/2-search-latency-onepager.md step 2).
+    verts = [{'lat': round(y, 5), 'lng': round(x, 5)} for x, y in hull]
 
     centroid = {
-        'lat': round(sum(p['lat'] for p in verts) / len(verts), 6),
-        'lng': round(sum(p['lng'] for p in verts) / len(verts), 6),
+        'lat': round(sum(p['lat'] for p in verts) / len(verts), 5),
+        'lng': round(sum(p['lng'] for p in verts) / len(verts), 5),
     }
 
     cos_lat = math.cos(centroid['lat'] * math.pi / 180)
