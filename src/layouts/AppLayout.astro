@@ -448,12 +448,14 @@ const urls: Record<Lang, string> = {
 
       // Night: no fetch was attempted at all, so there is nothing to report —
       // the night note already explains the lack of a sun/shade split.
+      // Hoisted so renderAt (below) can dim the ratio bar for a 'failed' search.
+      let heightState: ReturnType<typeof resolveHeightNoteState> = 'ok';
       if (night) {
         showQualityNote(null);
       } else {
-        const heightState = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
+        heightState = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
         if (heightState === 'failed') {
-          showQualityNote(tr('height_data_failed') + ' ' + tr('height_data_retry'));
+          showQualityNote(tr('height_data_failed') + ' ' + tr('height_data_retry'), 'warn');
         } else if (heightState === 'empty') {
           showQualityNote(tr('height_data_none'));
         } else if (heightState === 'partial') {
@@ -500,7 +502,7 @@ const urls: Record<Lang, string> = {
         if (night) sunnyRt = routes.reduce((a, b) => (b.distance < a.distance ? b : a));
 
         displayRoutes(startC, endC, sunnyRt, single ? null : shadyRt);
-        showResults(sunnyRt, shadyRt, single, night);
+        showResults(sunnyRt, shadyRt, single, night, heightState === 'failed');
       }
 
       renderAt(tDate);

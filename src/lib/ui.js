@@ -23,14 +23,18 @@ export function showToast(msg, type = 'error') {
   toastTimer = setTimeout(() => el.classList.remove('on'), 4500);
 }
 
-// OSM building-height confidence hint (review 3.5): honest disclosure of how
-// much of the shade computation rests on real data vs. type/default guesses,
-// so sparse-coverage areas read as "data gap" rather than "broken app".
-// msg falsy (e.g. no buildings fetched, night search) hides the note.
-export function showQualityNote(msg) {
+// OSM building-height confidence hint (review 3.5), and — since review #2
+// §1.1 — the data-failure warning: honest disclosure of how much of the
+// shade computation rests on real data vs. type/default guesses (or nothing
+// at all), so sparse-coverage or failed-fetch searches read as "data gap"
+// rather than "broken app". msg falsy (e.g. night search) hides the note.
+// level: 'info' (default, today's neutral coverage/empty/partial notes) or
+// 'warn' (a fetch outright failed — invalidates the ratio above it).
+export function showQualityNote(msg, level = 'info') {
   const el = document.getElementById('quality-note');
   el.textContent = msg || '';
   el.classList.toggle('on', !!msg);
+  el.classList.toggle('warn', !!msg && level === 'warn');
 }
 
 // Extra walking time from climbing: ~4 min per 100 m of ascent (Naismith-style,
@@ -149,7 +153,10 @@ export function collapseDrawer() {
 // night = sun below the horizon: also single (shortest route), but with a
 // night note and without the meaningless sun/shade ratio rows (via CSS on
 // the .night class).
-export function showResults(sunny, shady, single = false, night = false) {
+// heightFailed = the buildings fetch threw (review #2 §1.1): dims the ratio
+// bar via CSS on the .data-failed class, next to the warning quality-note —
+// a greyed-out number reads as "don't trust this" faster than any sentence.
+export function showResults(sunny, shady, single = false, night = false, heightFailed = false) {
   document.getElementById('tabs').style.display = single ? 'none' : '';
   document.getElementById('single-route-note').classList.toggle('on', single && !night);
   document.getElementById('night-note').classList.toggle('on', night);
@@ -157,6 +164,7 @@ export function showResults(sunny, shady, single = false, night = false) {
   if (!single) renderTab('tab-shady', shady);
   const drawer = document.getElementById('results');
   drawer.classList.toggle('night', night);
+  drawer.classList.toggle('data-failed', heightFailed);
   drawer.classList.add('on');
   initDrawer();
 }
