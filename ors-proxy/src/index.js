@@ -11,6 +11,10 @@ const ALLOWED_ORIGINS = new Set([
 
 const ORS = 'https://api.openrouteservice.org/v2/directions/foot-walking/geojson';
 const TTL = 60 * 60 * 24 * 7; // 7 jours : le réseau piéton bouge peu
+// Même durée que TTL, pour que le navigateur ne redemande pas une réponse que
+// KV a déjà. Jamais posé sur une erreur : un statut caché serait pire que
+// l'erreur elle-même (le front retry déjà les 429/503/504).
+const CACHE_CONTROL = `public, max-age=${TTL}`;
 
 export default {
   async fetch(request, env) {
@@ -39,7 +43,7 @@ export default {
     const cacheKey = await sha256(body);
     const cached = await env.ORS_CACHE.get(cacheKey);
     if (cached) {
-      return withCors(json(cached, { 'X-Cache': 'HIT' }), origin);
+      return withCors(json(cached, { 'X-Cache': 'HIT', 'Cache-Control': CACHE_CONTROL }), origin);
     }
 
     const upstream = await fetch(ORS, {
@@ -59,7 +63,14 @@ export default {
       await env.ORS_CACHE.put(cacheKey, text, { expirationTtl: TTL });
     }
 
-    return withCors(json(text, { 'X-Cache': 'MISS' }, upstream.status), origin);
+    return withCors(
+      json(
+        text,
+        { 'X-Cache': 'MISS', ...(upstream.ok ? { 'Cache-Control': CACHE_CONTROL } : {}) },
+        upstream.status,
+      ),
+      origin,
+    );
   },
 };
 

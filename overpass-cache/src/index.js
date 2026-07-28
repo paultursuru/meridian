@@ -9,6 +9,9 @@ const ALLOWED_ORIGINS = new Set([
 
 const OVERPASS = 'https://overpass-api.de/api/interpreter';
 const TTL = 60 * 60 * 24 * 30; // 30 jours en secondes
+// Même durée que TTL, pour que le navigateur ne redemande pas une réponse que
+// KV a déjà. Jamais posé sur une erreur : un 504 caché serait pire que le 504.
+const CACHE_CONTROL = `public, max-age=${TTL}`;
 
 export default {
   async fetch(request, env) {
@@ -29,7 +32,7 @@ export default {
     // 1) On cherche en cache (KV)
     const cached = await env.OVERPASS_CACHE.get(cacheKey);
     if (cached) {
-      return withCors(json(cached, { 'X-Cache': 'HIT' }), origin);
+      return withCors(json(cached, { 'X-Cache': 'HIT', 'Cache-Control': CACHE_CONTROL }), origin);
     }
 
     // 2) Cache vide -> on appelle Overpass en transmettant le body tel quel.
@@ -53,7 +56,11 @@ export default {
     }
 
     return withCors(
-      json(text, { 'X-Cache': 'MISS' }, upstream.ok ? 200 : upstream.status),
+      json(
+        text,
+        { 'X-Cache': 'MISS', ...(upstream.ok ? { 'Cache-Control': CACHE_CONTROL } : {}) },
+        upstream.ok ? 200 : upstream.status,
+      ),
       origin,
     );
   },

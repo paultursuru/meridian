@@ -127,11 +127,16 @@ function json(data, status = 200) {
 }
 
 // Same as json(), but for a body that's already a JSON string (a cache hit,
-// or the concatenated tile text) — skips a redundant JSON.stringify.
+// or the concatenated tile text) — skips a redundant JSON.stringify. Always a
+// 200 (errors go through json() instead), so it's safe to cache in the
+// browser unconditionally: swisstopo data only updates ~yearly.
 function rawJson(body) {
   return new Response(body, {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=2592000, immutable', // 30 days
+    },
   });
 }
 
