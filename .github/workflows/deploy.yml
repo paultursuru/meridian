@@ -23,6 +23,12 @@ jobs:
 
       - run: npm test
 
+      # Review #1's 5.5 / review #2's §9.1: the one e2e layer, gating deploy
+      # the same as the unit tests above.
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run test:e2e
+
   deploy:
     name: Deploy to Fly.io
     runs-on: ubuntu-latest

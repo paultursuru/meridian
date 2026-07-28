@@ -1,5 +1,9 @@
 # build output
 dist/
+
+# Playwright e2e artifacts (traces/screenshots on failure, HTML report)
+test-results/
+playwright-report/
 # generated types
 .astro/
 
