@@ -43,5 +43,5 @@ swisstopo-etl/*.json
 swisstopo-etl/chunks/
 swisstopo-etl/build_log.jsonl
 
-docs/
+miscs/
 tmp/
