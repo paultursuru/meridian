@@ -55,7 +55,7 @@ const urls: Record<Lang, string> = {
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
     "author": { "@type": "Person", "url": "https://github.com/paultursuru" }
   })} />
-  <script defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac"></script>
+  <script defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch"></script>
 </head>
 <body>
 
@@ -305,7 +305,13 @@ const urls: Record<Lang, string> = {
   const { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation } = await import('../lib/map.js');
 
   initMap();
-  initTabs((type: string) => setActiveRoute(type));
+  // initTabs' click handler only fires on a real user click on a .tab-btn (unlike
+  // setActiveTab, which is also called programmatically after search/scrub/veg) —
+  // the right place to measure whether the algorithmic preselect actually sticks.
+  initTabs((type: string) => {
+    window.umami?.track('tab_switch', { to: type });
+    setActiveRoute(type);
+  });
   registerServiceWorker();
   initInstallPrompt();
 
@@ -613,12 +619,20 @@ const urls: Record<Lang, string> = {
         hideScrubber();
       } else {
         const initialMinutes = minutesInZone(tDate, destTz);
+        // One 'scrub' event per search, on the first move only — the callback
+        // fires on every drag tick, and per-tick tracking would swamp Umami
+        // with noise instead of answering "is the scrubber used at all".
+        let scrubbed = false;
         showScrubber({
           min: minutesInZone(sunTimes.sunrise, destTz),
           max: minutesInZone(sunTimes.sunset, destTz),
           value: initialMinutes,
           label: fmtHm(initialMinutes),
         }, (minutes: number) => {
+          if (!scrubbed) {
+            scrubbed = true;
+            window.umami?.track('scrub');
+          }
           // Tracked in currentInstant (not re-derived from the range input)
           // so the vegetation continuation below can re-render at wherever
           // the user actually scrubbed to, not snap back to tDate.
@@ -786,9 +800,11 @@ const urls: Record<Lang, string> = {
   button('share-btn').addEventListener('click', async () => {
     const url = location.href;
     if (navigator.share) {
+      window.umami?.track('share', { method: 'native' });
       try { await navigator.share({ title: document.title, url }); }
       catch { /* user dismissed the share sheet */ }
     } else {
+      window.umami?.track('share', { method: 'clipboard' });
       await navigator.clipboard.writeText(url);
       showToast(tr('toast_link_copied'), 'success');
     }
