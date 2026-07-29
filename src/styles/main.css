@@ -517,7 +517,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Results drawer ── */
 #results {
   /* Also read from JS (time-scrubber positioning, see ui.js) — keep both in sync. */
-  --drawer-peek: 144px;
+  --drawer-peek: 168px;
   position: fixed;
   bottom: 0; left: 0; right: 0;
   background: #0e120a;
@@ -709,6 +709,19 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 .ratio-seg-shade { background: #e8c8f0; }
 .ratio-seg-sun   { background: #f0f2a0; }
+
+/* ── Ratio delta (review #2 §4.1: what choosing this tab costs/gains versus
+   the other route, so the trade-off is stated instead of left for the user
+   to compute by switching tabs). Empty (single-route / night results, where
+   there is no second route to compare against) collapses to nothing rather
+   than leaving a blank gap. */
+.ratio-delta {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: rgba(216,219,200,0.62);
+  text-align: center;
+}
+.ratio-delta:empty { display: none; }
 
 /* ── Route details (visible only when drawer is expanded) ── */
 .route-details {

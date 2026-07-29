@@ -1,4 +1,5 @@
 import { fmtDist, fmtDur } from './helpers.js';
+import { tr } from './i18n.js';
 
 export function setStatus(msg) {
   const el = document.getElementById('status');
@@ -100,6 +101,34 @@ export function renderTab(id, rt) {
   }
 }
 
+// Review #2 §4.1: state the trade-off instead of making the user switch tabs
+// and do the subtraction themselves. Sun and shade are complementary, so the
+// two routes' sun-percentage gap is *the* delta for both axes — no separate
+// shade math needed. Each tab states what choosing it costs/saves in time
+// against what it gains on its own axis (shade for the shady tab, sun for
+// the sunny one).
+function fmtTimeDelta(deltaMin) {
+  const sign = deltaMin > 0 ? '+' : deltaMin < 0 ? '−' : '±';
+  return `${sign}${Math.abs(deltaMin)} min`;
+}
+
+function renderDeltas(sunny, shady) {
+  const sunnySunPct = Math.round(sunny.sunScore * 100);
+  const shadySunPct = Math.round(shady.sunScore * 100);
+  const pctDelta = sunnySunPct - shadySunPct; // shared by both axes (shade = 100 - sun)
+  const sunnyMin = Math.round((sunny.duration + climbSeconds(sunny)) / 60);
+  const shadyMin = Math.round((shady.duration + climbSeconds(shady)) / 60);
+
+  document.getElementById('shady-delta').textContent = tr(
+    pctDelta >= 0 ? 'delta_shady_more' : 'delta_shady_less',
+    { time: fmtTimeDelta(shadyMin - sunnyMin), pct: String(Math.abs(pctDelta)) }
+  );
+  document.getElementById('sunny-delta').textContent = tr(
+    pctDelta >= 0 ? 'delta_sunny_more' : 'delta_sunny_less',
+    { time: fmtTimeDelta(sunnyMin - shadyMin), pct: String(Math.abs(pctDelta)) }
+  );
+}
+
 let drawerInited = false;
 
 function initDrawer() {
@@ -162,6 +191,9 @@ export function showResults(sunny, shady, single = false, night = false, heightF
   document.getElementById('night-note').classList.toggle('on', night);
   renderTab('tab-sunny', sunny);
   if (!single) renderTab('tab-shady', shady);
+  document.getElementById('sunny-delta').textContent = '';
+  document.getElementById('shady-delta').textContent = '';
+  if (!single) renderDeltas(sunny, shady);
   const drawer = document.getElementById('results');
   drawer.classList.toggle('night', night);
   drawer.classList.toggle('data-failed', heightFailed);
@@ -177,7 +209,7 @@ export function showResults(sunny, shady, single = false, night = false, heightF
 const SCRUBBER_GAP = 8; // px between the drawer's visible top edge and the scrubber
 
 function drawerPeekPx(drawer) {
-  return parseFloat(getComputedStyle(drawer).getPropertyValue('--drawer-peek')) || 144;
+  return parseFloat(getComputedStyle(drawer).getPropertyValue('--drawer-peek')) || 168;
 }
 
 // Keeps the scrubber docked to the drawer's actual visible top edge. The
