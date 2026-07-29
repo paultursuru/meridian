@@ -48,19 +48,24 @@ export function initInstallPrompt() {
     e.preventDefault();
     deferredPrompt = e;
     showBanner('android');
+    window.umami?.track('install', { stage: 'prompted', platform: 'android' });
   });
 
   // navigator.standalone is iOS-only and false while running in Safari's
   // browser chrome (as opposed to undefined elsewhere, or true once installed).
   if (isIosDevice() && navigator.standalone === false) {
     showBanner('ios');
+    // Safari never fires beforeinstallprompt/userChoice, so 'prompted' is all
+    // we can measure here — no matching 'resolved' event is possible on iOS.
+    window.umami?.track('install', { stage: 'prompted', platform: 'ios' });
   }
 
   document.getElementById('install-banner-close')?.addEventListener('click', dismissBanner);
   document.getElementById('install-banner-btn')?.addEventListener('click', async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
+    const { outcome } = await deferredPrompt.userChoice;
+    window.umami?.track('install', { stage: 'resolved', platform: 'android', outcome });
     deferredPrompt = null;
     dismissBanner();
   });
