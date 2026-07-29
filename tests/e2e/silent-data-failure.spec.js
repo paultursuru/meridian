@@ -47,7 +47,7 @@ test('buildings fetch failing (504) shows the warning note and dims the ratio, w
   await page.goto(SEARCH_URL);
 
   const note = page.locator('#quality-note');
-  await expect(note).toHaveClass(/warn/, { timeout: 20_000 }); // 504 retries 3x with backoff before giving up
+  await expect(note).toHaveClass(/warn/, { timeout: 20_000 }); // buildings retry 3x (1s+3s+6s) before giving up
   await expect(note).toContainText('unavailable');
   await expect(page.locator('#results')).toHaveClass(/data-failed/);
   await expect(page.locator('.tab-pane.active .ratio-track')).toHaveCSS('opacity', '0.4');
