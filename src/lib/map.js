@@ -146,7 +146,7 @@ export function setPreviewPin(role, coords) {
   clearApproxLocation();
   if (previewMarkers[role]) _map.removeLayer(previewMarkers[role]);
   const color = role === 'start' ? '#22c55e' : '#ef4444';
-  previewMarkers[role] = L.marker([coords.lat, coords.lng], { icon: pinIcon(color) }).addTo(_map);
+  previewMarkers[role] = L.marker([coords.lat, coords.lng], { icon: pinIcon(color), keyboard: false }).addTo(_map);
   _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
@@ -225,8 +225,8 @@ export function displayRoutes(startC, endC, sunny, shady) {
       .forEach(l => sunnyLayers.push(l));
   }
 
-  markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('#22c55e') }).addTo(_map));
-  markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('#ef4444') }).addTo(_map));
+  markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('#22c55e'), keyboard: false }).addTo(_map));
+  markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('#ef4444'), keyboard: false }).addTo(_map));
 
   _map.fitBounds(
     L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]),

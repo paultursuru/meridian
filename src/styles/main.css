@@ -245,7 +245,11 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: #d8dbc8;
 }
 #search-panel input[type="text"]::placeholder { color: rgba(216,219,200,0.4); }
-#search-panel input[type="text"]:focus { border-color: rgba(240,242,160,0.5); }
+#search-panel input[type="text"]:focus {
+  border-color: rgba(240,242,160,0.5);
+  outline: 2px solid rgba(240,242,160,0.7);
+  outline-offset: 2px;
+}
 .geo-btn {
   position: absolute;
   right: 6px;

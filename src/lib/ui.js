@@ -257,6 +257,7 @@ export function showScrubber(bounds, onScrub) {
 
 export function setScrubberLabel(label) {
   document.getElementById('scrubber-time').textContent = label;
+  document.getElementById('scrubber-range').setAttribute('aria-valuetext', label);
 }
 
 export function hideScrubber() {
