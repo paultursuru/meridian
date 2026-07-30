@@ -540,6 +540,12 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #results.on       { transform: translateY(calc(100% - var(--drawer-peek))); }
 #results.expanded { transform: translateY(0); overflow-y: auto; }
+/* Night has nothing left to reveal by expanding (ratio-wrap/detail-split are
+   hidden outright, not just clipped, and weather/quality notes are already
+   suppressed) — its natural height is shorter than --drawer-peek, so the peek
+   transform above would leave a gap under the drawer exposing the map. Sit
+   flush at the bottom instead of peeking. */
+#results.night.on { transform: translateY(0); }
 
 /* ── Time scrubber (floats just above the results drawer, follows it up when expanded) ── */
 #time-scrubber {
@@ -657,6 +663,19 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   text-align: center;
 }
 #night-note.on { display: block; }
+#night-note p { margin: 0 0 8px; }
+#night-sunrise-btn {
+  padding: 6px 14px;
+  background: #f0f2a0;
+  color: #0e120a;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#night-sunrise-btn:hover { background: #e4e698; }
 #results.night .ratio-wrap,
 #results.night .detail-split { display: none; }
 
