@@ -122,7 +122,7 @@ const urls: Record<Lang, string> = {
       </div>
     </div>
   </div>
-  <div id="map">
+  <div id="map" role="region" aria-label={t.aria_map}>
     <div id="app-description">
       <div id="app-description-arrow" set:html={arrowIcon} />
       <div id="app-description-content">
@@ -134,7 +134,7 @@ const urls: Record<Lang, string> = {
   </div>
 </div>
 
-<div id="status"></div>
+<div id="status" role="status" aria-live="polite"></div>
 
 <div id="about-overlay"></div>
 <div id="about-drawer" role="dialog" aria-modal="true" aria-label={t.aria_about}>
@@ -173,7 +173,7 @@ const urls: Record<Lang, string> = {
   <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} />
 </div>
 
-<div id="results">
+<div id="results" role="status" aria-live="polite">
   <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
     <div id="drawer-bar"></div>
   </div>
@@ -182,11 +182,11 @@ const urls: Record<Lang, string> = {
   </button>
   <div id="night-note">{t.night_note}</div>
   <div id="single-route-note">{t.single_route_note}</div>
-  <div id="tabs">
-    <button class="tab-btn shady"  data-tab="shady">{t.tab_shady}</button>
-    <button class="tab-btn active" data-tab="sunny">{t.tab_sunny}</button>
+  <div id="tabs" role="tablist">
+    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady">{t.tab_shady}</button>
+    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny">{t.tab_sunny}</button>
   </div>
-  <div id="tab-sunny" class="tab-pane active">
+  <div id="tab-sunny" class="tab-pane active" role="tabpanel" aria-labelledby="tab-btn-sunny">
     <div class="ratio-wrap">
       <div class="ratio-nums">
         <span class="ratio-shade-num">{t.label_shade} <strong id="sunny-shade-pct"></strong></span>
@@ -226,7 +226,7 @@ const urls: Record<Lang, string> = {
     </div>
   </div>
 
-  <div id="tab-shady" class="tab-pane">
+  <div id="tab-shady" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-shady">
     <div class="ratio-wrap">
       <div class="ratio-nums">
         <span class="ratio-shade-num">{t.label_shade} <strong id="shady-shade-pct"></strong></span>
@@ -936,16 +936,38 @@ const urls: Record<Lang, string> = {
   function openAbout() {
     drawer.classList.add('open');
     overlay.classList.add('on');
+    el('app').setAttribute('inert', '');
+    el('about-close').focus();
   }
   function closeAbout() {
     drawer.classList.remove('open');
     overlay.classList.remove('on');
+    el('app').removeAttribute('inert');
+    el('about-btn').focus();
+  }
+
+  // Keeps Tab from leaving the open drawer (it has no native <dialog> to rely
+  // on for this — role="dialog" alone doesn't trap focus).
+  function trapAboutFocus(e: KeyboardEvent) {
+    if (e.key !== 'Tab' || !drawer.classList.contains('open')) return;
+    const focusable = Array.from(drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   el('about-btn').addEventListener('click', openAbout);
   el('about-close').addEventListener('click', closeAbout);
   overlay.addEventListener('click', closeAbout);
   document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeAbout(); });
+  document.addEventListener('keydown', trapAboutFocus);
 
 </script>
 
