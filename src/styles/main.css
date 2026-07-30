@@ -116,18 +116,22 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
    border, drop shadow — but never visible at the same time as that bubble,
    since this only appears once a search has actually run (updateSunInfo,
    called from renderAt) and app-description is already dismissed by then.
-   A real <button>: click toggles #map-sun-info-details open (degrees, day
-   length, weather) — collapsed, it's one line sized to its own content
-   (width: max-content, no wrap needed) rather than the earlier fixed
-   max-width that forced ellipsis/wrapping on longer strings. */
+   A real <button>: click toggles #map-sun-info-details open (degrees,
+   date/time, weather) — collapsed, it's one line sized to its own content
+   (width: fit-content, no wrap needed) rather than the earlier fixed
+   max-width that forced ellipsis/wrapping on longer strings. max-width is
+   still capped, but wide enough for the longest realistic line ("Soleil au
+   nord-ouest · coucher 21:08" and DE's longer "im Nordwesten" compass
+   words) — a too-tight cap combined with white-space: nowrap on that line
+   let text spill past the box edge during scrubbing instead of wrapping. */
 #map-sun-info {
   display: none;
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 1000;
-  width: max-content;
-  max-width: min(240px, calc(100vw - 24px));
+  width: fit-content;
+  max-width: min(300px, calc(100vw - 24px));
   padding: 8px 12px;
   background: #0e120a;
   border: 1.5px solid rgba(240,242,160,0.2);
