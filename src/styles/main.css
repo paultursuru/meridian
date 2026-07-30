@@ -84,42 +84,21 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   transition: color 0.2s, background 0.2s;
 }
 #app-description-close:hover { color: #d8dbc8; background: rgba(240,242,160,0.08); }
-/* Tagline, then — once a search has run — a 3-beat loop with the plain-
-   language sun position and the exact degrees (review 3.2 + 3.3). Pure-CSS
-   animation: ping-pongs 1→2→3→2→1→… via `alternate`, so the loop point
-   never has to jump between mismatched lines. JS only fills the text and
-   flips on `.cycling` once there's real data for lines 2 and 3.
-   No fixed width: shrinks first under pressure (h1 and the about button
-   never do) and ellipsizes rather than pushing the button off-screen. */
+/* Tagline — static, stays up permanently (review 3.3's counter-proposal:
+   the sun position/degrees that used to cycle through here moved to
+   #map-sun-info instead, see main.css below and updateSunInfo() in
+   AppLayout.astro). No fixed width: shrinks first under pressure (h1 and
+   the about button never do) and ellipsizes rather than pushing the
+   button off-screen. */
 #sun-info {
   font-size: 0.82rem;
   font-weight: 600;
   color: rgba(216,219,200,0.6);
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   min-width: 0;
   max-width: 50vw;
-  height: 1.3em;
-  line-height: 1.3em;
-}
-#sun-info.day   { color: #f0f2a0; }
-#sun-info.night { color: #e8c8f0; }
-#sun-info.cycling .sun-info-track {
-  animation: sun-info-cycle 9s ease-in-out infinite alternate;
-}
-@keyframes sun-info-cycle {
-  0%, 27%   { transform: translateY(0); }
-  33%, 60%  { transform: translateY(-1.3em); }
-  66%, 100% { transform: translateY(-2.6em); }
-}
-.sun-info-line {
-  display: block;
-  height: 1.3em;
-  line-height: 1.3em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
 }
 @media (max-width: 600px) {
   #header h1 { font-size: 1rem; }
@@ -129,6 +108,94 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   }
   #sun-info { font-size: 0.7rem; }
   #app-description-arrow { width: 24px; }
+}
+
+/* Plain-language sun position (review 3.2 + 3.3), floated over the map's
+   top-right corner instead of cycling through the header (see #sun-info
+   above). Same visual language as #app-description: dark badge, accent
+   border, drop shadow — but never visible at the same time as that bubble,
+   since this only appears once a search has actually run (updateSunInfo,
+   called from renderAt) and app-description is already dismissed by then.
+   A real <button>: click toggles #map-sun-info-details open (degrees, day
+   length, weather) — collapsed, it's one line sized to its own content
+   (width: max-content, no wrap needed) rather than the earlier fixed
+   max-width that forced ellipsis/wrapping on longer strings. */
+#map-sun-info {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 8px 12px;
+  background: #0e120a;
+  border: 1.5px solid rgba(240,242,160,0.2);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  color: rgba(216,219,200,0.6);
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+#map-sun-info.on { display: block; }
+#map-sun-info.day   { color: #f0f2a0; }
+#map-sun-info.night { color: #e8c8f0; }
+#map-sun-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+#map-sun-info-human {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.3em;
+  white-space: nowrap;
+}
+/* Small down-caret, rotates to point up once expanded — the only visual
+   hint that this badge is clickable at all. */
+#map-sun-info-chevron {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  line-height: 1;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+#map-sun-info-chevron::before { content: '⌄'; }
+#map-sun-info.expanded #map-sun-info-chevron { transform: rotate(180deg); }
+#map-sun-info-details {
+  display: none;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(240,242,160,0.13);
+}
+#map-sun-info.expanded #map-sun-info-details { display: block; }
+#map-sun-info-technical,
+#map-sun-info-datetime,
+#map-sun-info-weather {
+  display: block;
+  text-align: right;
+  /* Wraps instead of ellipsizing: truncating a number here (e.g. "Azimut
+     1…") would defeat the point of a "technical" line — a couple of extra
+     wrapped lines cost far less than losing the data. */
+  white-space: normal;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.3em;
+  opacity: 0.8;
+}
+#map-sun-info-weather:empty { display: none; }
+@media (max-width: 600px) {
+  #map-sun-info {
+    top: 8px;
+    right: 8px;
+    padding: 6px 10px;
+  }
+  #map-sun-info-human { font-size: 0.72rem; }
+  #map-sun-info-technical,
+  #map-sun-info-datetime,
+  #map-sun-info-weather { font-size: 0.65rem; }
 }
 
 /* ── Install banner (review 6.1: nobody knows the app is installable) ── */
