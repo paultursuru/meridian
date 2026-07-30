@@ -16,6 +16,7 @@ export function showToast(msg, type = 'error') {
   if (!el) {
     el = document.createElement('div');
     el.id = 'toast';
+    el.setAttribute('role', 'alert');
     document.body.appendChild(el);
   }
   el.textContent = msg;
