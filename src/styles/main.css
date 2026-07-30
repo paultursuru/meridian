@@ -670,7 +670,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   background: none;
   font-size: 0.88rem;
   font-weight: 600;
-  color: rgba(216,219,200,0.4);
+  color: rgba(216,219,200,0.62);
   cursor: pointer;
   border-bottom: 3px solid transparent;
   margin-bottom: -1.5px;
@@ -691,7 +691,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   align-items: baseline;
   margin-bottom: 10px;
   font-size: 0.8rem;
-  color: rgba(216,219,200,0.5);
+  color: rgba(216,219,200,0.66);
 }
 .ratio-nums strong { font-size: 1.5rem; font-weight: 800; }
 .ratio-shade-num { color: #e8c8f0; }
@@ -748,7 +748,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 .stat-lbl {
   font-size: 0.7rem;
-  color: rgba(216,219,200,0.45);
+  color: rgba(216,219,200,0.64);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -775,7 +775,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 .detail-split-shade .split-val { font-size: 1rem; font-weight: 700; color: #e8c8f0; }
 .detail-split-sun   .split-val { font-size: 1rem; font-weight: 700; color: #f0f2a0; }
-.split-lbl { font-size: 0.72rem; color: rgba(216,219,200,0.45); }
+.split-lbl { font-size: 0.72rem; color: rgba(216,219,200,0.64); }
 .elev-val { letter-spacing: 0.5px; }
 .elev-loading { animation: elev-pulse 1.2s ease-in-out infinite; }
 @keyframes elev-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.7; } }
