@@ -1,11 +1,16 @@
 import { test, expect } from '@playwright/test';
 
 // Review #2 §3.1 + §3.2: the time scrubber re-scores routes and redraws the
-// map on every drag tick, but used to leave the header ("Altitude/Azimut")
-// and the share URL (`dt=`) frozen at the originally-searched time — so a
-// scrubbed screen and a shared/reloaded link silently disagreed with each
-// other. This is the e2e follow-up review #2's own §9.1 flagged as still
-// missing ("not §3.1/§3.2 — those remain open follow-ups").
+// map on every drag tick, but used to leave the sun-info readout
+// ("Altitude/Azimut") and the share URL (`dt=`) frozen at the
+// originally-searched time — so a scrubbed screen and a shared/reloaded link
+// silently disagreed with each other. This is the e2e follow-up review #2's
+// own §9.1 flagged as still missing ("not §3.1/§3.2 — those remain open
+// follow-ups"). The sun-info readout later moved from a header carousel to
+// #map-sun-info (review #2 §3.3, Paul's counter-proposal, 2026-07-30) —
+// #map-sun-info-technical is its equivalent of the old "Altitude/Azimut" line,
+// still updated on every renderAt regardless of the badge's collapsed/expanded
+// state, so this test doesn't need to click it open first.
 
 const START = '48.8738,2.2950';
 const END = '48.8606,2.3376';
@@ -37,13 +42,13 @@ async function mockUpstreams(page) {
   }));
 }
 
-test('scrubbing updates the sun-info header and the share URL, not just the map', async ({ page }) => {
+test('scrubbing updates the sun-info readout and the share URL, not just the map', async ({ page }) => {
   await mockUpstreams(page);
   await page.goto(SEARCH_URL);
 
   await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
 
-  const technicalLine = page.locator('#sun-info .sun-info-line').nth(2);
+  const technicalLine = page.locator('#map-sun-info-technical');
   const before = await technicalLine.textContent();
   const urlBefore = page.url();
   expect(urlBefore).toContain('dt=2026-07-28T14');
@@ -55,7 +60,7 @@ test('scrubbing updates the sun-info header and the share URL, not just the map'
     el.dispatchEvent(new Event('input', { bubbles: true }));
   }, scrubTo);
 
-  // §3.2: the header must track the scrubbed instant, not the one originally searched.
+  // §3.2: the sun-info readout must track the scrubbed instant, not the one originally searched.
   await expect(technicalLine).not.toHaveText(before ?? '');
 
   // §3.1: the share URL must carry the scrubbed time, so sharing after

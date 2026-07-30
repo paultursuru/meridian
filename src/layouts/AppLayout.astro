@@ -67,13 +67,7 @@ const urls: Record<Lang, string> = {
       </a>
     </h1>
     <div id="header-right">
-      <div id="sun-info">
-        <div class="sun-info-track">
-          <span class="sun-info-line">{t.navbar_tagline}</span>
-          <span class="sun-info-line"></span>
-          <span class="sun-info-line"></span>
-        </div>
-      </div>
+      <div id="sun-info">{t.navbar_tagline}</div>
       <button id="about-btn" aria-label={t.aria_about}>i</button>
     </div>
   </div>
@@ -131,6 +125,17 @@ const urls: Record<Lang, string> = {
       <button id="app-description-close" aria-label={t.aria_close}>×</button>
     </div>
     <div id="map-splash"><span>{t.map_loading}</span></div>
+    <button id="map-sun-info" type="button" aria-expanded="false" aria-label={t.aria_sun_info}>
+      <div id="map-sun-info-row">
+        <span id="map-sun-info-human"></span>
+        <span id="map-sun-info-chevron" aria-hidden="true"></span>
+      </div>
+      <div id="map-sun-info-details">
+        <span id="map-sun-info-technical"></span>
+        <span id="map-sun-info-datetime"></span>
+        <span id="map-sun-info-weather"></span>
+      </div>
+    </button>
   </div>
 </div>
 
@@ -281,7 +286,7 @@ const urls: Record<Lang, string> = {
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, dateValueInZone, minutesInZone } from '../lib/timezone.js';
-  import { fetchWeather }                from '../lib/weather.js';
+  import { fetchWeather, weatherAt }     from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
@@ -334,6 +339,18 @@ const urls: Record<Lang, string> = {
   let goToSunrise: () => void = () => {};
   button('night-sunrise-btn').addEventListener('click', () => goToSunrise());
 
+  // review #2 §3.3 follow-up: click to reveal the technical/weather detail
+  // lines instead of always showing them (that's what forced the wrapping
+  // fix in the first place — the collapsed badge now only ever needs to fit
+  // its one plain-language line). State lives entirely in the DOM (a class +
+  // aria-expanded), untouched by updateSunInfo/renderAt, so it survives
+  // scrub ticks and re-renders without any extra bookkeeping.
+  const sunInfoBtn = button('map-sun-info');
+  sunInfoBtn.addEventListener('click', () => {
+    const expanded = sunInfoBtn.classList.toggle('expanded');
+    sunInfoBtn.setAttribute('aria-expanded', String(expanded));
+  });
+
   // App description bubble: intro shown over the map on load, dismissed by
   // its own close button or, automatically, the moment a search starts —
   // it's onboarding, not something worth keeping around once the user acts.
@@ -369,26 +386,45 @@ const urls: Record<Lang, string> = {
   // Cloud cover (%) above which the sunny/shady distinction stops mattering
   const OVERCAST_PCT = 60;
 
-  // Header's sun-info slot: the tagline (rendered server-side, see the
-  // markup above) alone until the first search; from then on a 3-beat
-  // loop — tagline, plain-language sun position, exact degrees (review
-  // 3.3 — nobody knows what azimuth is, but this app is as much about
-  // exploring the sky as it is about routing, so keep both). The timing
-  // and slide are a pure-CSS animation (`.cycling`, see main.css); this
-  // only fills the text and switches the animation on.
-  function updateSunInfo(sun: { azDeg: number; altDeg: number }, times: { sunrise: Date; sunset: Date }, timeZone: string) {
-    const infoEl = el('sun-info');
-    infoEl.classList.toggle('day',   sun.altDeg > 0);
-    infoEl.classList.toggle('night', sun.altDeg <= 0);
+  // review #2 §3.3 (Paul's counter-proposal, 2026-07-30): the plain-language
+  // sun position and exact degrees live on the map now, not in a header
+  // carousel — they change with the scrubber, same as the shadows the map is
+  // already drawing, so showing them there instead of cycling through a
+  // cramped header pill removes the "can't read what you want when you want
+  // it" problem outright. The header keeps only the static tagline.
+  function updateSunInfo(sun: { azDeg: number; altDeg: number }, times: { sunrise: Date; sunset: Date }, timeZone: string, atDate: Date) {
+    const badge = el('map-sun-info');
+    badge.classList.toggle('day',   sun.altDeg > 0);
+    badge.classList.toggle('night', sun.altDeg <= 0);
+    badge.classList.add('on');
 
     const human = sun.altDeg <= 0
       ? tr('night_position', { time: formatTimeInZone(times.sunrise, timeZone) })
       : tr('sun_position', { dir: tr(('dir_' + compassDir(sun.azDeg)) as TranslationKey), time: formatTimeInZone(times.sunset, timeZone) });
     const technical = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
-    const lines = infoEl.querySelectorAll<HTMLSpanElement>('.sun-info-line');
-    lines[1].textContent = human;
-    lines[2].textContent = technical;
-    infoEl.classList.add('cycling');
+    // Locale-aware, and in the *destination's* zone like the rest of this
+    // panel (not the browser's) — timeZone can only be baked into the
+    // formatter's constructor, not passed per-call, so this is built fresh
+    // each render rather than hoisted (same pattern as formatTimeInZone/
+    // dateValueInZone in timezone.js). No year: every date this can show is
+    // either "today-ish" (search) or within the scrubber's own day, so
+    // day+month+time reads as "when" without the clutter.
+    const dateTimeFmt = new Intl.DateTimeFormat(document.documentElement.lang, {
+      timeZone, day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    });
+    const datetime = tr('map_datetime', { date: dateTimeFmt.format(atDate) });
+    el('map-sun-info-human').textContent = human;
+    el('map-sun-info-technical').textContent = technical;
+    el('map-sun-info-datetime').textContent = datetime;
+  }
+
+  // Weather is a single sample at the searched instant (see fetchWeather),
+  // not scrub-reactive — same known limitation as #weather-note, which this
+  // mirrors. Called once weatherP resolves, not from updateSunInfo/renderAt.
+  function updateMapWeatherInfo(weather: { cloudCover: number; temperature: number | null } | null) {
+    el('map-sun-info-weather').textContent = weather && weather.temperature != null
+      ? tr('map_weather', { temp: String(Math.round(weather.temperature)), cloud: String(Math.round(weather.cloudCover)) })
+      : '';
   }
 
 
@@ -450,7 +486,10 @@ const urls: Record<Lang, string> = {
       // Fired now, awaited only before rendering results: the routing +
       // Overpass calls below dwarf it, so it's effectively free. Resolves
       // to null when the date is beyond the forecast horizon or on error.
+      // Holds the whole day's hourly data (not one sample) so the scrubber
+      // can re-sample it via weatherAt() below on every tick, no 2nd fetch.
       const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
+      let hourlyWeather: Awaited<typeof weatherP> = null;
 
       const sunTimes = getSunTimes(tDate, midLat, midLng);
 
@@ -573,6 +612,24 @@ const urls: Record<Lang, string> = {
       }
       updateHeightNote();
 
+      // Sampled from hourlyWeather (a whole day, fetched once) at whatever
+      // instant is being rendered — called from renderAt below so both the
+      // overcast note and the map badge's weather line stay in sync with
+      // the scrubber instead of freezing at the searched hour. hourlyWeather
+      // is still null on the very first render (weatherP hasn't resolved
+      // yet); both targets simply show nothing until it does.
+      function updateWeatherInfo(atDate: Date) {
+        const w = weatherAt(hourlyWeather, atDate);
+        const weatherEl = el('weather-note');
+        if (w && w.cloudCover >= OVERCAST_PCT) {
+          weatherEl.textContent = tr('weather_overcast', { pct: String(Math.round(w.cloudCover)) });
+          weatherEl.classList.add('on');
+        } else {
+          weatherEl.classList.remove('on');
+        }
+        updateMapWeatherInfo(w);
+      }
+
       // Re-scores every already-fetched route for a given instant and re-renders
       // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole
       // search (same corridor all day); only the sun's position changes, so this
@@ -584,7 +641,11 @@ const urls: Record<Lang, string> = {
         // review #2 §3.2: the header must track whatever instant is actually
         // rendered, not just the time originally searched — recomputed here
         // so scrubbing keeps "Altitude/Azimut" in sync with the map's shadows.
-        updateSunInfo(getSun(atDate, midLat, midLng), sunTimes, destTz);
+        updateSunInfo(getSun(atDate, midLat, midLng), sunTimes, destTz, atDate);
+        // review #2 §3.3 follow-up: weather re-sampled per instant too, same
+        // reasoning as the sun position above — it used to freeze at the
+        // searched hour even while everything else tracked the scrubber.
+        updateWeatherInfo(atDate);
 
         // The sun moves ~11° azimuth over a 45-min walk — enough to flip which
         // side of a street is shaded. Score each segment with the sun at its
@@ -643,18 +704,20 @@ const urls: Record<Lang, string> = {
         delta,
       });
 
-      const weather = await weatherP;
-      const weatherEl = el('weather-note');
-      if (weather && weather.cloudCover >= OVERCAST_PCT) {
-        weatherEl.textContent = tr('weather_overcast', { pct: String(Math.round(weather.cloudCover)) });
-        weatherEl.classList.add('on');
-      } else {
-        weatherEl.classList.remove('on');
-      }
+      hourlyWeather = await weatherP;
+      // Refreshes the note/badge immediately at whatever instant is current
+      // (a scrub could already have moved past tDate while this was in
+      // flight) instead of waiting for the next scrub tick to show weather
+      // at all. Doesn't re-run renderAt's route scoring/map redraw — weather
+      // doesn't affect either, so a full re-render here would be pure waste.
+      updateWeatherInfo(currentInstant);
 
       const preselect = single ? 'sunny' : preselectTab({
         altDeg: sun.altDeg,
-        temperature: weather?.temperature ?? null,
+        // Preselection reflects the searched instant, not wherever the user
+        // may have scrubbed to while this was in flight — same reasoning as
+        // `month: tDate.getUTCMonth()` right below, already tDate-pinned.
+        temperature: weatherAt(hourlyWeather, tDate)?.temperature ?? null,
         month: tDate.getUTCMonth(),
         lat: midLat,
       });

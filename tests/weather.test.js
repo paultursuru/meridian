@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { isForecastable, closestHourIndex, fetchWeather } from '../src/lib/weather.js';
+import { isForecastable, closestHourIndex, fetchWeather, weatherAt } from '../src/lib/weather.js';
 
 const NOW = new Date('2026-07-05T12:00:00Z');
 
@@ -55,7 +55,7 @@ describe('fetchWeather', () => {
     return spy;
   }
 
-  it('returns cloud cover and temperature of the hour closest to the target', async () => {
+  it('returns the full day\'s hourly cloud cover and temperature', async () => {
     stubFetch({
       ok: true,
       json: async () => ({
@@ -67,16 +67,20 @@ describe('fetchWeather', () => {
       }),
     });
     const w = await fetchWeather(46.52, 6.63, target, NOW);
-    expect(w).toEqual({ cloudCover: 85, temperature: 26.1 });
+    expect(w).toEqual({
+      times: [T12 + HOUR, T12 + 2 * HOUR, T12 + 3 * HOUR],
+      cloudCover: [10, 85, 40],
+      temperature: [21.3, 26.1, 24.9],
+    });
   });
 
-  it('returns a null temperature when the field is missing', async () => {
+  it('defaults temperature to an empty array when the field is missing', async () => {
     stubFetch({
       ok: true,
       json: async () => ({ hourly: { time: [T12], cloud_cover: [50] } }),
     });
     const w = await fetchWeather(46.52, 6.63, target, NOW);
-    expect(w).toEqual({ cloudCover: 50, temperature: null });
+    expect(w).toEqual({ times: [T12], cloudCover: [50], temperature: [] });
   });
 
   it('requests the UTC day containing the target instant', async () => {
@@ -116,5 +120,31 @@ describe('fetchWeather', () => {
   it('returns null on an empty or malformed payload', async () => {
     stubFetch({ ok: true, json: async () => ({ hourly: { time: [], cloud_cover: [] } }) });
     expect(await fetchWeather(46.52, 6.63, target, NOW)).toBeNull();
+  });
+});
+
+describe('weatherAt', () => {
+  const hourly = {
+    times: [T12, T12 + HOUR, T12 + 2 * HOUR],
+    cloudCover: [10, 85, 40],
+    temperature: [21.3, 26.1, 24.9],
+  };
+
+  it('samples the hour closest to the given instant', () => {
+    expect(weatherAt(hourly, new Date((T12 + 2 * HOUR) * 1000))).toEqual({ cloudCover: 40, temperature: 24.9 });
+  });
+
+  it('re-samples a different instant from the same hourly object (the scrubber use case)', () => {
+    expect(weatherAt(hourly, new Date(T12 * 1000))).toEqual({ cloudCover: 10, temperature: 21.3 });
+    expect(weatherAt(hourly, new Date((T12 + HOUR) * 1000))).toEqual({ cloudCover: 85, temperature: 26.1 });
+  });
+
+  it('returns null when no weather was fetched', () => {
+    expect(weatherAt(null, new Date())).toBeNull();
+  });
+
+  it('returns a null temperature when missing at the sampled hour', () => {
+    const h = { times: [T12], cloudCover: [50], temperature: [] };
+    expect(weatherAt(h, new Date(T12 * 1000))).toEqual({ cloudCover: 50, temperature: null });
   });
 });
