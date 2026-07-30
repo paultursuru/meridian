@@ -286,7 +286,7 @@ const urls: Record<Lang, string> = {
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, dateValueInZone, minutesInZone } from '../lib/timezone.js';
-  import { fetchWeather }                from '../lib/weather.js';
+  import { fetchWeather, weatherAt }     from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
@@ -486,7 +486,10 @@ const urls: Record<Lang, string> = {
       // Fired now, awaited only before rendering results: the routing +
       // Overpass calls below dwarf it, so it's effectively free. Resolves
       // to null when the date is beyond the forecast horizon or on error.
+      // Holds the whole day's hourly data (not one sample) so the scrubber
+      // can re-sample it via weatherAt() below on every tick, no 2nd fetch.
       const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
+      let hourlyWeather: Awaited<typeof weatherP> = null;
 
       const sunTimes = getSunTimes(tDate, midLat, midLng);
 
@@ -609,6 +612,24 @@ const urls: Record<Lang, string> = {
       }
       updateHeightNote();
 
+      // Sampled from hourlyWeather (a whole day, fetched once) at whatever
+      // instant is being rendered — called from renderAt below so both the
+      // overcast note and the map badge's weather line stay in sync with
+      // the scrubber instead of freezing at the searched hour. hourlyWeather
+      // is still null on the very first render (weatherP hasn't resolved
+      // yet); both targets simply show nothing until it does.
+      function updateWeatherInfo(atDate: Date) {
+        const w = weatherAt(hourlyWeather, atDate);
+        const weatherEl = el('weather-note');
+        if (w && w.cloudCover >= OVERCAST_PCT) {
+          weatherEl.textContent = tr('weather_overcast', { pct: String(Math.round(w.cloudCover)) });
+          weatherEl.classList.add('on');
+        } else {
+          weatherEl.classList.remove('on');
+        }
+        updateMapWeatherInfo(w);
+      }
+
       // Re-scores every already-fetched route for a given instant and re-renders
       // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole
       // search (same corridor all day); only the sun's position changes, so this
@@ -621,6 +642,10 @@ const urls: Record<Lang, string> = {
         // rendered, not just the time originally searched — recomputed here
         // so scrubbing keeps "Altitude/Azimut" in sync with the map's shadows.
         updateSunInfo(getSun(atDate, midLat, midLng), sunTimes, destTz, atDate);
+        // review #2 §3.3 follow-up: weather re-sampled per instant too, same
+        // reasoning as the sun position above — it used to freeze at the
+        // searched hour even while everything else tracked the scrubber.
+        updateWeatherInfo(atDate);
 
         // The sun moves ~11° azimuth over a 45-min walk — enough to flip which
         // side of a street is shaded. Score each segment with the sun at its
@@ -679,19 +704,20 @@ const urls: Record<Lang, string> = {
         delta,
       });
 
-      const weather = await weatherP;
-      const weatherEl = el('weather-note');
-      if (weather && weather.cloudCover >= OVERCAST_PCT) {
-        weatherEl.textContent = tr('weather_overcast', { pct: String(Math.round(weather.cloudCover)) });
-        weatherEl.classList.add('on');
-      } else {
-        weatherEl.classList.remove('on');
-      }
-      updateMapWeatherInfo(weather);
+      hourlyWeather = await weatherP;
+      // Refreshes the note/badge immediately at whatever instant is current
+      // (a scrub could already have moved past tDate while this was in
+      // flight) instead of waiting for the next scrub tick to show weather
+      // at all. Doesn't re-run renderAt's route scoring/map redraw — weather
+      // doesn't affect either, so a full re-render here would be pure waste.
+      updateWeatherInfo(currentInstant);
 
       const preselect = single ? 'sunny' : preselectTab({
         altDeg: sun.altDeg,
-        temperature: weather?.temperature ?? null,
+        // Preselection reflects the searched instant, not wherever the user
+        // may have scrubbed to while this was in flight — same reasoning as
+        // `month: tDate.getUTCMonth()` right below, already tDate-pinned.
+        temperature: weatherAt(hourlyWeather, tDate)?.temperature ?? null,
         month: tDate.getUTCMonth(),
         lat: midLat,
       });

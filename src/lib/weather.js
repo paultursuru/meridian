@@ -28,10 +28,13 @@ export function closestHourIndex(unixTimes, targetDate) {
 // response can't stall the rest of the search past this.
 const FETCH_TIMEOUT_MS = 4000;
 
-// Cloud cover (0-100 %) and air temperature (°C) at the given point and
-// instant, or null when the date is outside the forecast window or the
-// request fails (including a timeout). Weather is best-effort decoration:
-// every failure path returns null and the search continues without it.
+// The full day's hourly cloud cover (0-100 %) and air temperature (°C) at
+// the given point, or null when the date is outside the forecast window or
+// the request fails (including a timeout). Weather is best-effort
+// decoration: every failure path returns null and the search continues
+// without it. Returns the whole day (not just the searched instant) so a
+// caller re-scoring at a different instant — the time scrubber — can
+// re-sample via weatherAt() below without a second network call.
 export async function fetchWeather(lat, lng, date, now = new Date()) {
   if (!isForecastable(date, now)) return null;
   const day = date.toISOString().split('T')[0]; // UTC day containing `date`
@@ -44,12 +47,21 @@ export async function fetchWeather(lat, lng, date, now = new Date()) {
     const times  = d?.hourly?.time;
     const covers = d?.hourly?.cloud_cover;
     if (!times?.length || !covers?.length) return null;
-    const i = closestHourIndex(times, date);
-    const cloudCover  = covers[i];
-    const temperature = d?.hourly?.temperature_2m?.[i];
-    if (!Number.isFinite(cloudCover)) return null;
-    return { cloudCover, temperature: Number.isFinite(temperature) ? temperature : null };
+    return { times, cloudCover: covers, temperature: d?.hourly?.temperature_2m ?? [] };
   } catch {
     return null;
   }
+}
+
+// Cloud cover/temperature at a specific instant, sampled from a fetchWeather()
+// result — e.g. re-called on every scrub tick with the same `hourly` object
+// and a different `date`, no extra request. null in (no weather fetched, or
+// the sampled hour's cloud cover is missing) → null out.
+export function weatherAt(hourly, date) {
+  if (!hourly) return null;
+  const i = closestHourIndex(hourly.times, date);
+  const cloudCover  = hourly.cloudCover[i];
+  const temperature = hourly.temperature[i];
+  if (!Number.isFinite(cloudCover)) return null;
+  return { cloudCover, temperature: Number.isFinite(temperature) ? temperature : null };
 }
