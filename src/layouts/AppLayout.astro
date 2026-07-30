@@ -182,11 +182,11 @@ const urls: Record<Lang, string> = {
   </button>
   <div id="night-note">{t.night_note}</div>
   <div id="single-route-note">{t.single_route_note}</div>
-  <div id="tabs">
-    <button class="tab-btn shady"  data-tab="shady">{t.tab_shady}</button>
-    <button class="tab-btn active" data-tab="sunny">{t.tab_sunny}</button>
+  <div id="tabs" role="tablist">
+    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady">{t.tab_shady}</button>
+    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny">{t.tab_sunny}</button>
   </div>
-  <div id="tab-sunny" class="tab-pane active">
+  <div id="tab-sunny" class="tab-pane active" role="tabpanel" aria-labelledby="tab-btn-sunny">
     <div class="ratio-wrap">
       <div class="ratio-nums">
         <span class="ratio-shade-num">{t.label_shade} <strong id="sunny-shade-pct"></strong></span>
@@ -226,7 +226,7 @@ const urls: Record<Lang, string> = {
     </div>
   </div>
 
-  <div id="tab-shady" class="tab-pane">
+  <div id="tab-shady" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-shady">
     <div class="ratio-wrap">
       <div class="ratio-nums">
         <span class="ratio-shade-num">{t.label_shade} <strong id="shady-shade-pct"></strong></span>

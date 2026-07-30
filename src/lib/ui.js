@@ -53,9 +53,13 @@ export function fmtDurWithClimb(rt) {
 export function initTabs(onTabChange) {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
       onTabChange?.(btn.dataset.tab);
     });
@@ -63,9 +67,11 @@ export function initTabs(onTabChange) {
 }
 
 export function setActiveTab(type) {
-  document.querySelectorAll('.tab-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.tab === type)
-  );
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const active = b.dataset.tab === type;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', String(active));
+  });
   document.querySelectorAll('.tab-pane').forEach(p =>
     p.classList.toggle('active', p.id === 'tab-' + type)
   );
