@@ -238,7 +238,11 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   padding: 8px 60px 8px 12px;
   border: 1.5px solid rgba(240,242,160,0.2);
   border-radius: 8px;
-  font-size: 0.88rem;
+  /* 16px minimum, not 0.88rem/~14px: below that, iOS Safari auto-zooms the
+     whole page on focus (its own accessibility affordance for legible
+     input text) — fighting it with user-scalable=no would break WCAG 1.4.4
+     for everyone else instead, see review #2 §6.6. */
+  font-size: 1rem;
   outline: none;
   transition: border-color 0.2s;
   background: #161b12;
@@ -300,7 +304,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   padding: 8px 10px;
   border: 1.5px solid rgba(240,242,160,0.2);
   border-radius: 8px;
-  font-size: 0.82rem;
+  font-size: 1rem; /* same 16px iOS auto-zoom threshold as the text inputs above */
   outline: none;
   background: #161b12;
   color: #d8dbc8;
