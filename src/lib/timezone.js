@@ -32,6 +32,16 @@ export function formatTimeInZone(date, timeZone) {
   return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date);
 }
 
+// "YYYY-MM-DD" wall-clock reading of `date` in `timeZone` — same formatToParts
+// approach as tzOffsetMs above, to avoid relying on a locale's date-format
+// separator/order (e.g. en-CA) staying stable across ICU versions.
+export function dateValueInZone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 // Minutes since local midnight (0-1439) for `date`'s wall-clock reading in `timeZone`.
 export function minutesInZone(date, timeZone) {
   const [h, m] = formatTimeInZone(date, timeZone).split(':').map(Number);
