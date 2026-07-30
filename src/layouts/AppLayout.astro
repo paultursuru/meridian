@@ -936,16 +936,38 @@ const urls: Record<Lang, string> = {
   function openAbout() {
     drawer.classList.add('open');
     overlay.classList.add('on');
+    el('app').setAttribute('inert', '');
+    el('about-close').focus();
   }
   function closeAbout() {
     drawer.classList.remove('open');
     overlay.classList.remove('on');
+    el('app').removeAttribute('inert');
+    el('about-btn').focus();
+  }
+
+  // Keeps Tab from leaving the open drawer (it has no native <dialog> to rely
+  // on for this — role="dialog" alone doesn't trap focus).
+  function trapAboutFocus(e: KeyboardEvent) {
+    if (e.key !== 'Tab' || !drawer.classList.contains('open')) return;
+    const focusable = Array.from(drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   el('about-btn').addEventListener('click', openAbout);
   el('about-close').addEventListener('click', closeAbout);
   overlay.addEventListener('click', closeAbout);
   document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeAbout(); });
+  document.addEventListener('keydown', trapAboutFocus);
 
 </script>
 
