@@ -277,7 +277,7 @@ const urls: Record<Lang, string> = {
   import { fetchVegetation }             from '../lib/trees.js';
   import { scoreRoute }                  from '../lib/shadow.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
-  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, minutesInZone } from '../lib/timezone.js';
+  import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, dateValueInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather }                from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
   import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
@@ -444,7 +444,6 @@ const urls: Record<Lang, string> = {
       const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
 
       const sunTimes = getSunTimes(tDate, midLat, midLng);
-      updateSunInfo(sun, sunTimes, destTz);
 
       const routes = await buildRoutes(startC, endC, setStatus);
       if (!routes.length) throw new Error(tr('error_no_route'));
@@ -537,6 +536,11 @@ const urls: Record<Lang, string> = {
       // the routes ORS already returned, not re-fetching new route alternatives
       // per hour — that would be a much heavier, separate feature).
       function renderAt(atDate: Date) {
+        // review #2 §3.2: the header must track whatever instant is actually
+        // rendered, not just the time originally searched — recomputed here
+        // so scrubbing keeps "Altitude/Azimut" in sync with the map's shadows.
+        updateSunInfo(getSun(atDate, midLat, midLng), sunTimes, destTz);
+
         // The sun moves ~11° azimuth over a 45-min walk — enough to flip which
         // side of a street is shaded. Score each segment with the sun at its
         // estimated arrival time instead of freezing it at departure.
@@ -556,6 +560,16 @@ const urls: Record<Lang, string> = {
 
         displayRoutes(startC, endC, sunnyRt, single ? null : shadyRt);
         showResults(sunnyRt, shadyRt, single, night, heightState === 'failed');
+
+        // review #2 §3.1: re-derived from `atDate` on every render (not just
+        // once from the search form's dateV/timeV) so a shared link always
+        // captures whatever instant is actually on screen, scrubbed or not.
+        history.replaceState(null, '', location.pathname + '?' + buildShareQuery({
+          start: { ...startC, label: startQ },
+          end:   { ...endC,   label: endQ },
+          date: dateValueInZone(atDate, destTz),
+          time: formatTimeInZone(atDate, destTz),
+        }));
       }
 
       // First render: buildings only (or nothing, at night) — the drawer must
@@ -592,14 +606,6 @@ const urls: Record<Lang, string> = {
       } else {
         weatherEl.classList.remove('on');
       }
-
-      // Make the result shareable/bookmarkable: reflect the search in the URL.
-      history.replaceState(null, '', location.pathname + '?' + buildShareQuery({
-        start: { ...startC, label: startQ },
-        end:   { ...endC,   label: endQ },
-        date: dateV,
-        time: timeV,
-      }));
 
       const preselect = single ? 'sunny' : preselectTab({
         altDeg: sun.altDeg,
