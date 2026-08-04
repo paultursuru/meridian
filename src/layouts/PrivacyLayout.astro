@@ -57,7 +57,7 @@ const backLabels: Record<Lang, string> = {
   <link rel="alternate" hreflang="it" href={privacyUrls.it} />
   <link rel="alternate" hreflang="en" href={privacyUrls.en} />
   <link rel="alternate" hreflang="x-default" href={privacyUrls.fr} />
-  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-performance="true"></script>
+  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="true"></script>
 </head>
 <body class="privacy-page">
 
@@ -142,6 +142,12 @@ const backLabels: Record<Lang, string> = {
   }
   .about-link:hover { color: #f0f2a0; }
 </style>
+
+<!-- Bundle par Astro (pas is:inline) : la CSP interdit les scripts inline. -->
+<script>
+  import { trackPageview } from '../lib/analytics.js';
+  trackPageview();
+</script>
 
 </body>
 </html>

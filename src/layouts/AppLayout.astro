@@ -55,7 +55,7 @@ const urls: Record<Lang, string> = {
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
     "author": { "@type": "Person", "url": "https://github.com/paultursuru" }
   })} />
-  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-performance="true"></script>
+  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="true"></script>
 </head>
 <body>
 
@@ -296,15 +296,20 @@ const urls: Record<Lang, string> = {
   import { localDateValue, fmtHm }        from '../lib/helpers.js';
   import { initInstallPrompt, registerServiceWorker, isStandalone } from '../lib/pwa.js';
   import { saveLastPosition, getLastPosition } from '../lib/lastPosition.js';
+  import { trackPageview } from '../lib/analytics.js';
 
   // Umami's script (loaded below) attaches this global; it's absent until the
   // script loads (and never present at all if an ad/tracker blocker strips
   // it), so every call site must go through the optional-chained window.umami.
   declare global {
     interface Window {
-      umami?: { track: (event: string, data?: Record<string, unknown>) => void };
+      umami?: { track: (event?: string, data?: Record<string, unknown>) => void };
     }
   }
+
+  // The tag carries data-auto-pageview="false" (see analytics.js for why), so
+  // the arrival page view is ours to send. Custom events are unaffected.
+  trackPageview();
 
   // Leaflet + MapLibre are ~330 KB of the first-load bundle and aren't needed
   // until the map itself renders (the splash covers it until then), so they're
