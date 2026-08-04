@@ -213,3 +213,14 @@ than a drop-in API swap:
   other route is unaffected, byte-for-byte the same Overpass path as before.
 
 Data: [swissBUILDINGS3D 3.0](https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta), © [swisstopo](https://github.com/swisstopo) — Federal Office of Topography.
+
+---
+
+## License
+
+[MIT](LICENSE) © Paul Lahana.
+
+The app relies on third-party data and services under their own terms, notably
+[OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL) and
+[swissBUILDINGS3D 3.0](https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta)
+(© swisstopo). The MIT license covers this repository's own code, not that data.
