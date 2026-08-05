@@ -16,6 +16,30 @@ function rateLimitError() {
   return err;
 }
 
+// Any other non-retryable ORS status. Without this the UI showed the raw
+// "Erreur : ORS 400", which means nothing to anyone: a real user hit it on
+// 2026-08-05 and could only report "it doesn't work". The technical detail
+// stays on the error for the console and Sentry; the UI translates the code.
+function routeFailedError(status) {
+  const err = new Error(`ORS ${status}`);
+  err.code = 'ROUTE_FAILED';
+  return err;
+}
+
+// A pedestrian route stops making sense long before ORS's own ceiling (it
+// refuses anything over 6000 km with error 2004). In practice, a distance
+// this large means the geocoder matched something absurd rather than that the
+// user really wants to walk: the 2026-08-05 report came from typing "ouchy",
+// which Nominatim resolved to a farm in Queensland, Australia. Catching it
+// here turns a raw upstream 400 into a message that names the actual problem.
+const MAX_WALK_M = 300_000;
+
+function tooFarError() {
+  const err = new Error('walking distance beyond MAX_WALK_M');
+  err.code = 'TOO_FAR';
+  return err;
+}
+
 // Coords from ORS with elevation=true are [lon, lat, ele].
 function calcElevFromCoords(coords) {
   let up = 0, down = 0;
@@ -46,7 +70,7 @@ async function orsPost(body) {
       body: JSON.stringify(body),
     });
     if (RETRYABLE.has(r.status)) { lastStatus = r.status; continue; }
-    if (!r.ok) throw new Error(`ORS ${r.status}`);
+    if (!r.ok) throw routeFailedError(r.status);
     const d = await r.json();
     return parseFeatures(d.features || []);
   }
@@ -106,6 +130,10 @@ export function dedupeRoutes(all, directDist) {
 
 export async function buildRoutes(start, end, onStatus) {
   onStatus(tr('status_routing'));
+  const directDist = haversine(start.lat, start.lng, end.lat, end.lng);
+  // Checked before the request: no point spending an ORS call (and one of the
+  // 2000 daily quota) on a route the user cannot have meant.
+  if (directDist > MAX_WALK_M) throw tooFarError();
   const all = await orsAlts(start, end);
-  return dedupeRoutes(all, haversine(start.lat, start.lng, end.lat, end.lng));
+  return dedupeRoutes(all, directDist);
 }
