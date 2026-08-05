@@ -42,13 +42,22 @@ async function mockUpstreams(page) {
   await page.route('https://overpass-cache.meridianway.workers.dev/**', route => route.fulfill({ json: { elements: [] } }));
 }
 
+// Le HTML est statique : les champs et le bouton existent avant que le script
+// ait attache ses ecouteurs. initAutocomplete() pose role=combobox sur les deux
+// champs, ce qui donne un signal fiable que le script a tourne — sans ca, un
+// clic trop precoce ne declenche rien et le test est flaky.
+async function waitForApp(page) {
+  await page.waitForSelector('#inp-start[role="combobox"]');
+  await page.waitForSelector('#inp-end[role="combobox"]');
+}
+
 test.beforeEach(async ({ page }) => {
   await mockUpstreams(page);
 });
 
 test('un champ rempli sans événement input laisse quand même lancer la recherche', async ({ page }) => {
   await page.goto('/en/');
-  await expect(page.locator('#inp-start')).toBeVisible();
+  await waitForApp(page);
 
   // Écriture directe de .value, sans dispatch : c'est ce que font une dictée,
   // un autofill ou une extension, et c'est le cœur du bug signalé.
@@ -72,7 +81,7 @@ test('un champ rempli sans événement input laisse quand même lancer la recher
 
 test('les deux champs vides : message visible, bulle d\'accueil masquée, focus sur le départ', async ({ page }) => {
   await page.goto('/en/');
-  await expect(page.locator('#inp-start')).toBeVisible();
+  await waitForApp(page);
 
   await page.click('#search-btn');
 
@@ -91,7 +100,7 @@ test('les deux champs vides : message visible, bulle d\'accueil masquée, focus 
 
 test('un seul champ rempli : le focus va sur le champ manquant', async ({ page }) => {
   await page.goto('/en/');
-  await expect(page.locator('#inp-start')).toBeVisible();
+  await waitForApp(page);
 
   await page.fill('#inp-start', START_Q);
   await page.keyboard.press('Escape');
@@ -103,7 +112,7 @@ test('un seul champ rempli : le focus va sur le champ manquant', async ({ page }
 
 test('le parcours tapé normal reste inchangé, et le bouton se désactive pendant le calcul', async ({ page }) => {
   await page.goto('/en/');
-  await expect(page.locator('#inp-start')).toBeVisible();
+  await waitForApp(page);
 
   await page.fill('#inp-start', START_Q);
   await page.keyboard.press('Escape');
