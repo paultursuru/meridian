@@ -2,7 +2,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-leaflet';
-import { collapseDrawer } from './ui.js';
+import { collapseDrawer, bottomOverlayPx } from './ui.js';
+import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { tr } from './i18n.js';
 import targetIcon from '../icons/target.svg?raw';
 
@@ -228,8 +229,20 @@ export function displayRoutes(startC, endC, sunny, shady) {
   markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('#22c55e'), keyboard: false }).addTo(_map));
   markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('#ef4444'), keyboard: false }).addTo(_map));
 
+  // Bottom padding measured rather than assumed, so the route lands in the
+  // strip the user can actually see instead of under the drawer and scrubber.
+  const padding = {
+    topLeft: FIT_PADDING.topLeft,
+    bottomRight: [FIT_PADDING.bottomRight[0], bottomOverlayPx()],
+  };
+
+  // Then clamped to whatever the container measures, and the zoom capped:
+  // asking for more padding than the map is tall (a small phone in portrait
+  // with the soft keyboard open measures ~204px here) makes Leaflet store an
+  // Infinity zoom without complaining, and the map then dies with "Invalid
+  // LatLng object: (NaN, NaN)" at the next resize. See mapFit.js.
   _map.fitBounds(
     L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]),
-    { paddingTopLeft: [40, 30], paddingBottomRight: [40, 200] }
+    { ...clampFitPadding(_map.getSize(), padding), maxZoom: FIT_MAX_ZOOM }
   );
 }

@@ -468,7 +468,16 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 
 /* ── Map ── */
-#map { flex: 1; z-index: 1; position: relative; }
+/* min-height: as a bare `flex: 1` item in a 100vh column, #map absorbs every
+   pixel the header and search panel don't want, and on a short viewport (a
+   phone in landscape, or in portrait with the soft keyboard open, which
+   Firefox for Android resizes the layout viewport for) that left it a sliver.
+   The fitBounds NaN crash that came out of that is fixed properly in
+   mapFit.js; this is about the map staying usable at all. Deliberately low:
+   below header + panel + 160px of viewport the bottom of the map is clipped
+   instead (body is overflow: hidden), which is the better of the two bad
+   outcomes since the results drawer covers that strip anyway. */
+#map { flex: 1; min-height: 160px; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
 /* Blurred shadow under the sun/shade route gradient (see drawGradientRoute in map.js) —
    a soft glow reads as a shadow, unlike a crisp parallel outline. */
@@ -832,6 +841,28 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   text-align: center;
 }
 .ratio-delta:empty { display: none; }
+
+/* Short viewport (a 320x640-class phone, or any phone in landscape): the map
+   is only ~420px tall there, and the drawer's 168px peek plus the scrubber
+   floating above it swallow half of it, leaving the route in a sliver. Trim
+   the drawer's *spacing* rather than its content — it's laid out for a tall
+   screen, and at 320x640 only 140 of its 264px are actual content — then lower
+   the peek to match. The headline percentages come down a step too, still the
+   biggest thing in the drawer by some way. ui.js reads --drawer-peek to dock
+   the scrubber, and map.js reads it through bottomOverlayPx() to frame the
+   route, so both follow this automatically.
+   Placed here, after every rule it overrides: a media query adds no
+   specificity, so an earlier block would simply lose to the base rules. */
+@media (max-height: 700px) {
+  /* Tuned to the compacted content below it: handle + tabs + ratio bar +
+     the delta line, which is the last thing worth reading without expanding. */
+  #results { --drawer-peek: 142px; }
+  #drawer-handle { padding: 6px 0 7px; }
+  .tab-btn { padding: 7px 0; }
+  .tab-pane { padding: 10px 16px; }
+  .ratio-nums { margin-bottom: 7px; }
+  .ratio-nums strong { font-size: 1.3rem; }
+}
 
 /* ── Route details (visible only when drawer is expanded) ── */
 .route-details {
