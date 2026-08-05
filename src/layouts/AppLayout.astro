@@ -370,15 +370,19 @@ const urls: Record<Lang, string> = {
 
   // Reflects whether each address field has text: toggles the ✕ clear button
   // (`.has-value` on `.input-wrap`, see main.css) and the Calculate button.
+  // Only drives the ✕ clear button's visibility. The search buttons are
+  // deliberately NOT disabled on empty fields: handleSearch already refuses
+  // empty input with a translated message, and a disabled button receives no
+  // click at all. A field filled without firing `input` — dictation, autofill,
+  // a browser extension, some assistive input methods — used to leave the user
+  // with two visible addresses and a button that did nothing, with no way to
+  // find out why (reported by a user, 2026-08-05). The buttons are still
+  // disabled while a search is in flight, which is a different concern.
   function syncInputState() {
     const sVal = input('inp-start').value.trim();
     const eVal = input('inp-end').value.trim();
     input('inp-start').closest('.input-wrap')!.classList.toggle('has-value', !!sVal);
     input('inp-end').closest('.input-wrap')!.classList.toggle('has-value', !!eVal);
-    const ready = !!(sVal && eVal);
-    button('search-btn').disabled = !ready;
-    button('depart-toggle').disabled = !ready;
-    button('depart-confirm').disabled = !ready;
   }
 
   let startAC: ReturnType<typeof initAutocomplete>;
@@ -448,7 +452,19 @@ const urls: Record<Lang, string> = {
     const dateV  = input('inp-date').value;
     const timeV  = input('inp-time').value;
 
-    if (!startQ || !endQ) { showToast(tr('alert_empty')); return; }
+    // Focus the offending field on top of the message: with the buttons no
+    // longer disabled, this is now the only signal telling the user what is
+    // missing, so it has to point at it rather than just say it.
+    if (!startQ || !endQ) {
+      // Sans ça, le message se superpose à la bulle d'accueil, qui dit déjà de
+      // remplir les champs : deux textes empilés, dont le nouveau se remarque
+      // à peine. hideAppDescription() est appelé plus bas pour les recherches
+      // qui aboutissent, mais ce chemin-ci sort avant.
+      hideAppDescription();
+      showToast(tr('alert_empty'));
+      input(startQ ? 'inp-end' : 'inp-start').focus();
+      return;
+    }
 
     const btn = button('search-btn');
     btn.disabled = true;
