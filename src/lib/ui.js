@@ -219,6 +219,22 @@ function drawerPeekPx(drawer) {
   return parseFloat(getComputedStyle(drawer).getPropertyValue('--drawer-peek')) || 168;
 }
 
+// The scrubber's own height. Hardcoded rather than measured because the one
+// caller that needs it (bottomOverlayPx, for map.js) runs on the first render,
+// before showScrubber has taken it out of display:none — offsetHeight is 0
+// there. Kept in sync with #time-scrubber's padding + content in main.css.
+const SCRUBBER_HEIGHT = 34;
+
+// How much of the map's bottom edge is covered by chrome: the drawer's peek
+// plus the scrubber floating above it. map.js keeps the fitted route clear of
+// this strip (see mapFit.js), and reading it from the same CSS var the
+// scrubber positions itself from means a media query that shrinks the drawer
+// re-frames the route to match, with no second copy of the number to update.
+export function bottomOverlayPx() {
+  const drawer = document.getElementById('results');
+  return (drawer ? drawerPeekPx(drawer) : 168) + SCRUBBER_GAP + SCRUBBER_HEIGHT;
+}
+
 // Keeps the scrubber docked to the drawer's actual visible top edge. The
 // collapsed height is the fixed CSS peek; the expanded height is content-driven
 // (offsetHeight), which the transform-based expand/collapse doesn't change.
