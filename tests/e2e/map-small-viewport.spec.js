@@ -142,9 +142,8 @@ test.describe('fitBounds on a zero-size bounds', () => {
     //
     // Reachable because buildShareQuery rounds to 5 decimals (~1 m), so two
     // genuinely distinct endpoints a metre apart serialise to the identical
-    // string and come back equal. The mocked route has to be 0 m long to
-    // match: dedupeRoutes drops anything longer than 2.5x the direct
-    // distance (routing.js), which is 0 for coincident endpoints.
+    // string and come back equal. The mocked route is 0 m long to match the
+    // coincident endpoints.
     const pageErrors = [];
     page.on('pageerror', e => pageErrors.push(e.message));
 
