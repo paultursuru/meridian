@@ -42,24 +42,36 @@ describe('routeOverlap', () => {
 });
 
 describe('dedupeRoutes', () => {
-  const directDist = 1500; // ~6.60→6.62 at 46.5°N
-
   it('keeps same-length routes on different streets (old distance dedup merged these)', () => {
     const a = route(line(46.52, 6.60, 6.62), 1540);
     const b = route(line(46.522, 6.60, 6.62), 1545);
-    expect(dedupeRoutes([a, b], directDist)).toHaveLength(2);
+    expect(dedupeRoutes([a, b])).toHaveLength(2);
   });
 
   it('drops a route with the same geometry', () => {
     const coords = line(46.52, 6.60, 6.62);
     const a = route(coords, 1540);
     const b = route(coords.slice().reverse(), 1560);
-    expect(dedupeRoutes([a, b], directDist)).toHaveLength(1);
+    expect(dedupeRoutes([a, b])).toHaveLength(1);
   });
 
-  it('drops routes longer than 2.5× the direct distance', () => {
+  it('drops alternatives far longer than the best route', () => {
     const a = route(line(46.52, 6.60, 6.62), 1540);
     const detour = route(line(46.53, 6.60, 6.62), 4000);
-    expect(dedupeRoutes([a, detour], directDist)).toHaveLength(1);
+    expect(dedupeRoutes([a, detour])).toHaveLength(1);
+  });
+
+  it('keeps a heavily detoured route when it is the only way (Ecublens VD 2026-08-06)', () => {
+    // 598 m apart as the crow flies, but the motorway and the railway push the
+    // real walk to 1.7 km and 2.0 km. The old 2.5×-direct cap (1495 m) dropped
+    // both and the UI reported "aucun itinéraire trouvé".
+    const a = route(line(46.52, 6.60, 6.62), 1726.9);
+    const b = route(line(46.522, 6.60, 6.62), 2041.3);
+    expect(dedupeRoutes([a, b])).toHaveLength(2);
+  });
+
+  it('never returns empty for a non-empty ORS response', () => {
+    const only = route(line(46.52, 6.60, 6.62), 50_000);
+    expect(dedupeRoutes([only])).toHaveLength(1);
   });
 });

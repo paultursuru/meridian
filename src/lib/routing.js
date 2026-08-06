@@ -116,12 +116,27 @@ export function routeOverlap(coordsA, coordsB) {
   return hits / cellsA.size;
 }
 
+// How much longer than the best route an alternative may be. 1.8 mirrors the
+// weight_factor orsAlts asks for, so we never throw away a route we explicitly
+// requested.
+//
+// This used to cap at 2.5× the *crow-flies* distance, which silently deleted
+// every route whenever a barrier forced a detour: a user reported "no route
+// found" between two streets in Ecublens VD 600 m apart, where the motorway and
+// the railway push the real walk to 1.7 km, i.e. 2.9× direct. ORS returned two
+// perfectly good routes and both were dropped, leaving zero. A ratio against
+// the direct line only measures how obstructed the terrain is; measuring
+// alternatives against the shortest route ORS found is what the filter actually
+// meant, and it can never empty a non-empty result.
+const ALT_MAX_FACTOR = 1.8;
+
 // Dedup by geometry, not by distance: two same-length routes on different
 // streets are exactly the pairs worth keeping for sun scoring.
-export function dedupeRoutes(all, directDist) {
+export function dedupeRoutes(all) {
+  const shortest = Math.min(...all.map(rt => rt.distance));
   const unique = [];
   for (const rt of all) {
-    if (rt.distance > directDist * 2.5) continue;
+    if (rt.distance > shortest * ALT_MAX_FACTOR) continue;
     const dup = unique.some(u => routeOverlap(rt.geometry.coordinates, u.geometry.coordinates) >= 0.9);
     if (!dup) unique.push(rt);
   }
@@ -135,5 +150,5 @@ export async function buildRoutes(start, end, onStatus) {
   // 2000 daily quota) on a route the user cannot have meant.
   if (directDist > MAX_WALK_M) throw tooFarError();
   const all = await orsAlts(start, end);
-  return dedupeRoutes(all, directDist);
+  return dedupeRoutes(all);
 }
