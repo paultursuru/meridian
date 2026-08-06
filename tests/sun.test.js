@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import SunCalc from 'suncalc';
-import { getSun, makeSunSampler } from '../src/lib/sun.js';
+import { getSun, makeSunSampler, isGrazingSun, GRAZING_SUN_DEG } from '../src/lib/sun.js';
 
 // Lausanne — a fixed location for deterministic results.
 const LAT = 46.52, LNG = 6.63;
@@ -47,5 +47,32 @@ describe('makeSunSampler', () => {
   it('memoizes within a quantization bucket', () => {
     const sunAt = makeSunSampler(departure, LAT, LNG, 60);
     expect(sunAt(10)).toBe(sunAt(20)); // same 60 s bucket → same object
+  });
+});
+
+describe('isGrazingSun (review 7.3)', () => {
+  it('is false at night, where the night note already explains things', () => {
+    expect(isGrazingSun(-0.1)).toBe(false);
+    expect(isGrazingSun(-20)).toBe(false);
+    expect(isGrazingSun(0)).toBe(false);
+  });
+
+  it('is true while the sun is up but under the threshold', () => {
+    expect(isGrazingSun(0.1)).toBe(true);
+    expect(isGrazingSun(2.3)).toBe(true);   // Lausanne at the 2026-08-12 eclipse
+    expect(isGrazingSun(GRAZING_SUN_DEG - 0.01)).toBe(true);
+  });
+
+  it('is false once the buildings-only model is trustworthy again', () => {
+    expect(isGrazingSun(GRAZING_SUN_DEG)).toBe(false);
+    expect(isGrazingSun(30)).toBe(false);
+  });
+
+  it('brackets the altitude where a 150 m bbox padding stops containing shadows', () => {
+    // A 10 m building's shadow is height/tan(alt); at the threshold it is
+    // already 114 m, i.e. most of the padding buildings.js fetches.
+    const shadow = 10 / Math.tan(GRAZING_SUN_DEG * Math.PI / 180);
+    expect(shadow).toBeGreaterThan(100);
+    expect(shadow).toBeLessThan(150);
   });
 });
