@@ -238,6 +238,15 @@ export function bottomOverlayPx() {
 // Keeps the scrubber docked to the drawer's actual visible top edge. The
 // collapsed height is the fixed CSS peek; the expanded height is content-driven
 // (offsetHeight), which the transform-based expand/collapse doesn't change.
+//
+// Because the expanded case reads offsetHeight, anything that changes the
+// drawer's *content* moves its top edge and must re-run this. Firing it only
+// on expand/collapse and window resize was not enough: a note appearing while
+// the drawer was already open grew it under a scrubber that stayed put, and
+// the drawer covered it (reported 2026-08-06 with the grazing-sun note, but
+// the vegetation-failed line and the weather note can do the same thing when
+// their background fetches resolve). A ResizeObserver on the drawer catches
+// every one of those without each caller having to remember.
 function updateScrubberPosition() {
   const scrubber = document.getElementById('time-scrubber');
   if (!scrubber.classList.contains('on')) return;
@@ -254,7 +263,16 @@ function initScrubber() {
   scrubberInited = true;
   const range = document.getElementById('scrubber-range');
   range.addEventListener('input', () => scrubOnChange(Number(range.value)));
+  // Still needed alongside the observer below: a media query that changes
+  // --drawer-peek moves the *collapsed* dock point without changing the
+  // drawer's own box, so the observer would never fire for it.
   window.addEventListener('resize', updateScrubberPosition);
+  // Setting the scrubber's `bottom` never resizes the drawer, so this cannot
+  // feed back into itself.
+  const drawer = document.getElementById('results');
+  if (drawer && typeof ResizeObserver === 'function') {
+    new ResizeObserver(updateScrubberPosition).observe(drawer);
+  }
 }
 
 // bounds: { min, max, value, label } in minutes-since-local-midnight (see
