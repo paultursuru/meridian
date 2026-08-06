@@ -24,7 +24,7 @@ Live at [meridian-way.ch](https://meridian-way.ch), available in French, German,
 | Layer | Technology |
 |---|---|
 | Framework | [Astro](https://astro.build) v6 |
-| Map | [Leaflet](https://leafletjs.com) + [MapLibre GL](https://maplibre.org) (`@maplibre/maplibre-gl-leaflet`), Stadia Maps OSM Bright vector tiles |
+| Map | [Leaflet](https://leafletjs.com) + [MapLibre GL](https://maplibre.org) (`@maplibre/maplibre-gl-leaflet`), Stadia Maps Alidade Smooth vector tiles (`alidade_smooth`, an OSM Bright derivative) |
 | Pedestrian routing + elevation | [OpenRouteService](https://openrouteservice.org) `foot-walking`, proxied and cached through a Cloudflare Worker |
 | Geocoding (autocomplete) | [Photon](https://photon.komoot.io) (komoot.io) |
 | Geocoding (search / reverse) | [Nominatim](https://nominatim.org) (OSM) |
@@ -177,7 +177,8 @@ Reopening the installed app tries to prefill the "start" field from the device's
 
 OSM building-height coverage varies a lot by city — a real showcase route
 through Lausanne only had real height data (vs. a generic fallback guess)
-for 26% of buildings, well behind Paris (70%) or New York (98%). For
+for 26% of buildings, well behind Paris (70%) or New York (84%, measured
+2026-07-28; an earlier revision of this file cited 98%). For
 Switzerland specifically, swisstopo publishes **swissBUILDINGS3D 3.0**, an
 authoritative per-building 3D dataset with real geometry-derived heights for
 every building — no fallback guessing needed. As of July 2026, MeridianWay

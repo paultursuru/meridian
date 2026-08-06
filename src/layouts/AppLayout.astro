@@ -189,6 +189,7 @@ const urls: Record<Lang, string> = {
     <p>{t.night_note}</p>
     <button id="night-sunrise-btn" type="button"></button>
   </div>
+  <div id="grazing-sun-note">{t.grazing_sun_note}</div>
   <div id="single-route-note">{t.single_route_note}</div>
   <div id="tabs" role="tablist">
     <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady">{t.tab_shady}</button>
@@ -278,7 +279,7 @@ const urls: Record<Lang, string> = {
 </div>
 
 <script>
-  import { getSun, getSunTimes, compassDir, makeSunSampler } from '../lib/sun.js';
+  import { getSun, getSunTimes, compassDir, makeSunSampler, isGrazingSun } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings, heightStats, resolveHeightNoteState } from '../lib/buildings.js';
@@ -662,7 +663,14 @@ const urls: Record<Lang, string> = {
         // review #2 §3.2: the header must track whatever instant is actually
         // rendered, not just the time originally searched — recomputed here
         // so scrubbing keeps "Altitude/Azimut" in sync with the map's shadows.
-        updateSunInfo(getSun(atDate, midLat, midLng), sunTimes, destTz, atDate);
+        const sunNow = getSun(atDate, midLat, midLng);
+        updateSunInfo(sunNow, sunTimes, destTz, atDate);
+        // Grazing sun: recomputed per render like the header above, since
+        // scrubbing towards sunset is exactly how a user crosses the
+        // threshold. Suppressed at night, which has its own note and its own
+        // reason — showing both would say the same thing twice.
+        document.getElementById('grazing-sun-note')
+          ?.classList.toggle('on', !night && isGrazingSun(sunNow.altDeg));
         // review #2 §3.3 follow-up: weather re-sampled per instant too, same
         // reasoning as the sun position above — it used to freeze at the
         // searched hour even while everything else tracked the scrubber.
