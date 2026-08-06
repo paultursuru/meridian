@@ -43,14 +43,38 @@ function formatPhotonFeature(feature) {
   return { label, line1, line2, short, lat, lng, countryCode };
 }
 
+// Same coded-error pattern as routing.js: the message stays human and
+// translated (it is shown to the user as-is), the code is what analytics
+// reads. Before this, every geocoding failure reached the `search` event as
+// code 'unknown', which is why the 2026-08-05 export could not separate a bad
+// address from a dead upstream without a human investigation.
+//
+// role ('start' | 'end') rides on the error because handleSearch geocodes both
+// endpoints in a single Promise.all: without it the rejection cannot say which
+// field the user actually got wrong, and that is the actionable half of the
+// measurement.
+function addressNotFoundError(q, role) {
+  const err = new Error(tr('error_address_not_found', { q }));
+  err.code = 'ADDRESS_NOT_FOUND';
+  err.role = role;
+  return err;
+}
+
+function positionUnknownError() {
+  const err = new Error(tr('error_position_unknown'));
+  err.code = 'POSITION_UNKNOWN';
+  return err;
+}
+
 // countryCode: lowercase ISO 3166-1 alpha-2 (e.g. 'ch'), or undefined when
 // unknown — used to route Swiss searches to the swissBUILDINGS3D pipeline
 // instead of Overpass (see buildings.js's fetchBuildings).
-export async function geocode(q) {
+// role: optional 'start' | 'end', used only to tag a failure (see above).
+export async function geocode(q, { role } = {}) {
   const url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1&accept-language=${getLang()}`;
   const r = await fetch(url);
   const d = await r.json();
-  if (!d.length) throw new Error(tr('error_address_not_found', { q }));
+  if (!d.length) throw addressNotFoundError(q, role);
   const countryCode = d[0].address?.country_code;
   return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), countryCode };
 }
@@ -59,7 +83,7 @@ export async function reverseGeocode(lat, lng) {
   const url = `${NOM_BASE}/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=${getLang()}&addressdetails=1`;
   const r = await fetch(url);
   const d = await r.json();
-  if (!d.display_name) throw new Error(tr('error_position_unknown'));
+  if (!d.display_name) throw positionUnknownError();
   const { short } = formatAddress(d);
   return { short, countryCode: d.address?.country_code };
 }

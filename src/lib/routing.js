@@ -26,6 +26,17 @@ function routeFailedError(status) {
   return err;
 }
 
+// Retries exhausted on a retryable status (503/504): the service is down, the
+// request was fine. Deliberately not ROUTE_FAILED — that one tells the user to
+// try more precise addresses, which would send them editing an address that
+// was never the problem. 429 is handled separately above because "slow down"
+// is more specific than "we are down".
+function routingUnavailableError(status) {
+  const err = new Error(`ORS ${status} after retries`);
+  err.code = 'ROUTING_UNAVAILABLE';
+  return err;
+}
+
 // A pedestrian route stops making sense long before ORS's own ceiling (it
 // refuses anything over 6000 km with error 2004). In practice, a distance
 // this large means the geocoder matched something absurd rather than that the
@@ -75,7 +86,7 @@ async function orsPost(body) {
     return parseFeatures(d.features || []);
   }
   if (lastStatus === 429) throw rateLimitError();
-  throw new Error(`ORS ${lastStatus}`);
+  throw routingUnavailableError(lastStatus);
 }
 
 async function orsAlts(start, end) {
