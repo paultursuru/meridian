@@ -714,6 +714,22 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #single-route-note.on { display: block; }
 
+/* ── Grazing-sun note (sun up but under GRAZING_SUN_DEG — the buildings-only
+   model can't see the terrain or the distant casters that decide the answer
+   at that altitude, so the estimate is flagged rather than presented flat).
+   Deliberately the neutral note style, not the amber #quality-note.warn one:
+   amber is reserved for a failure that invalidates the ratio, and a low
+   evening sun is a normal condition, not an alarm. */
+#grazing-sun-note {
+  display: none;
+  padding: 9px 16px 11px;
+  border-bottom: 1.5px solid rgba(240,242,160,0.1);
+  font-size: 0.82rem;
+  color: rgba(216,219,200,0.55);
+  text-align: center;
+}
+#grazing-sun-note.on { display: block; }
+
 /* ── Weather note (overcast forecast — shown at the bottom of the drawer, below
    the shade/sun split, so it doesn't compete with the headline stat) ── */
 #weather-note {
