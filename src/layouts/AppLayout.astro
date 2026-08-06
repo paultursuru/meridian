@@ -445,9 +445,8 @@ const urls: Record<Lang, string> = {
   // and skip touching the DOM instead of clobbering the newer search.
   let searchGeneration = 0;
 
-  // A coded error, like the ones routing.js and geocode.js raise: translated
-  // message for the toast, machine-readable code for the `search` event. This
-  // is the only one raised in this file.
+  // Coded like the ones routing.js and geocode.js raise: translated message
+  // for the toast, code for the `search` event.
   type CodedError = Error & { code?: string; role?: string };
   function noRouteError(): CodedError {
     const err: CodedError = new Error(tr('error_no_route'));
@@ -562,10 +561,6 @@ const urls: Record<Lang, string> = {
       }
 
       const routes = await buildRoutes(startC, endC, setStatus);
-      // Coded like the routing.js failures below it: this is exactly the error
-      // §9.5 was producing, and because it was bare it reached analytics as
-      // 'unknown' and cost a manual investigation to identify. The message is
-      // already the right one for the user, the code is for the export.
       if (!routes.length) throw noRouteError();
 
       const bbox = routesBbox(routes);
@@ -830,38 +825,30 @@ const urls: Record<Lang, string> = {
 
     } catch (err) {
       setStatus(null);
-      // Codes posés par routing.js et geocode.js : le détail technique reste
-      // sur l'erreur pour la console et Sentry, l'utilisateur voit une phrase
-      // qui décrit son problème. Sans ça, un 400 d'ORS s'affichait tel quel
-      // ("Erreur : ORS 400"), ce qui n'aide personne.
+      // Codes set by routing.js and geocode.js: the technical detail stays on
+      // the error for the console and Sentry, the user gets a sentence that
+      // describes their problem rather than a raw "Error: ORS 400".
       const { code, role } = (err ?? {}) as CodedError;
-      // Codes dont le message n'est pas dans l'erreur : elle porte le détail
-      // technique, la traduction se fait ici.
-      const TECHNICAL: Record<string, string> = {
+      // Codes whose error carries only technical detail: translated here.
+      const TECHNICAL = {
         RATE_LIMIT: 'error_rate_limit',
         TOO_FAR: 'error_too_far',
         ROUTE_FAILED: 'error_route_failed',
         ROUTING_UNAVAILABLE: 'error_routing_unavailable',
-      };
-      // Codes dont le message est déjà la phrase à afficher (elle est traduite
-      // à la construction, et error_address_not_found cite l'adresse tapée) :
-      // on l'affiche telle quelle, sans le préfixe "Erreur : " qui la rendait
-      // plus alarmante qu'utile.
+      } as const;
+      // Codes whose message is already the sentence to show: displayed as-is,
+      // without the "Error: " prefix.
       const READY = new Set(['ADDRESS_NOT_FOUND', 'POSITION_UNKNOWN', 'NO_ROUTE']);
-      if (code && TECHNICAL[code]) {
-        showToast(tr(TECHNICAL[code]));
+      const technicalKey = code ? TECHNICAL[code as keyof typeof TECHNICAL] : undefined;
+      if (technicalKey) {
+        showToast(tr(technicalKey));
       } else if (code && READY.has(code) && err instanceof Error) {
         showToast(err.message);
       } else {
         showToast(tr('error_prefix') + (err instanceof Error ? err.message : String(err)));
       }
       console.error(err);
-      // error messages can embed the user's typed query (error_address_not_found)
-      // — never send err.message itself, only the machine-readable code when
-      // there is one, so this stays as PII-free as the rest of the event.
-      // field says which of the two endpoints failed: both are geocoded in one
-      // Promise.all, so the code alone cannot tell a bad origin from a bad
-      // destination, and that is the half of the answer worth acting on.
+      // Never send err.message: it can embed the address the user typed.
       window.umami?.track('search', {
         status: 'error',
         code: code ?? 'unknown',
@@ -875,17 +862,10 @@ const urls: Record<Lang, string> = {
     }
   }
 
-  // Deux familles d'erreurs arrivent dans le même catch, et jusqu'ici la
-  // seconde était affichée à tort comme la première : un échec de
-  // reverseGeocode (la géoloc a parfaitement marché, c'est Nominatim qui ne
-  // reconnaît pas le point) tombait dans le `else` et annonçait un délai
-  // dépassé. Le code d'une GeolocationPositionError est numérique (1/2/3), le
-  // nôtre est une chaîne, donc les deux cohabitent sans collision.
-  //
-  // Ces échecs n'étaient mesurés nulle part : l'event `search` ne couvre que
-  // handleSearch. Ils n'étaient pas 'unknown' dans l'export, ils étaient
-  // absents. Un event dédié ne part qu'en cas d'échec, donc le volume est
-  // négligeable pour le quota.
+  // Two families of error land here: a GeolocationPositionError's code is
+  // numeric (1/2/3), ours is a string. A reverseGeocode failure used to be
+  // reported as a timeout even though geolocation had worked. The event only
+  // fires on failure, so its volume is negligible.
   const GEO_CODES: Record<number, string> = { 1: 'GEO_DENIED', 2: 'GEO_UNAVAILABLE', 3: 'GEO_TIMEOUT' };
   function handleGeoError(err: unknown, source: 'field' | 'locate') {
     const code = (err as { code?: number | string })?.code;

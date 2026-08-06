@@ -43,16 +43,12 @@ function formatPhotonFeature(feature) {
   return { label, line1, line2, short, lat, lng, countryCode };
 }
 
-// Same coded-error pattern as routing.js: the message stays human and
-// translated (it is shown to the user as-is), the code is what analytics
-// reads. Before this, every geocoding failure reached the `search` event as
-// code 'unknown', which is why the 2026-08-05 export could not separate a bad
-// address from a dead upstream without a human investigation.
+// Coded errors, same pattern as routing.js: the message is what the user
+// reads, the code is what analytics groups by.
 //
 // role ('start' | 'end') rides on the error because handleSearch geocodes both
-// endpoints in a single Promise.all: without it the rejection cannot say which
-// field the user actually got wrong, and that is the actionable half of the
-// measurement.
+// endpoints in one Promise.all, so the rejection alone cannot say which field
+// the user got wrong.
 function addressNotFoundError(q, role) {
   const err = new Error(tr('error_address_not_found', { q }));
   err.code = 'ADDRESS_NOT_FOUND';

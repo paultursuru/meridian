@@ -76,8 +76,7 @@ describe('dedupeRoutes', () => {
   });
 });
 
-// getLang() reads document.documentElement.lang and buildRoutes calls tr()
-// through onStatus; the vitest environment is 'node', so it needs a stub.
+// buildRoutes calls tr() through onStatus; the vitest environment is 'node'.
 beforeAll(() => {
   globalThis.document = { documentElement: { lang: 'fr' } };
 });
@@ -94,14 +93,9 @@ function mockOrs(status) {
   globalThis.fetch = async () => ({ ok: status === 200, status, json: async () => ({ features: [] }) });
 }
 
-// Every one of these reached the `search` event as code 'unknown' before, which
-// is the whole point of the change: an export that cannot separate "the service
-// is down" from "your address is wrong" cannot rank anything.
 describe('buildRoutes error codes', () => {
   it('codes exhausted 503 retries as ROUTING_UNAVAILABLE, not ROUTE_FAILED', async () => {
-    // The distinction matters to the user, not just to the export:
-    // ROUTE_FAILED tells them to try more precise addresses, which would send
-    // them editing an address that was never the problem.
+    // ROUTE_FAILED would tell the user to fix an address that was fine.
     vi.useFakeTimers();
     mockOrs(503);
     const p = buildRoutes(LAUSANNE, RENENS, () => {});

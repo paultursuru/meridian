@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { geocode, reverseGeocode } from '../src/lib/geocode.js';
 
-// getLang() reads document.documentElement.lang, and the vitest environment is
-// 'node'. A minimal stub is enough: these tests only care that the thrown
-// message is the translated one, not which language it lands in.
+// getLang() reads document.documentElement.lang; the vitest environment is 'node'.
 beforeAll(() => {
   globalThis.document = { documentElement: { lang: 'fr' } };
 });
@@ -16,10 +14,8 @@ function mockJson(payload) {
   globalThis.fetch = async () => ({ ok: true, json: async () => payload });
 }
 
-// Why these assert on `code` rather than on the message: the message is what a
-// human reads, the code is what the Umami export groups by. Before this,
-// every one of these failures was recorded as 'unknown', which is what made
-// the §9.5 regression cost a manual investigation instead of a filter.
+// These assert on `code` rather than on the message: the message is what a
+// human reads, the code is what the Umami export groups by.
 describe('geocode', () => {
   it('tags an empty Nominatim result with ADDRESS_NOT_FOUND', async () => {
     mockJson([]);
@@ -28,8 +24,6 @@ describe('geocode', () => {
 
   it('carries the role so the export can tell origin from destination', async () => {
     mockJson([]);
-    // handleSearch geocodes both endpoints in one Promise.all, so without this
-    // the rejection cannot say which of the two fields the user got wrong.
     await expect(geocode('nowhere', { role: 'end' })).rejects.toMatchObject({
       code: 'ADDRESS_NOT_FOUND',
       role: 'end',
@@ -43,8 +37,7 @@ describe('geocode', () => {
 
   it('still keeps the user-facing message on the error, quoting the query', async () => {
     mockJson([]);
-    // The catch in AppLayout shows this message as-is for ADDRESS_NOT_FOUND,
-    // so it has to stay translated rather than become a bare code.
+    // AppLayout shows this message as-is, so it has to stay translated.
     await expect(geocode('ouchy')).rejects.toThrow('ouchy');
   });
 
@@ -61,8 +54,7 @@ describe('geocode', () => {
 describe('reverseGeocode', () => {
   it('tags an unrecognised point with POSITION_UNKNOWN', async () => {
     mockJson({});
-    // This is the one the geolocation catch used to report as a timeout: the
-    // geolocation succeeded, Nominatim just had nothing at that point.
+    // The geolocation catch used to report this one as a timeout.
     await expect(reverseGeocode(0, 0)).rejects.toMatchObject({ code: 'POSITION_UNKNOWN' });
   });
 

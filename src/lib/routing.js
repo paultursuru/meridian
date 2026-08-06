@@ -27,10 +27,8 @@ function routeFailedError(status) {
 }
 
 // Retries exhausted on a retryable status (503/504): the service is down, the
-// request was fine. Deliberately not ROUTE_FAILED — that one tells the user to
-// try more precise addresses, which would send them editing an address that
-// was never the problem. 429 is handled separately above because "slow down"
-// is more specific than "we are down".
+// request was fine. Not ROUTE_FAILED, whose message tells the user to try more
+// precise addresses — here the addresses were never the problem.
 function routingUnavailableError(status) {
   const err = new Error(`ORS ${status} after retries`);
   err.code = 'ROUTING_UNAVAILABLE';
