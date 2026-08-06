@@ -445,6 +445,15 @@ const urls: Record<Lang, string> = {
   // and skip touching the DOM instead of clobbering the newer search.
   let searchGeneration = 0;
 
+  // Coded like the ones routing.js and geocode.js raise: translated message
+  // for the toast, code for the `search` event.
+  type CodedError = Error & { code?: string; role?: string };
+  function noRouteError(): CodedError {
+    const err: CodedError = new Error(tr('error_no_route'));
+    err.code = 'NO_ROUTE';
+    return err;
+  }
+
   async function handleSearch() {
     const mySearchGen = ++searchGeneration;
     const searchStart = performance.now(); // review #2 §7: "ms" is wall-clock to first render
@@ -479,8 +488,8 @@ const urls: Record<Lang, string> = {
     try {
       setStatus(tr('status_geocoding'));
       const [startC, endC] = await Promise.all([
-        startAC.getPlace() ?? geocode(startQ),
-        endAC.getPlace()   ?? geocode(endQ),
+        startAC.getPlace() ?? geocode(startQ, { role: 'start' }),
+        endAC.getPlace()   ?? geocode(endQ, { role: 'end' }),
       ]);
 
       const midLat = (startC.lat + endC.lat) / 2;
@@ -552,7 +561,7 @@ const urls: Record<Lang, string> = {
       }
 
       const routes = await buildRoutes(startC, endC, setStatus);
-      if (!routes.length) throw new Error(tr('error_no_route'));
+      if (!routes.length) throw noRouteError();
 
       const bbox = routesBbox(routes);
       let buildings: Awaited<ReturnType<typeof fetchBuildings>>['buildings'] = [];
@@ -816,27 +825,34 @@ const urls: Record<Lang, string> = {
 
     } catch (err) {
       setStatus(null);
-      // Codes posés par routing.js : le message technique reste sur l'erreur
-      // pour la console et Sentry, l'utilisateur voit une phrase qui décrit son
-      // problème. Sans ça, un 400 d'ORS s'affichait tel quel ("Erreur : ORS
-      // 400"), ce qui n'aide personne.
-      const code = (err as { code?: string })?.code;
-      if (code === 'RATE_LIMIT') {
-        showToast(tr('error_rate_limit'));
-      } else if (code === 'TOO_FAR') {
-        showToast(tr('error_too_far'));
-      } else if (code === 'ROUTE_FAILED') {
-        showToast(tr('error_route_failed'));
+      // Codes set by routing.js and geocode.js: the technical detail stays on
+      // the error for the console and Sentry, the user gets a sentence that
+      // describes their problem rather than a raw "Error: ORS 400".
+      const { code, role } = (err ?? {}) as CodedError;
+      // Codes whose error carries only technical detail: translated here.
+      const TECHNICAL = {
+        RATE_LIMIT: 'error_rate_limit',
+        TOO_FAR: 'error_too_far',
+        ROUTE_FAILED: 'error_route_failed',
+        ROUTING_UNAVAILABLE: 'error_routing_unavailable',
+      } as const;
+      // Codes whose message is already the sentence to show: displayed as-is,
+      // without the "Error: " prefix.
+      const READY = new Set(['ADDRESS_NOT_FOUND', 'POSITION_UNKNOWN', 'NO_ROUTE']);
+      const technicalKey = code ? TECHNICAL[code as keyof typeof TECHNICAL] : undefined;
+      if (technicalKey) {
+        showToast(tr(technicalKey));
+      } else if (code && READY.has(code) && err instanceof Error) {
+        showToast(err.message);
       } else {
         showToast(tr('error_prefix') + (err instanceof Error ? err.message : String(err)));
       }
       console.error(err);
-      // error messages can embed the user's typed query (error_address_not_found)
-      // — never send err.message itself, only the machine-readable code when
-      // there is one, so this stays as PII-free as the rest of the event.
+      // Never send err.message: it can embed the address the user typed.
       window.umami?.track('search', {
         status: 'error',
-        code: (err as { code?: string })?.code ?? 'unknown',
+        code: code ?? 'unknown',
+        ...(role ? { field: role } : {}),
         ms: Math.round(performance.now() - searchStart),
       });
     } finally {
@@ -844,6 +860,27 @@ const urls: Record<Lang, string> = {
       button('depart-toggle').disabled = false;
       button('depart-confirm').disabled = false;
     }
+  }
+
+  // Two families of error land here: a GeolocationPositionError's code is
+  // numeric (1/2/3), ours is a string. A reverseGeocode failure used to be
+  // reported as a timeout even though geolocation had worked. The event only
+  // fires on failure, so its volume is negligible.
+  const GEO_CODES: Record<number, string> = { 1: 'GEO_DENIED', 2: 'GEO_UNAVAILABLE', 3: 'GEO_TIMEOUT' };
+  function handleGeoError(err: unknown, source: 'field' | 'locate') {
+    const code = (err as { code?: number | string })?.code;
+    if (code === 1) {
+      showToast(tr('error_geo_denied'));
+    } else if (code === 'POSITION_UNKNOWN' && err instanceof Error) {
+      showToast(err.message);
+    } else {
+      showToast(tr('error_geo_timeout'));
+    }
+    console.error(err);
+    window.umami?.track('geo_error', {
+      code: typeof code === 'number' ? (GEO_CODES[code] ?? 'unknown') : (code ?? 'unknown'),
+      source,
+    });
   }
 
   async function fillFromGeo(ac: ReturnType<typeof initAutocomplete>, role: 'start' | 'end', btnId: string) {
@@ -864,11 +901,7 @@ const urls: Record<Lang, string> = {
       setStatus(null);
     } catch (err: unknown) {
       setStatus(null);
-      if ((err as GeolocationPositionError)?.code === 1) {
-        showToast(tr('error_geo_denied'));
-      } else {
-        showToast(tr('error_geo_timeout'));
-      }
+      handleGeoError(err, 'field');
     } finally {
       btn.disabled = false;
       btn.classList.remove('loading');
@@ -1068,11 +1101,7 @@ const urls: Record<Lang, string> = {
       setStatus(null);
     } catch (err: unknown) {
       setStatus(null);
-      if ((err as GeolocationPositionError)?.code === 1) {
-        showToast(tr('error_geo_denied'));
-      } else {
-        showToast(tr('error_geo_timeout'));
-      }
+      handleGeoError(err, 'locate');
     }
   });
 

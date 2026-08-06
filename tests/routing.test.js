@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { routeOverlap, dedupeRoutes } from '../src/lib/routing.js';
+import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
+import { routeOverlap, dedupeRoutes, buildRoutes } from '../src/lib/routing.js';
 
 // Straight west→east line at a given latitude, one point every ~15 m,
 // [lon, lat, ele] like ORS geometries.
@@ -73,5 +73,54 @@ describe('dedupeRoutes', () => {
   it('never returns empty for a non-empty ORS response', () => {
     const only = route(line(46.52, 6.60, 6.62), 50_000);
     expect(dedupeRoutes([only])).toHaveLength(1);
+  });
+});
+
+// buildRoutes calls tr() through onStatus; the vitest environment is 'node'.
+beforeAll(() => {
+  globalThis.document = { documentElement: { lang: 'fr' } };
+});
+
+afterEach(() => {
+  delete globalThis.fetch;
+  vi.useRealTimers();
+});
+
+const LAUSANNE = { lat: 46.5171, lng: 6.6331 };
+const RENENS   = { lat: 46.5373, lng: 6.5853 };
+
+function mockOrs(status) {
+  globalThis.fetch = async () => ({ ok: status === 200, status, json: async () => ({ features: [] }) });
+}
+
+describe('buildRoutes error codes', () => {
+  it('codes exhausted 503 retries as ROUTING_UNAVAILABLE, not ROUTE_FAILED', async () => {
+    // ROUTE_FAILED would tell the user to fix an address that was fine.
+    vi.useFakeTimers();
+    mockOrs(503);
+    const p = buildRoutes(LAUSANNE, RENENS, () => {});
+    const assertion = expect(p).rejects.toMatchObject({ code: 'ROUTING_UNAVAILABLE' });
+    await vi.runAllTimersAsync(); // skip the 1s + 3s backoff
+    await assertion;
+  });
+
+  it('keeps 429 on its own RATE_LIMIT code', async () => {
+    vi.useFakeTimers();
+    mockOrs(429);
+    const p = buildRoutes(LAUSANNE, RENENS, () => {});
+    const assertion = expect(p).rejects.toMatchObject({ code: 'RATE_LIMIT' });
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+
+  it('still codes a non-retryable status as ROUTE_FAILED', async () => {
+    mockOrs(400);
+    await expect(buildRoutes(LAUSANNE, RENENS, () => {}))
+      .rejects.toMatchObject({ code: 'ROUTE_FAILED' });
+  });
+
+  it('keeps the status in the message for the console and Sentry', async () => {
+    mockOrs(400);
+    await expect(buildRoutes(LAUSANNE, RENENS, () => {})).rejects.toThrow('ORS 400');
   });
 });
