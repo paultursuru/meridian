@@ -1,4 +1,4 @@
-import { fmtDist, fmtDur } from './helpers.js';
+import { fmtDist, fmtDur, fmtHm } from './helpers.js';
 import { tr } from './i18n.js';
 
 export function setStatus(msg) {
@@ -266,38 +266,53 @@ let markTravelRaf = 0;
 // How long the thumb takes to travel to the eclipse marker when it's clicked.
 // Roughly the spin's own duration, so the two read as one gesture.
 const MARK_TRAVEL_MS = 600;
+// How often the routes/map/URL are actually recomputed while it travels. A
+// full render is too heavy to run per frame: measured over the 600 ms travel,
+// one render per frame yields 22 distinct thumb positions against 32 with none
+// at all. So the thumb and the clock move every frame (cheap: an attribute and
+// a string) and the expensive part runs on this slower beat, plus a final one
+// on arrival that always lands exactly on the target. 150 ms keeps 25 of those
+// 32 positions while still sweeping the shadows three or four times on the way,
+// which is what makes the map look like it's following rather than catching up
+// at the end.
+const MARK_TRAVEL_RENDER_MS = 150;
 
-// Moves the range to `target` and drives the render at each step. The range
-// doesn't fire `input` when its value is set programmatically, so the callback
-// is invoked by hand — the same path a drag tick takes, so the drawer, map,
-// label and share URL all update exactly as if the user had dragged there.
-function stepScrubberTo(range, minutes) {
+// The range doesn't fire `input` when its value is set programmatically, so
+// the callback is invoked by hand — the same path a drag tick takes, so the
+// drawer, map and share URL update exactly as if the user had dragged there.
+// 'mark' tells the caller this move came from the marker rather than a drag:
+// the two are counted separately, and one click produces several of these.
+function renderScrubberAt(range, minutes) {
   range.value = String(minutes);
-  // 'mark' tells the caller this move came from the marker, not from a drag:
-  // the two are counted separately, and one click produces a whole run of
-  // these frames.
   scrubOnChange(Number(range.value), 'mark');
 }
 
 // Slides rather than jumps: the thumb crossing the afternoon is what makes it
-// obvious *that* the time changed and by how much, which a teleport hides. The
-// per-frame cost is the cost of a drag tick, which this already is. Eased out,
-// so it settles on the marker rather than slamming into it.
+// obvious *that* the time changed and by how much, which a teleport hides.
+// Eased out, so it settles on the marker rather than slamming into it.
 function travelScrubberTo(range, target) {
   cancelAnimationFrame(markTravelRaf);
   const from = Number(range.value);
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   if (from === target || reduced) {
-    stepScrubberTo(range, target);
+    renderScrubberAt(range, target);
     return;
   }
   const t0 = performance.now();
+  let lastRender = t0;
   const frame = (now) => {
     const p = Math.min(1, (now - t0) / MARK_TRAVEL_MS);
     const eased = 1 - Math.pow(1 - p, 3);
     // Rounded: the range's step is 1 minute, so fractional values would be
     // snapped by the input anyway and the label would jitter between them.
-    stepScrubberTo(range, p === 1 ? target : Math.round(from + (target - from) * eased));
+    const minutes = p === 1 ? target : Math.round(from + (target - from) * eased);
+    if (p === 1 || now - lastRender >= MARK_TRAVEL_RENDER_MS) {
+      lastRender = now;
+      renderScrubberAt(range, minutes);
+    } else {
+      range.value = String(minutes);
+      setScrubberLabel(fmtHm(minutes));
+    }
     if (p < 1) markTravelRaf = requestAnimationFrame(frame);
   };
   markTravelRaf = requestAnimationFrame(frame);
