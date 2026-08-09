@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import SunCalc from 'suncalc';
-import { getSun, makeSunSampler, isGrazingSun, GRAZING_SUN_DEG } from '../src/lib/sun.js';
+import { getSun, makeSunSampler, isGrazingSun, GRAZING_SUN_DEG, isEclipseWindow, ECLIPSE_2026 } from '../src/lib/sun.js';
 
 // Lausanne — a fixed location for deterministic results.
 const LAT = 46.52, LNG = 6.63;
@@ -74,5 +74,30 @@ describe('isGrazingSun (review 7.3)', () => {
     const shadow = 10 / Math.tan(GRAZING_SUN_DEG * Math.PI / 180);
     expect(shadow).toBeGreaterThan(100);
     expect(shadow).toBeLessThan(150);
+  });
+});
+
+describe('isEclipseWindow', () => {
+  it('is true across the evening of the eclipse', () => {
+    expect(isEclipseWindow('2026-08-12', 19 * 60)).toBe(true);      // before first contact
+    expect(isEclipseWindow('2026-08-12', 20 * 60 + 15)).toBe(true); // maximum
+    expect(isEclipseWindow('2026-08-12', 20 * 60 + 43)).toBe(true); // last contact
+  });
+
+  it('brackets the real 19:25-20:43 contact times on both sides', () => {
+    expect(ECLIPSE_2026.startMin).toBeLessThan(19 * 60 + 25);
+    expect(ECLIPSE_2026.endMin).toBeGreaterThan(20 * 60 + 43);
+  });
+
+  it('is false outside the window on the same day', () => {
+    expect(isEclipseWindow('2026-08-12', ECLIPSE_2026.startMin - 1)).toBe(false);
+    expect(isEclipseWindow('2026-08-12', ECLIPSE_2026.endMin + 1)).toBe(false);
+    expect(isEclipseWindow('2026-08-12', 12 * 60)).toBe(false);
+  });
+
+  it('is false on the days either side, at the same hour', () => {
+    expect(isEclipseWindow('2026-08-11', 20 * 60 + 15)).toBe(false);
+    expect(isEclipseWindow('2026-08-13', 20 * 60 + 15)).toBe(false);
+    expect(isEclipseWindow('2027-08-12', 20 * 60 + 15)).toBe(false);
   });
 });
