@@ -662,9 +662,62 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   min-width: 40px;
   text-align: center;
 }
+/* Wraps the range so the eclipse marker can be positioned in the track's own
+   coordinates rather than the whole bar's, which also holds the time label. */
+#scrubber-track {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
 #scrubber-range {
   flex: 1;
+  min-width: 0;
   accent-color: #f0f2a0;
+}
+
+/* ── Eclipse marker (2026-08-12, Swiss routes — see sun.js#ECLIPSE_2026).
+   Sits above the track at the minute of maximum, with a short stem down to it,
+   so it reads as "drag here" rather than as decoration. `left` is set from JS;
+   the translate keeps the icon centred on that point. A real button: clicking
+   it scrubs to the maximum, i.e. the thing the marker is pointing at, so the
+   hint and the shortcut are the same object. It sits clear above the track,
+   so taking pointer events back can't cost the thumb a drag.
+
+   Note the two transforms: `translateX(-50%)` is layout (it centres the icon
+   on `left`), the spin belongs to the inner <svg> instead, or the animation
+   would fight the centring every keyframe. */
+#scrubber-mark {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 12px);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translateX(-50%);
+  cursor: pointer;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.7));
+}
+#scrubber-mark.on { display: block; }
+#scrubber-mark svg { display: block; width: 100%; height: 100%; }
+#scrubber-mark:focus-visible { outline: 2px solid #f0f2a0; outline-offset: 3px; border-radius: 50%; }
+#scrubber-mark::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: 6px;
+  background: rgba(28, 29, 19, 0.55);
+}
+/* One turn on click. The class is removed on animationend (ui.js), so it can
+   be replayed; without that, a second click on an element that already carries
+   the class does nothing. */
+@keyframes scrubber-mark-spin { to { transform: rotate(360deg); } }
+#scrubber-mark.spin svg { animation: scrubber-mark-spin 0.7s cubic-bezier(0.4,0,0.2,1); }
+@media (prefers-reduced-motion: reduce) {
+  #scrubber-mark.spin svg { animation: none; }
 }
 
 /* ── Drawer handle ── */
@@ -713,6 +766,20 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   text-align: center;
 }
 #single-route-note.on { display: block; }
+
+/* ── Eclipse note (2026-08-12 window, Swiss routes only — see sun.js). Same
+   neutral note style as the two around it: the ratio above is not wrong, the
+   geometry still holds, it just describes an evening whose light is missing.
+   Shown in place of the grazing-sun note, never stacked with it. */
+#eclipse-note {
+  display: none;
+  padding: 9px 16px 11px;
+  border-bottom: 1.5px solid rgba(240,242,160,0.1);
+  font-size: 0.82rem;
+  color: rgba(216,219,200,0.55);
+  text-align: center;
+}
+#eclipse-note.on { display: block; }
 
 /* ── Grazing-sun note (sun up but under GRAZING_SUN_DEG — the buildings-only
    model can't see the terrain or the distant casters that decide the answer

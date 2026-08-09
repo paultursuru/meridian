@@ -40,6 +40,39 @@ export function isGrazingSun(altDeg) {
   return altDeg > 0 && altDeg < GRAZING_SUN_DEG;
 }
 
+// Partial solar eclipse of 2026-08-12, seen from Switzerland in the last hour
+// before sunset: first contact ~19:25, maximum ~20:15 with just over 90% of
+// the disc covered.
+//
+// The shade model is pure geometry and is blind to it. SunCalc keeps returning
+// a sun at its usual altitude and azimuth, so the shadows, the scores and the
+// sunny/shady split all stay exactly as they would on any other evening, while
+// in reality nine tenths of the light is gone. Nothing to correct in the
+// numbers (the geometry is right), only something to say out loud, so the
+// sunny route doesn't promise a sun that won't be there.
+//
+// Bounds are wall-clock minutes in the route's own zone, deliberately wider
+// than the real contact times: someone searching at 19:00 walks into it, and
+// an advisory note is cheap on either side. Gated on Switzerland by the caller,
+// which also makes these Europe/Zurich times by construction.
+export const ECLIPSE_2026 = {
+  date: '2026-08-12',
+  startMin: 18 * 60 + 30,
+  endMin: 21 * 60,
+  // Where the scrubber marker sits. One national figure for a marker a few
+  // pixels wide: the real maximum runs from ~20:14 in Geneva to ~20:19 in the
+  // Engadine, which is finer than the track can resolve anyway.
+  maxMin: 20 * 60 + 15,
+};
+
+// True when `dateInZone` ("YYYY-MM-DD") and `minutesOfDay` (0-1439), both
+// already read in the route's own time zone, fall inside the eclipse window.
+export function isEclipseWindow(dateInZone, minutesOfDay) {
+  return dateInZone === ECLIPSE_2026.date
+    && minutesOfDay >= ECLIPSE_2026.startMin
+    && minutesOfDay <= ECLIPSE_2026.endMin;
+}
+
 const COMPASS_DIRS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
 
 // 8-point compass direction key ('n'…'nw') for an azimuth (N=0, clockwise).
