@@ -14,9 +14,15 @@ import { test, expect } from '@playwright/test';
 
 const START = '46.5197,6.6323';
 const END = '46.5250,6.6400';
-// 19:30 local is ~10° sun altitude (note hidden); scrubbing to 20:30 is ~2.3°
+// 19:30 local is ~12° sun altitude (note hidden); scrubbing to 20:30 is ~2°
 // (note shown). Both inside the scrubber's sunrise..sunset bounds.
-const SEARCH_URL = `/?from=${START}&to=${END}&dt=2026-08-12T19:30`;
+//
+// Deliberately not the 12th: that evening the eclipse note takes the grazing
+// note's place on a Swiss route (sun.js#ECLIPSE_2026), which would leave this
+// spec asserting on a note that can no longer appear. The invariant it guards
+// is unchanged — any note growing the drawer must push the scrubber up — and
+// the eclipse note is subject to it too.
+const SEARCH_URL = `/?from=${START}&to=${END}&dt=2026-08-13T19:30`;
 
 async function mockUpstreams(page) {
   await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({

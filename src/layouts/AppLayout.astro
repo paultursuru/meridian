@@ -4,6 +4,7 @@ import { translations, type Lang } from '../lib/i18n';
 import AboutContent from '../components/AboutContent.astro';
 import targetIcon from '../icons/target.svg?raw';
 import arrowIcon from '../icons/arrow.svg?raw';
+import eclipseIcon from '../icons/eclipse-marker.svg?raw';
 
 interface Props {
   lang: Lang;
@@ -175,7 +176,10 @@ const urls: Record<Lang, string> = {
 
 <div id="time-scrubber">
   <span id="scrubber-time"></span>
-  <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} />
+  <div id="scrubber-track">
+    <button id="scrubber-mark" type="button"><Fragment set:html={eclipseIcon} /></button>
+    <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} />
+  </div>
 </div>
 
 <div id="results" role="status" aria-live="polite">
@@ -189,6 +193,7 @@ const urls: Record<Lang, string> = {
     <p>{t.night_note}</p>
     <button id="night-sunrise-btn" type="button"></button>
   </div>
+  <div id="eclipse-note">{t.eclipse_note}</div>
   <div id="grazing-sun-note">{t.grazing_sun_note}</div>
   <div id="single-route-note">{t.single_route_note}</div>
   <div id="tabs" role="tablist">
@@ -279,7 +284,7 @@ const urls: Record<Lang, string> = {
 </div>
 
 <script>
-  import { getSun, getSunTimes, compassDir, makeSunSampler, isGrazingSun } from '../lib/sun.js';
+  import { getSun, getSunTimes, compassDir, makeSunSampler, isGrazingSun, isEclipseWindow, ECLIPSE_2026 } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
   import { routesBbox, fetchBuildings, heightStats, resolveHeightNoteState } from '../lib/buildings.js';
@@ -509,6 +514,12 @@ const urls: Record<Lang, string> = {
         tDate = zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz);
       }
 
+      // Settled once, here, rather than per render: the scrubber only ever
+      // moves within the searched day, so this can't change under it. Gates
+      // the marker below, and rides along on the `search` event as the
+      // denominator any eclipse_jump count needs.
+      const eclipseDay = switzerland && dateValueInZone(tDate, destTz) === ECLIPSE_2026.date;
+
       const sun = getSun(tDate, midLat, midLng);
       // Night: sun exposure doesn't apply — no weather badge, no shadow
       // computation; just show the shortest route and say so.
@@ -674,12 +685,21 @@ const urls: Record<Lang, string> = {
         // so scrubbing keeps "Altitude/Azimut" in sync with the map's shadows.
         const sunNow = getSun(atDate, midLat, midLng);
         updateSunInfo(sunNow, sunTimes, destTz, atDate);
+        // The 2026-08-12 eclipse: Swiss routes only, and read in the route's
+        // own zone so it tracks the scrubber like everything else here. It
+        // takes precedence over the grazing-sun note below, which it would
+        // otherwise sit next to for most of the window (the sun is under 5°
+        // from ~20:05): both say "trust this less", and the eclipse says why
+        // more precisely.
+        const eclipse = switzerland && !night
+          && isEclipseWindow(dateValueInZone(atDate, destTz), minutesInZone(atDate, destTz));
+        document.getElementById('eclipse-note')?.classList.toggle('on', eclipse);
         // Grazing sun: recomputed per render like the header above, since
         // scrubbing towards sunset is exactly how a user crosses the
         // threshold. Suppressed at night, which has its own note and its own
         // reason — showing both would say the same thing twice.
         document.getElementById('grazing-sun-note')
-          ?.classList.toggle('on', !night && isGrazingSun(sunNow.altDeg));
+          ?.classList.toggle('on', !night && !eclipse && isGrazingSun(sunNow.altDeg));
         // review #2 §3.3 follow-up: weather re-sampled per instant too, same
         // reasoning as the sun position above — it used to freeze at the
         // searched hour even while everything else tracked the scrubber.
@@ -740,6 +760,7 @@ const urls: Record<Lang, string> = {
         ms: msToFirstRender,
         night, single,
         delta,
+        eclipse: eclipseDay,
       });
 
       hourlyWeather = await weatherP;
@@ -775,13 +796,28 @@ const urls: Record<Lang, string> = {
         // fires on every drag tick, and per-tick tracking would swamp Umami
         // with noise instead of answering "is the scrubber used at all".
         let scrubbed = false;
+        // Same idea for the marker, and kept separate from 'scrub' on purpose:
+        // one is "did anyone drag the thing", the other is "did the eclipse
+        // shortcut get used". Folding the travel's frames into 'scrub' would
+        // inflate a metric that's already being read.
+        let jumped = false;
+        // The marker is the one hint that survives being scrubbed past, which
+        // is the point: it shows where to drag to.
         showScrubber({
           min: minutesInZone(sunTimes.sunrise, destTz),
           max: minutesInZone(sunTimes.sunset, destTz),
           value: initialMinutes,
           label: fmtHm(initialMinutes),
-        }, (minutes: number) => {
-          if (!scrubbed) {
+          mark: eclipseDay
+            ? { minutes: ECLIPSE_2026.maxMin, label: tr('eclipse_max_label', { time: fmtHm(ECLIPSE_2026.maxMin) }) }
+            : null,
+        }, (minutes: number, source?: string) => {
+          if (source === 'mark') {
+            if (!jumped) {
+              jumped = true;
+              window.umami?.track('eclipse_jump');
+            }
+          } else if (!scrubbed) {
             scrubbed = true;
             window.umami?.track('scrub');
           }

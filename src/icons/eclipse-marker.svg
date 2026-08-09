@@ -1,0 +1,49 @@
+<!-- Scrubber-marker copy of eclipse.svg, which is kept untouched next to it.
+     Same artwork, two removals: the opaque black backdrop (rect2985), so the
+     marker sits on the map rather than in a black square, and the Inkscape
+     wrapper (XML prolog, sodipodi/RDF metadata) which can't be inlined into
+     the page with ?raw. Paths, filters and colours are the original's.
+
+     "Eclipse" by narrowhouse, openclipart.org/detail/102949, public domain. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 793.71 843.88" width="800" height="800" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <filter id="filter3809" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="13.105121"/>
+    </filter>
+    <filter id="filter3839" height="2.5306" width="2.5306" color-interpolation-filters="sRGB" y="-.76528" x="-.76528">
+      <feGaussianBlur stdDeviation="170.36657"/>
+    </filter>
+  </defs>
+  <g transform="translate(3.3438 -97.562)">
+    <path
+        style="filter:url(#filter3809);stroke:#ffffff;fill:#ffffff"
+        d="m954.29 708.08c0 147.54-119.6 267.14-267.14 267.14s-267.14-119.6-267.14-267.14 119.6-267.14 267.14-267.14 267.14 119.6 267.14 267.14z"
+        transform="translate(-303.71 -191.14)"
+    />
+    <path
+        style="stroke:#000000;fill:#000000"
+        d="m954.29 708.08a267.14 267.14 0 1 1 -534.29 0 267.14 267.14 0 1 1 534.29 0z"
+        transform="matrix(1.0107 0 0 1.0107 -324.48 -200.42)"
+    />
+    <path
+        style="filter:url(#filter3839);stroke:#000000;fill:#ffffff"
+        d="m954.29 708.08c0 147.54-119.6 267.14-267.14 267.14s-267.14-119.6-267.14-267.14 119.6-267.14 267.14-267.14 267.14 119.6 267.14 267.14z"
+        transform="matrix(.14287 0 0 .14498 498.4 563.7)"
+    />
+    <path
+        style="filter:url(#filter3839);stroke:#000000;fill:#ffffff"
+        d="m954.29 708.08c0 147.54-119.6 267.14-267.14 267.14s-267.14-119.6-267.14-267.14 119.6-267.14 267.14-267.14 267.14 119.6 267.14 267.14z"
+        transform="matrix(.14287 0 0 .14498 498.4 563.7)"
+    />
+    <path
+        style="filter:url(#filter3839);stroke:#000000;fill:#ffffff"
+        d="m954.29 708.08c0 147.54-119.6 267.14-267.14 267.14s-267.14-119.6-267.14-267.14 119.6-267.14 267.14-267.14 267.14 119.6 267.14 267.14z"
+        transform="matrix(.14287 0 0 .14498 498.4 563.7)"
+    />
+    <path
+        style="filter:url(#filter3839);stroke:#000000;fill:#ffffff"
+        d="m954.29 708.08c0 147.54-119.6 267.14-267.14 267.14s-267.14-119.6-267.14-267.14 119.6-267.14 267.14-267.14 267.14 119.6 267.14 267.14z"
+        transform="matrix(.28229 0 0 .28646 405.42 462.1)"
+    />
+  </g>
+</svg>

@@ -1,4 +1,4 @@
-import { fmtDist, fmtDur } from './helpers.js';
+import { fmtDist, fmtDur, fmtHm } from './helpers.js';
 import { tr } from './i18n.js';
 
 export function setStatus(msg) {
@@ -257,12 +257,91 @@ function updateScrubberPosition() {
 
 let scrubberInited = false;
 let scrubOnChange = () => {};
+// Minute the eclipse marker currently points at, or null when it's hidden —
+// read by the click handler below, which is bound once and outlives any one
+// search's bounds.
+let scrubMarkMinutes = null;
+let markTravelRaf = 0;
+
+// How long the thumb takes to travel to the eclipse marker when it's clicked.
+// Roughly the spin's own duration, so the two read as one gesture.
+const MARK_TRAVEL_MS = 600;
+// How often the routes/map/URL are actually recomputed while it travels. A
+// full render is too heavy to run per frame: measured over the 600 ms travel,
+// one render per frame yields 22 distinct thumb positions against 32 with none
+// at all. So the thumb and the clock move every frame (cheap: an attribute and
+// a string) and the expensive part runs on this slower beat, plus a final one
+// on arrival that always lands exactly on the target. 150 ms keeps 25 of those
+// 32 positions while still sweeping the shadows three or four times on the way,
+// which is what makes the map look like it's following rather than catching up
+// at the end.
+const MARK_TRAVEL_RENDER_MS = 150;
+
+// The range doesn't fire `input` when its value is set programmatically, so
+// the callback is invoked by hand — the same path a drag tick takes, so the
+// drawer, map and share URL update exactly as if the user had dragged there.
+// 'mark' tells the caller this move came from the marker rather than a drag:
+// the two are counted separately, and one click produces several of these.
+function renderScrubberAt(range, minutes) {
+  range.value = String(minutes);
+  scrubOnChange(Number(range.value), 'mark');
+}
+
+// Slides rather than jumps: the thumb crossing the afternoon is what makes it
+// obvious *that* the time changed and by how much, which a teleport hides.
+// Eased out, so it settles on the marker rather than slamming into it.
+function travelScrubberTo(range, target) {
+  cancelAnimationFrame(markTravelRaf);
+  const from = Number(range.value);
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (from === target || reduced) {
+    renderScrubberAt(range, target);
+    return;
+  }
+  const t0 = performance.now();
+  let lastRender = t0;
+  const frame = (now) => {
+    const p = Math.min(1, (now - t0) / MARK_TRAVEL_MS);
+    const eased = 1 - Math.pow(1 - p, 3);
+    // Rounded: the range's step is 1 minute, so fractional values would be
+    // snapped by the input anyway and the label would jitter between them.
+    const minutes = p === 1 ? target : Math.round(from + (target - from) * eased);
+    if (p === 1 || now - lastRender >= MARK_TRAVEL_RENDER_MS) {
+      lastRender = now;
+      renderScrubberAt(range, minutes);
+    } else {
+      range.value = String(minutes);
+      setScrubberLabel(fmtHm(minutes));
+    }
+    if (p < 1) markTravelRaf = requestAnimationFrame(frame);
+  };
+  markTravelRaf = requestAnimationFrame(frame);
+}
 
 function initScrubber() {
   if (scrubberInited) return;
   scrubberInited = true;
   const range = document.getElementById('scrubber-range');
-  range.addEventListener('input', () => scrubOnChange(Number(range.value)));
+  // A real drag also cancels a marker travel in flight: the user has taken the
+  // thumb back and should win. Safe to key off `input` because setting `value`
+  // from JS doesn't fire it, so this only ever sees genuine interaction.
+  range.addEventListener('input', () => {
+    cancelAnimationFrame(markTravelRaf);
+    scrubOnChange(Number(range.value));
+  });
+
+  // Clicking the marker travels to the minute it marks.
+  const mark = document.getElementById('scrubber-mark');
+  mark?.addEventListener('click', () => {
+    if (scrubMarkMinutes === null) return;
+    travelScrubberTo(range, scrubMarkMinutes);
+    // Restart rather than stack: a rapid second click should spin again, not
+    // be swallowed because the class is still there from the first.
+    mark.classList.remove('spin');
+    void mark.offsetWidth; // reflow, so re-adding the class restarts the animation
+    mark.classList.add('spin');
+  });
+  mark?.addEventListener('animationend', () => mark.classList.remove('spin'));
   // Still needed alongside the observer below: a media query that changes
   // --drawer-peek moves the *collapsed* dock point without changing the
   // drawer's own box, so the observer would never fire for it.
@@ -275,8 +354,34 @@ function initScrubber() {
   }
 }
 
+// Half the range thumb's width. A native thumb's centre travels from
+// min + half a thumb to max - half a thumb, not edge to edge, so a marker
+// placed at a raw percentage of the track sits a few pixels off from the
+// time the thumb reads there. Kept in sync with #scrubber-range in main.css.
+const SCRUBBER_THUMB_HALF_PX = 8;
+
+// Pins the eclipse marker over the minute it marks, or hides it when there's
+// nothing to mark — including the case where the marked minute falls outside
+// the day's sunrise..sunset bounds, where it would otherwise clamp to an end
+// of the track and point at the wrong time.
+function setScrubberMark(bounds) {
+  const el = document.getElementById('scrubber-mark');
+  const mark = bounds.mark;
+  const inRange = mark && mark.minutes >= bounds.min && mark.minutes <= bounds.max && bounds.max > bounds.min;
+  el.classList.toggle('on', !!inRange);
+  scrubMarkMinutes = inRange ? mark.minutes : null;
+  if (!inRange) return;
+  const frac = (mark.minutes - bounds.min) / (bounds.max - bounds.min);
+  el.style.left = `calc(${SCRUBBER_THUMB_HALF_PX}px + (100% - ${SCRUBBER_THUMB_HALF_PX * 2}px) * ${frac})`;
+  el.title = mark.label;
+  el.setAttribute('aria-label', mark.label);
+}
+
 // bounds: { min, max, value, label } in minutes-since-local-midnight (see
-// timezone.js#minutesInZone / helpers.js#fmtHm). onScrub(minutes) fires on every drag tick.
+// timezone.js#minutesInZone / helpers.js#fmtHm), plus an optional
+// mark: { minutes, label } drawn above the track at that minute.
+// onScrub(minutes, source) fires on every drag tick, and on every frame of a
+// marker travel — where source is 'mark' and is otherwise undefined.
 export function showScrubber(bounds, onScrub) {
   initScrubber();
   scrubOnChange = onScrub;
@@ -285,6 +390,7 @@ export function showScrubber(bounds, onScrub) {
   range.max   = String(bounds.max);
   range.value = String(bounds.value);
   setScrubberLabel(bounds.label);
+  setScrubberMark(bounds);
   document.getElementById('time-scrubber').classList.add('on');
   updateScrubberPosition();
 }
