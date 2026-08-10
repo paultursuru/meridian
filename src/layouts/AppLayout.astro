@@ -564,7 +564,13 @@ const urls: Record<Lang, string> = {
         const sunriseDateV = dateValueInZone(nextSunrise, destTz);
         const sunriseTimeV = formatTimeInZone(nextSunrise, destTz);
         button('night-sunrise-btn').textContent = tr('night_sunrise_btn', { time: sunriseTimeV });
+        // One per search: a double tap is one intent, not two.
+        let sunriseJumped = false;
         goToSunrise = () => {
+          if (!sunriseJumped) {
+            sunriseJumped = true;
+            window.umami?.track('sunrise_jump', { stage: 'clicked' });
+          }
           input('inp-date').value = sunriseDateV;
           input('inp-time').value = sunriseTimeV;
           handleSearch();
@@ -739,6 +745,11 @@ const urls: Record<Lang, string> = {
       // First render: buildings only (or nothing, at night) — the drawer must
       // not sit inert waiting for vegetation's up-to-~13s Overpass round trip.
       renderAt(tDate);
+      // The night note only reaches the screen once the drawer opens, and
+      // buildRoutes above can still throw before that — reporting it where
+      // goToSunrise is built would count searches nobody ever saw and deflate
+      // the click rate. Once per search, not per renderAt.
+      if (night) window.umami?.track('sunrise_jump', { stage: 'shown' });
       let currentInstant = tDate;
       // Captured once, here, so the 'search' event's ms keeps meaning
       // "wall-clock to first render" even though for a real search it now
