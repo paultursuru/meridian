@@ -60,7 +60,7 @@ export default {
     // step 4 : c'est ça qui remplace les 10s de backoff côté client.
     const query = new URLSearchParams(body).get('data') || '';
     const upstreams = isSwissBbox(extractBbox(query)) ? UPSTREAMS_CH : UPSTREAMS_DEFAULT;
-    const { text, status } = await fetchFromUpstreams(upstreams, body);
+    const { text, status, upstream, trail } = await fetchFromUpstreams(upstreams, body);
 
     // On ne met en cache que les vraies réponses JSON réussies, jamais une
     // erreur ou une page HTML d'Overpass (sinon on cacherait une panne 30 jours).
@@ -69,7 +69,18 @@ export default {
     }
 
     return withCors(
-      json(text, { 'X-Cache': 'MISS', ...(status === 200 ? { 'Cache-Control': CACHE_CONTROL } : {}) }, status),
+      json(text, {
+        'X-Cache': 'MISS',
+        // Which instance actually answered, and what each one cost. The Swiss
+        // instance answers a Lausanne bbox in ~0.7s when called directly, but
+        // the deployed Worker's own Swiss searches come back with the global
+        // instance's latency profile, so the routing looks right in the source
+        // while something else decides what really serves. Reading it off a
+        // response beats inferring it from timings.
+        'X-Upstream': upstream,
+        'X-Upstream-Trail': trail,
+        ...(status === 200 ? { 'Cache-Control': CACHE_CONTROL } : {}),
+      }, status),
       origin,
     );
   },
@@ -101,9 +112,16 @@ function isSwissBbox(bbox) {
 // upstream on a retryable failure; a non-retryable status (a malformed
 // query, say) would fail identically everywhere, so trying again elsewhere
 // just burns a subrequest for nothing.
+// Also reports which upstream served and what each attempt cost, as
+// { upstream, trail }: upstream is the host that answered (or the last one
+// tried when they all failed), trail is "host=status/ms" per attempt.
 async function fetchFromUpstreams(upstreams, body) {
-  let last = { text: '', status: 502 };
+  let last = { text: '', status: 502, upstream: '' };
+  const trail = [];
   for (const url of upstreams) {
+    const host = new URL(url).host;
+    const startedAt = Date.now();
+    const note = (status) => trail.push(`${host}=${status}/${Date.now() - startedAt}ms`);
     let res;
     try {
       // Overpass exige un User-Agent identifiant (sinon il répond 406), que le
@@ -117,16 +135,21 @@ async function fetchFromUpstreams(upstreams, body) {
         body,
       });
     } catch (err) {
-      last = { text: String(err?.message || err), status: 502 };
+      note('throw');
+      last = { text: String(err?.message || err), status: 502, upstream: host };
       continue;
     }
     const text = await res.text();
     const isHtmlError = text.trimStart().startsWith('<');
-    if (res.ok && !isHtmlError) return { text, status: 200 };
-    last = { text, status: isHtmlError ? 504 : res.status };
+    // An HTML body on a 200 is Overpass reporting a failure (a dispatcher
+    // timeout, say), so the trail records what it really was, not the 200.
+    const effective = isHtmlError ? 504 : res.status;
+    note(effective);
+    if (res.ok && !isHtmlError) return { text, status: 200, upstream: host, trail: trail.join(',') };
+    last = { text, status: effective, upstream: host };
     if (!isHtmlError && !RETRYABLE_STATUS.has(res.status)) break;
   }
-  return last;
+  return { ...last, trail: trail.join(',') };
 }
 
 function json(text, extraHeaders = {}, status = 200) {
@@ -140,6 +163,9 @@ function withCors(res, origin) {
   if (origin && ALLOWED_ORIGINS.has(origin)) {
     res.headers.set('Access-Control-Allow-Origin', origin);
     res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    // Without this the diagnostic headers exist on the wire but are invisible
+    // to any page that fetches through this Worker.
+    res.headers.set('Access-Control-Expose-Headers', 'X-Cache, X-Upstream, X-Upstream-Trail');
   }
   return res;
 }
