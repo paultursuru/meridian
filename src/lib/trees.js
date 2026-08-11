@@ -123,10 +123,10 @@ export async function fetchVegetation(bbox) {
   const bb = `(${s},${w},${n},${e})`;
   const q = `[out:json][timeout:25];(node["natural"="tree"]${bb};way["natural"="tree_row"]${bb};way["landuse"="forest"]${bb};way["natural"="wood"]${bb};relation["landuse"="forest"]${bb};relation["natural"="wood"]${bb};);out body;>;out skel qt;`;
   try {
-    const d = await overpassFetch(q);
-    return { ...parseVegetation(d.elements || []), status: 'ok' };
+    const { data, upstream } = await overpassFetch(q);
+    return { ...parseVegetation(data.elements || []), status: 'ok', upstream };
   } catch (err) {
     console.warn('Overpass vegetation failed', err);
-    return { trees: [], forests: [], status: 'failed' };
+    return { trees: [], forests: [], status: 'failed', upstream: err?.upstream ?? 'unknown' };
   }
 }

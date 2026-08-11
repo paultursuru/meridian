@@ -588,6 +588,12 @@ const urls: Record<Lang, string> = {
       let buildingsStatus: Awaited<ReturnType<typeof fetchBuildings>>['status'] = 'ok';
       let buildingsSource: Awaited<ReturnType<typeof fetchBuildings>>['source'] = switzerland ? 'swisstopo' : 'osm';
       let vegStatus: Awaited<ReturnType<typeof fetchVegetation>>['status'] = 'ok';
+      // Which instance behind overpass-cache served (or failed). Vegetation is
+      // the one Overpass call every daytime search makes, and a non-Swiss
+      // search's buildings call shares its bbox, so it would report the same
+      // instance: one field says it for both. Null for a night search, which
+      // makes no Overpass call at all.
+      let vegUpstream: string | null = null;
       // Kicked off once buildings resolve, awaited only inside its own .then()
       // below — never blocking the first render. Buildings dominate urban
       // shade and land in ~1s from R2; vegetation is decorative and the one
@@ -775,6 +781,7 @@ const urls: Record<Lang, string> = {
         night, single,
         delta,
         eclipse: eclipseDay,
+        ...(vegUpstream ? { upstream: vegUpstream } : {}),
       });
 
       hourlyWeather = await weatherP;
@@ -857,6 +864,7 @@ const urls: Record<Lang, string> = {
           trees = vegRes.trees;
           forests = vegRes.forests;
           vegStatus = vegRes.status;
+          vegUpstream = vegRes.upstream;
           updateHeightNote();
           renderAt(currentInstant);
           // renderAt -> displayRoutes redraws both route layers at full
