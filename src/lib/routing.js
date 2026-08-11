@@ -4,7 +4,13 @@ import { tr } from './i18n.js';
 // ORS is proxied through a Cloudflare Worker (ors-proxy/) so the API key
 // never ships in the client bundle. Same pattern as overpass.js.
 const ORS_PROXY = 'https://ors-proxy.meridianway.workers.dev';
-const WALK_MS   = 4.5 / 3.6; // 4.5 km/h in m/s
+// Only used when a feature comes back without a duration. ORS's foot-walking
+// profile is a flat 5 km/h over the network distance: six Lausanne
+// alternatives all measured exactly 5.00 km/h, and the same 2.2 km route took
+// 1579 s in both directions despite 159 m of ascent one way. So its number
+// carries no slope or surface term, but it is ORS's to improve rather than a
+// constant we maintain, which is why it is preferred over this fallback.
+const WALK_MS   = 5 / 3.6;
 const RETRYABLE  = new Set([429, 503, 504]);
 const BACKOFF_MS = [1000, 3000];
 
@@ -60,13 +66,32 @@ function calcElevFromCoords(coords) {
   return { up: Math.round(up), down: Math.round(down) };
 }
 
+// Extra walking time from climbing: ~4 min per 100 m of ascent
+// (Naismith-style, conservative, strong walkers feel little of it). Only the
+// uphill counts. ORS's own duration is direction-blind, so this adds
+// something genuinely missing instead of double-counting a slope term.
+function climbSeconds(elevation) {
+  if (!elevation || !elevation.up) return 0;
+  return (elevation.up / 100) * 4 * 60;
+}
+
+// duration is the *total* walking time, ascent included. It is both what the
+// drawer shows and what scoreRoute divides distance by to know where the
+// walker stands at each minute, so the two must be the same number: while the
+// climb supplement lived in the rendering layer, the shade model was scoring
+// a walker faster than the one the UI described, and the gap widened with
+// exactly the ascent that the shady route tends to carry.
 function parseFeatures(features) {
-  return features.map(f => ({
-    geometry: f.geometry,
-    distance: f.properties.summary.distance,
-    duration: f.properties.summary.distance / WALK_MS,
-    elevation: calcElevFromCoords(f.geometry.coordinates),
-  }));
+  return features.map(f => {
+    const elevation = calcElevFromCoords(f.geometry.coordinates);
+    const { distance, duration } = f.properties.summary;
+    return {
+      geometry: f.geometry,
+      distance,
+      duration: (duration || distance / WALK_MS) + climbSeconds(elevation),
+      elevation,
+    };
+  });
 }
 
 async function orsPost(body) {

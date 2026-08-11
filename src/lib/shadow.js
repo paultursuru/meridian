@@ -106,8 +106,10 @@ function forestShadeAt(lat, lng, forests, shadowDirRad, altRad, deciduousLeafFra
 // Fractions along each segment where shade is sampled (25%, 50%, 75%).
 const TEST_FRACTIONS = [0.25, 0.5, 0.75];
 
-// Fallback walking speed when the route carries no distance/duration.
-const DEFAULT_WALK_MS = 4.5 / 3.6; // 4.5 km/h in m/s
+// Fallback walking speed when the route carries no distance/duration. Same
+// flat pace ORS returns, so a route missing its duration is scored as the same
+// walker rather than a slower invented one.
+const DEFAULT_WALK_MS = 5 / 3.6; // 5 km/h in m/s
 
 // Returns { score: [0,1], segShade: [{i, shade}] }
 // score = fraction of distance in sun (1 = fully sunny, 0 = fully shaded).
@@ -121,6 +123,9 @@ export function scoreRoute(rt, buildings, trees = [], sun, deciduousLeafFrac = 1
   const segShade = [];
 
   const sunAt = typeof sun === 'function' ? sun : () => sun;
+  // Average pace over the whole route, ascent included (routing.js folds the
+  // climb supplement into duration), so a hilly route is sampled against a
+  // later sun instead of one it would only meet walking on the flat.
   const speed = rt.duration > 0 ? rt.distance / rt.duration : DEFAULT_WALK_MS;
 
   let sunLen = 0, totalLen = 0;
