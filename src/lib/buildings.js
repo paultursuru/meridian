@@ -249,8 +249,8 @@ export async function fetchBuildings(bbox, { switzerland = false } = {}) {
     // AppLayout.astro's two-pass search) — keep the full 1s+3s+6s retry
     // ladder here rather than overpassFetch's default single retry, which is
     // sized for the now-decorative, non-blocking vegetation call instead.
-    const d = await overpassFetch(q, { backoffMs: [1000, 3000, 6000] });
-    return { buildings: parseBuildings(d.elements || []), status: 'ok', source: 'osm' };
+    const { data } = await overpassFetch(q, { backoffMs: [1000, 3000, 6000] });
+    return { buildings: parseBuildings(data.elements || []), status: 'ok', source: 'osm' };
   } catch (err) {
     console.warn('Overpass buildings failed, shadows disabled for this query', err);
     return { buildings: [], status: 'failed', source: 'osm' };
