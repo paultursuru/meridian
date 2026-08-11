@@ -300,7 +300,7 @@ const urls: Record<Lang, string> = {
   import { TZ_CENTERS } from '../lib/tzCenters.js';
   import { tr, type TranslationKey }     from '../lib/i18n.js';
   import { localDateValue, fmtHm }        from '../lib/helpers.js';
-  import { initInstallPrompt, registerServiceWorker, isStandalone } from '../lib/pwa.js';
+  import { initInstallPrompt, registerServiceWorker, isStandalone, notifySearchSucceeded } from '../lib/pwa.js';
   import { saveLastPosition, getLastPosition } from '../lib/lastPosition.js';
   import { trackPageview } from '../lib/analytics.js';
 
@@ -745,6 +745,9 @@ const urls: Record<Lang, string> = {
       // First render: buildings only (or nothing, at night) — the drawer must
       // not sit inert waiting for vegetation's up-to-~13s Overpass round trip.
       renderAt(tDate);
+      // Results are on screen: the install banner has something to argue from
+      // now, which it did not have at page load.
+      notifySearchSucceeded();
       // The night note only reaches the screen once the drawer opens, and
       // buildRoutes above can still throw before that — reporting it where
       // goToSunrise is built would count searches nobody ever saw and deflate
