@@ -34,6 +34,34 @@ export function registerServiceWorker() {
   }
 }
 
+// Platform the banner is waiting to show for, or null once it has been shown
+// (it is offered once per page, not once per search).
+let pendingMode = null;
+let searchSucceeded = false;
+
+// The banner is only worth showing to someone who has seen what the app does:
+// asking for a home-screen icon before the first result is asking on nothing.
+// The platform is known long before that (Chrome fires beforeinstallprompt as
+// soon as the service worker is up), so the two halves are separated here.
+function offerBanner(mode) {
+  pendingMode = mode;
+  if (searchSucceeded) flushBanner();
+}
+
+function flushBanner() {
+  if (!pendingMode) return;
+  showBanner(pendingMode);
+  window.umami?.track('install', { stage: 'prompted', platform: pendingMode });
+  pendingMode = null;
+}
+
+// Called once a search has actually put routes on screen. Safe to call on
+// every search: the banner is only ever shown once.
+export function notifySearchSucceeded() {
+  searchSucceeded = true;
+  flushBanner();
+}
+
 // Custom install banner (review 6.1): the app is installable but neither
 // Android nor iOS tells the user on its own — Chrome only shows its native
 // mini-infobar once per site, and Safari never fires beforeinstallprompt at
@@ -47,18 +75,14 @@ export function initInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    showBanner('android');
-    window.umami?.track('install', { stage: 'prompted', platform: 'android' });
+    offerBanner('android');
   });
 
   // navigator.standalone is iOS-only and false while running in Safari's
   // browser chrome (as opposed to undefined elsewhere, or true once installed).
-  if (isIosDevice() && navigator.standalone === false) {
-    showBanner('ios');
-    // Safari never fires beforeinstallprompt/userChoice, so 'prompted' is all
-    // we can measure here — no matching 'resolved' event is possible on iOS.
-    window.umami?.track('install', { stage: 'prompted', platform: 'ios' });
-  }
+  // Safari never fires beforeinstallprompt/userChoice, so 'prompted' is all we
+  // can measure there — no matching 'resolved' event is possible on iOS.
+  if (isIosDevice() && navigator.standalone === false) offerBanner('ios');
 
   document.getElementById('install-banner-close')?.addEventListener('click', dismissBanner);
   document.getElementById('install-banner-btn')?.addEventListener('click', async () => {
