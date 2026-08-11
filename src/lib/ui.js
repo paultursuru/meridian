@@ -39,18 +39,6 @@ export function showQualityNote(msg, level = 'info') {
   el.classList.toggle('warn', !!msg && level === 'warn');
 }
 
-// Extra walking time from climbing: ~4 min per 100 m of ascent (Naismith-style,
-// conservative — strong walkers feel little of it). Only the uphill counts.
-function climbSeconds(rt) {
-  if (!rt.elevation || !rt.elevation.up) return 0;
-  return (rt.elevation.up / 100) * 4 * 60;
-}
-
-// Flat-walking time plus the ascent supplement, folded into a single total.
-export function fmtDurWithClimb(rt) {
-  return fmtDur(rt.duration + climbSeconds(rt));
-}
-
 export function initTabs(onTabChange) {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -92,7 +80,7 @@ export function renderTab(id, rt) {
   g('shade-fill').style.width  = shadePct + '%';
   g('sun-fill').style.width    = sunPct + '%';
   g('dist').textContent        = fmtDist(rt.distance);
-  g('dur').textContent         = fmtDurWithClimb(rt);
+  g('dur').textContent         = fmtDur(rt.duration);
   g('shaded-dist').textContent = fmtDist(shadedM);
   g('sun-dist').textContent    = fmtDist(sunnyM);
 
@@ -123,8 +111,8 @@ function renderDeltas(sunny, shady) {
   const sunnySunPct = Math.round(sunny.sunScore * 100);
   const shadySunPct = Math.round(shady.sunScore * 100);
   const pctDelta = sunnySunPct - shadySunPct; // shared by both axes (shade = 100 - sun)
-  const sunnyMin = Math.round((sunny.duration + climbSeconds(sunny)) / 60);
-  const shadyMin = Math.round((shady.duration + climbSeconds(shady)) / 60);
+  const sunnyMin = Math.round(sunny.duration / 60);
+  const shadyMin = Math.round(shady.duration / 60);
 
   document.getElementById('shady-delta').textContent = tr(
     pctDelta >= 0 ? 'delta_shady_more' : 'delta_shady_less',

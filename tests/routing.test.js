@@ -124,3 +124,58 @@ describe('buildRoutes error codes', () => {
     await expect(buildRoutes(LAUSANNE, RENENS, () => {})).rejects.toThrow('ORS 400');
   });
 });
+
+// A single ORS feature: a straight line whose elevation climbs by `climbM`
+// over its length, with whatever summary ORS is pretending to return.
+function mockOrsFeature(summary, climbM = 0) {
+  const coords = [];
+  for (let i = 0; i <= 20; i++) {
+    coords.push([6.60 + i * 0.0002, 46.52, 400 + (climbM * i) / 20]);
+  }
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ features: [{ geometry: { coordinates: coords }, properties: { summary } }] }),
+  });
+}
+
+async function firstRoute(summary, climbM) {
+  mockOrsFeature(summary, climbM);
+  const [rt] = await buildRoutes(LAUSANNE, RENENS, () => {});
+  return rt;
+}
+
+describe('route duration', () => {
+  it("keeps ORS's own duration instead of re-deriving one from the distance", async () => {
+    // Was distance / 4.5 km/h, which threw away the number ORS returned and
+    // fed a made-up pace to the sun scoring.
+    const rt = await firstRoute({ distance: 3000, duration: 2160 });
+    expect(rt.duration).toBe(2160);
+  });
+
+  it('falls back to a flat pace only when ORS omits the duration', async () => {
+    const rt = await firstRoute({ distance: 3000 });
+    expect(rt.duration).toBeCloseTo(3000 / (5 / 3.6), 5);
+  });
+
+  it('adds ~4 min per 100 m of ascent, which ORS never accounts for', async () => {
+    // Same 3000 m at the same ORS duration, 250 m of climb: +10 min.
+    const rt = await firstRoute({ distance: 3000, duration: 2160 }, 250);
+    expect(rt.elevation.up).toBe(250);
+    expect(rt.duration).toBeCloseTo(2160 + 600, 5);
+  });
+
+  it('ignores descent, only the uphill costs time', async () => {
+    const rt = await firstRoute({ distance: 3000, duration: 2160 }, -250);
+    expect(rt.elevation.down).toBe(250);
+    expect(rt.duration).toBe(2160);
+  });
+
+  it('gives scoreRoute a pace that matches the time shown to the user', async () => {
+    // The whole point of folding the climb in here: distance / duration is
+    // what scoreRoute walks the sun along, so it must be the same total the
+    // drawer displays, not a flat-ground pace the walker never holds.
+    const rt = await firstRoute({ distance: 3000, duration: 2160 }, 250);
+    expect(rt.distance / rt.duration).toBeCloseTo(3000 / 2760, 5);
+  });
+});

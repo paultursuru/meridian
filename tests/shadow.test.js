@@ -155,8 +155,8 @@ describe('scoreRoute — forests', () => {
 });
 
 describe('scoreRoute — sun moving along the walk (sampler)', () => {
-  // Two ~76 m segments walked at the default 1.25 m/s: segment midpoints are
-  // reached at ~31 s and ~92 s. A sampler that drops the sun below the horizon
+  // Two ~76 m segments walked at the default 1.39 m/s: segment midpoints are
+  // reached at ~27 s and ~82 s. A sampler that drops the sun below the horizon
   // after 60 s leaves the first segment sunny and shades the second.
   const rt = {
     geometry: {
