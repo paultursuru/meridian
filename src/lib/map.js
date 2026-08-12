@@ -80,7 +80,10 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
       bubblingMouseEvents: false, // keep route clicks from also closing the drawer via the map click below
     });
     seg._baseOpacity = opacity;
-    if (onClick) seg.on('click', onClick);
+    // Stopped, not just handled: a click on a route means "show me this one",
+    // and letting it through to the map would also collapse the drawer and
+    // offer to drop an endpoint on top of the route the user just picked.
+    if (onClick) seg.on('click', (ev) => { L.DomEvent.stopPropagation(ev); onClick(); });
     layers.push(seg.addTo(_map));
   }
   return layers;
@@ -121,6 +124,58 @@ export function initMap() {
   new LocateControl().addTo(_map);
 
   _map.on('click', collapseDrawer);
+  _map.on('click', openPickPopup);
+
+  // The intro bubble, the splash and the sun badge are plain HTML children of
+  // #map, so a click on any of them reaches Leaflet's container underneath.
+  // That was harmless while a map click only collapsed the drawer; now it
+  // would drop a "use this point" menu behind the thing the user was actually
+  // clicking. Leaflet's own controls already do this for themselves.
+  for (const id of ['app-description', 'map-splash', 'map-sun-info']) {
+    const el = document.getElementById(id);
+    if (el) L.DomEvent.disableClickPropagation(el);
+  }
+}
+
+// Click anywhere on the map to use that spot as an endpoint, so a walk can be
+// planned without typing an address at all. A popup with the two roles in it
+// rather than a mode armed beforehand: the map is a pan/zoom surface, and a
+// bare click can't be allowed to move a pin on its own. Leaflet's own popup
+// carries the parts that are tedious by hand — anchored to a latlng, so it
+// tracks the map while panning, and closed by the next click or Escape.
+function openPickPopup(e) {
+  const box = L.DomUtil.create('div', 'pick-menu');
+  box.setAttribute('role', 'group');
+  box.setAttribute('aria-label', tr('map_pick_label'));
+
+  for (const role of ['start', 'end']) {
+    const btn = L.DomUtil.create('button', 'pick-btn', box);
+    btn.type = 'button';
+    btn.dataset.role = role;
+    btn.textContent = tr(role === 'start' ? 'map_pick_start' : 'map_pick_end');
+    L.DomEvent.on(btn, 'click', () => {
+      _map.closePopup();
+      window.dispatchEvent(new CustomEvent('map-point-picked', {
+        detail: { role, lat: e.latlng.lat, lng: e.latlng.lng },
+      }));
+    });
+  }
+  // Keeps a click inside the menu from reaching the map underneath, which
+  // would immediately reopen the popup one pixel further along.
+  L.DomEvent.disableClickPropagation(box);
+
+  // With a close button, unlike most popups: dismissing this one by clicking
+  // the map is impossible, because that click just opens another menu one
+  // spot further along. Escape closes it too, but that is no help on a phone
+  // and invisible everywhere else.
+  const popup = L.popup({ className: 'pick-popup', closeButton: true, offset: [0, 4] })
+    .setLatLng(e.latlng)
+    .setContent(box)
+    .openOn(_map);
+
+  // Leaflet's own close button is labelled "Close popup", in English.
+  popup.getElement()?.querySelector('.leaflet-popup-close-button')
+    ?.setAttribute('aria-label', tr('aria_close'));
 }
 
 function pinIcon(color) {
@@ -142,13 +197,17 @@ export function clearMap() {
   clearApproxLocation();
 }
 
-export function setPreviewPin(role, coords) {
+// pan: fly to the pin, which is what an address or a geolocation fix wants —
+// the point is somewhere else. A point picked on the map is already in view
+// and under the user's finger, so moving the map there would only take the
+// surroundings they aimed at away from them.
+export function setPreviewPin(role, coords, { pan = true } = {}) {
   // A real pin supersedes the rough "my location" marker, if one is showing.
   clearApproxLocation();
   if (previewMarkers[role]) _map.removeLayer(previewMarkers[role]);
   const color = role === 'start' ? '#22c55e' : '#ef4444';
   previewMarkers[role] = L.marker([coords.lat, coords.lng], { icon: pinIcon(color), keyboard: false }).addTo(_map);
-  _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
+  if (pan) _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
 // Recenters only — no marker. Used for the passive, permission-free initial
