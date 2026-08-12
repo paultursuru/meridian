@@ -39,20 +39,54 @@ export function showQualityNote(msg, level = 'info') {
   el.classList.toggle('warn', !!msg && level === 'warn');
 }
 
+// Desktop side panel (main.css): the results dock to the left of the map
+// instead of sliding up from the bottom, both routes on screen at once.
+// Read on demand rather than cached — the breakpoint can be crossed by a window
+// resize at any time.
+const SIDE_PANEL_MQ = '(min-width: 900px)';
+function sidePanel() {
+  return window.matchMedia?.(SIDE_PANEL_MQ).matches ?? false;
+}
+
 export function initTabs(onTabChange) {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-selected', 'false');
-      });
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      onTabChange?.(btn.dataset.tab);
-    });
+  // Bound once for every control that names a route: the tab buttons on
+  // mobile, and the card titles that replace them in the side panel.
+  const select = (type) => {
+    if (!type || document.getElementById('tab-btn-' + type)?.classList.contains('active')) return;
+    setActiveTab(type);
+    onTabChange?.(type);
+  };
+
+  document.querySelectorAll('[data-tab]').forEach(el => {
+    el.addEventListener('click', () => select(el.dataset.tab));
   });
+
+  // In the side panel the whole card is the target, not just its title — the
+  // tabs are gone and the cards are what the user is looking at. The "already
+  // active" guard above is what keeps this quiet on mobile, where the single
+  // visible pane is by definition the active one.
+  document.querySelectorAll('.tab-pane').forEach(pane => {
+    pane.addEventListener('click', () => select(pane.id.replace('tab-', '')));
+  });
+}
+
+// The side panel docks to the map's top edge, which moves with whatever sits
+// above it: the install banner appearing, the search panel wrapping to a second
+// line. #map is the flex:1 item in that column, so it resizes whenever the
+// chrome above it does — one observer on it keeps the variable honest without
+// having to watch each piece separately.
+export function initLayout() {
+  const map = document.getElementById('map');
+  if (!map) return;
+  // getBoundingClientRect, not offsetTop: the chrome above the map does not
+  // land on whole pixels (the search panel's 1px border, a wrapped row), and
+  // offsetTop rounds — which left a hairline of map showing above the panel.
+  // The panel is position: fixed and the page never scrolls, so the viewport
+  // coordinate is the right one to hand it.
+  const sync = () => document.documentElement.style.setProperty('--map-top', `${map.getBoundingClientRect().top}px`);
+  sync();
+  if (typeof ResizeObserver === 'function') new ResizeObserver(sync).observe(map);
+  window.addEventListener('resize', sync);
 }
 
 export function setActiveTab(type) {
@@ -124,6 +158,16 @@ function renderDeltas(sunny, shady) {
   );
 }
 
+// Folded state of the desktop side panel. One piece of state, written to two
+// elements: the scrubber is docked to the panel's bottom edge but lives outside
+// it in the DOM (on mobile it has to float above the sheet, not inside it), so
+// no selector reaches it from #results.
+function setPanelCollapsed(collapsed) {
+  document.getElementById('results')?.classList.toggle('collapsed', collapsed);
+  document.getElementById('time-scrubber')?.classList.toggle('panel-collapsed', collapsed);
+  document.getElementById('panel-toggle')?.setAttribute('aria-expanded', String(!collapsed));
+}
+
 let drawerInited = false;
 
 function initDrawer() {
@@ -132,6 +176,23 @@ function initDrawer() {
 
   const drawer = document.getElementById('results');
   const handle = document.getElementById('drawer-handle');
+
+  // The side panel has no collapsed state, so the handle is inert there (CSS
+  // drops its pointer events and its grab bar). Take it out of the tab order
+  // too, rather than leaving a focusable control that does nothing.
+  const syncHandle = () => {
+    const inert = sidePanel();
+    handle.tabIndex = inert ? -1 : 0;
+    handle.setAttribute('aria-hidden', String(inert));
+  };
+  syncHandle();
+  window.matchMedia?.(SIDE_PANEL_MQ).addEventListener('change', syncHandle);
+
+  // What the handle does on mobile — get the results out of the way of the
+  // map — the panel gets from its own edge button.
+  const toggle = document.getElementById('panel-toggle');
+  toggle?.addEventListener('click', () =>
+    setPanelCollapsed(!drawer.classList.contains('collapsed')));
 
   let startY = 0, isDragging = false, moved = false;
 
@@ -192,6 +253,13 @@ export function showResults(sunny, shady, single = false, night = false, heightF
   const drawer = document.getElementById('results');
   drawer.classList.toggle('night', night);
   drawer.classList.toggle('data-failed', heightFailed);
+  // Hiding the tabs is enough on mobile, where only the active pane shows
+  // anyway; the side panel shows every pane, so it needs to know that the
+  // shady one holds nothing (renderTab was skipped for it above).
+  drawer.classList.toggle('single', single);
+  // A new search is a request to see its result, so it always arrives with the
+  // panel open — same as the sheet, which comes back up on every search.
+  setPanelCollapsed(false);
   drawer.classList.add('on');
   initDrawer();
 }
@@ -213,14 +281,36 @@ function drawerPeekPx(drawer) {
 // there. Kept in sync with #time-scrubber's padding + content in main.css.
 const SCRUBBER_HEIGHT = 34;
 
+// Side-panel layout only: breathing room under the fitted route, and the
+// panel width to fall back on if the CSS variable can't be read.
+// Kept in sync with --side-panel-w in main.css.
+const SIDE_PANEL_MAP_PAD = 40;
+const SIDE_PANEL_FALLBACK_W = 380;
+
 // How much of the map's bottom edge is covered by chrome: the drawer's peek
 // plus the scrubber floating above it. map.js keeps the fitted route clear of
 // this strip (see mapFit.js), and reading it from the same CSS var the
 // scrubber positions itself from means a media query that shrinks the drawer
 // re-frames the route to match, with no second copy of the number to update.
 export function bottomOverlayPx() {
+  // Side panel: nothing covers the bottom of the map any more (the scrubber
+  // docks inside the panel), so this is plain breathing room.
+  if (sidePanel()) return SIDE_PANEL_MAP_PAD;
   const drawer = document.getElementById('results');
   return (drawer ? drawerPeekPx(drawer) : 168) + SCRUBBER_GAP + SCRUBBER_HEIGHT;
+}
+
+// Map pixels covered on the left, i.e. the side panel's width or nothing.
+// Read from the CSS variable rather than measured: displayRoutes fits the
+// route before showResults slides the panel in, so at that moment the element
+// is still off-screen and its own box would be the wrong thing to trust.
+export function leftOverlayPx() {
+  if (!sidePanel()) return 0;
+  // Folded away: the map has the whole window back, so the next fit should use
+  // it (renderAt re-fits on every scrub tick, so this catches up on its own).
+  if (document.getElementById('results')?.classList.contains('collapsed')) return 0;
+  const w = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--side-panel-w'));
+  return w || SIDE_PANEL_FALLBACK_W;
 }
 
 // Keeps the scrubber docked to the drawer's actual visible top edge. The
@@ -237,6 +327,12 @@ export function bottomOverlayPx() {
 // every one of those without each caller having to remember.
 function updateScrubberPosition() {
   const scrubber = document.getElementById('time-scrubber');
+  // Side panel: the scrubber is docked at the panel's bottom edge by CSS, and
+  // an inline `bottom` left over from a narrower window would override it.
+  if (sidePanel()) {
+    scrubber.style.bottom = '';
+    return;
+  }
   if (!scrubber.classList.contains('on')) return;
   const drawer = document.getElementById('results');
   const visibleH = drawer.classList.contains('expanded') ? drawer.offsetHeight : drawerPeekPx(drawer);

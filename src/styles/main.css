@@ -756,6 +756,11 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #share-btn:hover { border-color: rgba(240,242,160,0.45); color: #f0f2a0; }
 
+/* Desktop only (see the side-panel block at the end of the file): below the
+   breakpoint the drawer handle is the control that gets the results out of
+   the way. */
+#panel-toggle { display: none; }
+
 /* ── Single-route note (replaces the tabs when only one unique route exists) ── */
 #single-route-note {
   display: none;
@@ -884,6 +889,12 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Tab content ── */
 .tab-pane { display: none; padding: 14px 16px; }
 .tab-pane.active { display: block; }
+
+/* Names the route inside its own card, and selects it — only ever visible in
+   the desktop side panel, where the tabs are gone and both cards are on
+   screen at once. A real button, not a heading: it is the keyboard route to
+   the selection the card click makes with a mouse. */
+.pane-title { display: none; }
 
 /* ── Ratio display ── */
 .ratio-wrap { width: 100%; }
@@ -1208,4 +1219,212 @@ p.opensource-badge {
   #search-btn { flex: 1; }
   .depart-popover { left: 0; right: 0; }
   #about-drawer { width: 100vw; }
+}
+
+/* ── Desktop: the results dock as a side panel ──
+   The bottom sheet is genuinely good on a phone and unreadable stretched
+   across a laptop: at 1280px the two headline percentages sit ~1,100px apart
+   and stop reading as one statistic, and the scrubber becomes a 1,250px
+   slider for a 15-hour range. Docked left at 380px, the same markup gets the
+   proportions it was designed for, and both routes fit one under the other —
+   so the tabs go away and the sunny/shady comparison is just there, side by
+   side, instead of something the user has to reconstruct by alternating.
+
+   The panel floats over the map rather than shrinking it: no Leaflet resize
+   on every search, and keeping the route clear of it is the mechanism the
+   bottom sheet already uses (leftOverlayPx in ui.js, read by map.js).
+
+   --map-top is written by ui.js from #map's own offset, so the panel lines up
+   with the top of the map whatever sits above it — the install banner
+   appearing, or the search panel wrapping to a second line.
+
+   Last block in the file, after every rule it overrides: a media query adds
+   no specificity of its own. */
+@media (min-width: 900px) {
+  /* Also read from JS (leftOverlayPx, see ui.js) — keep both in sync. */
+  :root { --side-panel-w: 380px; }
+
+  #results {
+    top: var(--map-top, 96px);
+    right: auto;
+    width: var(--side-panel-w);
+    max-height: none;
+    border-radius: 0;
+    border-top: none;
+    border-right: 1px solid rgba(240,242,160,0.13);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+    /* Clears the scrubber docked at the bottom (below): it floats over the
+       panel, so the last note has to be able to scroll out from under it. */
+    padding-bottom: 58px;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    /* Column, so the notes can be ordered below the route cards without
+       moving them in the DOM (where they sit above, which is right for the
+       sheet: there they explain why the bar underneath is missing). */
+    display: flex;
+    flex-direction: column;
+  }
+  #results > * { flex: 0 0 auto; }
+  /* Slides in from the left instead of up. There is no peek state to
+     distinguish: the panel is as tall as the map, so `on` and `expanded` are
+     the same picture. */
+  #results.on,
+  #results.expanded,
+  #results.night.on { transform: none; }
+  /* Folded away by #panel-toggle. Last, so it wins over the three above. */
+  #results.collapsed { transform: translateX(-100%); }
+
+  /* The handle keeps its strip — the share button is positioned inside it —
+     but stops being a control, since there is nothing left to expand. Tall
+     enough to clear that button: without the grab bar the strip collapses to
+     its padding, and the first note underneath ran behind the button. */
+  #drawer-handle { min-height: 46px; padding: 0; cursor: default; pointer-events: none; }
+  #drawer-bar { display: none; }
+  #results .route-details { display: block; }
+
+  /* Both routes at once, stacked, instead of two tabs to alternate between.
+     The tab buttons' `active` class lives on: it is now the selected-card
+     highlight, and clicking a card is what moves it (see initTabs in ui.js),
+     so the map still highlights exactly one route. */
+  #tabs { display: none; }
+  /* Two actual cards, inset and rounded, rather than two full-bleed bands. The
+     selected one is the one that is lit: its own outline in its own route
+     colour, on a lifted background. Selection reads as the whole object being
+     picked up, which is also how the map says it (the other route drops to
+     half opacity there, scaleOpacity in map.js) — the unselected card recedes
+     a little, but nowhere near enough to stop being readable, because
+     comparing the two is the entire point of showing both. */
+  .tab-pane {
+    display: block;
+    cursor: pointer;
+    margin: 10px 12px;
+    padding: 14px;
+    background: #12170e;
+    border: 1px solid rgba(240,242,160,0.09);
+    border-radius: 12px;
+    transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .tab-pane:not(.active) { opacity: 0.72; }
+  .tab-pane:not(.active):hover { opacity: 0.9; }
+  #tab-sunny.active { border-color: rgba(240,242,160,0.5); background: rgba(240,242,160,0.05); }
+  #tab-shady.active { border-color: rgba(232,200,240,0.5); background: rgba(232,200,240,0.05); }
+  /* Only one unique route: the shady pane was never rendered for it, so it
+     would show an empty card next to the real one. The remaining card loses
+     its title with it — "sunny" only means something against a shadier
+     alternative, and the note above it already says there is none. */
+  #results.single #tab-shady { display: none; }
+  #results.single .pane-title { display: none; }
+
+  .pane-title {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: left;
+    color: rgba(216,219,200,0.62);
+    cursor: pointer;
+  }
+  #tab-sunny.active .pane-title { color: #f0f2a0; }
+  #tab-shady.active .pane-title { color: #e8c8f0; }
+
+  /* Every note lands under the route cards, and they all read as one kind of
+     thing. In the sheet they are split in two on purpose — night/eclipse/
+     grazing/single sit above because they explain a bar that is missing or
+     qualified, weather/quality below — but in a panel that shows everything
+     at once that split just scatters five different-looking paragraphs
+     through the results. Ordered rather than moved, so the DOM (and the
+     sheet) is untouched. */
+  #night-note,
+  #eclipse-note,
+  #grazing-sun-note,
+  #single-route-note { order: 2; }
+  #weather-note { order: 3; }
+  #quality-note { order: 4; }
+  #night-note,
+  #eclipse-note,
+  #grazing-sun-note,
+  #single-route-note,
+  #weather-note,
+  #quality-note {
+    padding: 11px 16px;
+    border-top: 1.5px solid rgba(240,242,160,0.1);
+    border-bottom: none;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: rgba(216,219,200,0.6);
+    /* Left, not centred: the quality note is a bulleted list and has to be,
+       and ragged-centre paragraphs in a 380px column read worse anyway. The
+       amber #quality-note.warn treatment still applies over this. */
+    text-align: left;
+  }
+
+  /* A footer bar across the panel's bottom edge rather than a card floating
+     above the drawer: 380px wide it reads as a control for the results next to
+     it instead of a slider across the whole window, and flush to the edge
+     nothing of the scrolling panel shows underneath it. z-index: it shares
+     2000 with the panel but comes earlier in the DOM, so it needs one more to
+     stay on top of it. */
+  #time-scrubber {
+    left: 0;
+    right: auto;
+    bottom: 0;
+    width: var(--side-panel-w);
+    padding: 10px 14px;
+    background: #0e120a;
+    border: none;
+    border-top: 1px solid rgba(240,242,160,0.13);
+    border-radius: 0;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
+    z-index: 2001;
+  }
+  /* Goes with the panel: it is that panel's control, and the point of folding
+     is to hand the whole window to the map. */
+  #time-scrubber.panel-collapsed { transform: translateX(-100%); }
+  #time-scrubber { transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
+
+  /* Leaflet puts zoom and locate-me in the map's top-left corner, which is
+     exactly where the panel docks — they were unreachable behind it. Slide
+     them clear for as long as it is actually on screen. :has() rather than a
+     class written from JS, because "the panel covers the map" is three states
+     at once (on, not collapsed, wide enough) and CSS already knows all three;
+     where it isn't supported the rule is dropped and the controls sit where
+     they do today. */
+  .leaflet-top.leaflet-left { transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1); }
+  body:has(#results.on:not(.collapsed)) .leaflet-top.leaflet-left { margin-left: var(--side-panel-w); }
+
+  /* A tab on the panel's outer edge, riding it in and out. Centred on the map
+     band rather than the window: top + bottom + a fixed height leaves the two
+     auto margins to split the leftover, which is what centres it. */
+  #panel-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: var(--side-panel-w);
+    top: var(--map-top, 96px);
+    bottom: 0;
+    margin: auto 0;
+    width: 22px;
+    height: 54px;
+    padding: 0;
+    background: #161b12;
+    border: 1px solid rgba(240,242,160,0.2);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    color: rgba(216,219,200,0.6);
+    cursor: pointer;
+    z-index: 2001;
+    transition: left 0.32s cubic-bezier(0.4,0,0.2,1), color 0.2s, background 0.2s;
+  }
+  #panel-toggle:hover { background: #1d2416; color: #f0f2a0; }
+  #panel-toggle svg { display: block; transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
+  /* Nothing to fold away until a search has produced something. */
+  #results:not(.on) ~ #panel-toggle { display: none; }
+  #results.collapsed ~ #panel-toggle { left: 0; }
+  #results.collapsed ~ #panel-toggle svg { transform: rotate(180deg); }
 }
