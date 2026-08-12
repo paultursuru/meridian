@@ -201,6 +201,7 @@ const urls: Record<Lang, string> = {
     <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny">{t.tab_sunny}</button>
   </div>
   <div id="tab-sunny" class="tab-pane active" role="tabpanel" aria-labelledby="tab-btn-sunny">
+    <button class="pane-title" type="button" data-tab="sunny">{t.tab_sunny}</button>
     <div class="ratio-wrap">
       <div class="ratio-nums">
         <span class="ratio-shade-num">{t.label_shade} <strong id="sunny-shade-pct"></strong></span>
@@ -241,6 +242,7 @@ const urls: Record<Lang, string> = {
   </div>
 
   <div id="tab-shady" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-shady">
+    <button class="pane-title" type="button" data-tab="shady">{t.tab_shady}</button>
     <div class="ratio-wrap">
       <div class="ratio-nums">
         <span class="ratio-shade-num">{t.label_shade} <strong id="shady-shade-pct"></strong></span>
@@ -283,6 +285,15 @@ const urls: Record<Lang, string> = {
   <div id="quality-note"></div>
 </div>
 
+<!-- Folds the desktop side panel away to give the map the whole window, the
+     one thing the bottom sheet's handle does that a docked panel otherwise
+     loses. Never shown below the breakpoint, where the handle itself is the
+     control. A sibling of #results rather than a child: the panel clips its
+     own overflow, and this has to stay reachable once it has slid out. -->
+<button id="panel-toggle" type="button" aria-controls="results" aria-expanded="true" title={t.panel_toggle_title} aria-label={t.panel_toggle_title}>
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12l7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
 <script>
   import { getSun, getSunTimes, compassDir, makeSunSampler, isGrazingSun, isEclipseWindow, ECLIPSE_2026 } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
@@ -294,7 +305,7 @@ const urls: Record<Lang, string> = {
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, dateValueInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather, weatherAt }     from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
-  import { setStatus, showToast, initTabs, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, initLayout, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { TZ_CENTERS } from '../lib/tzCenters.js';
@@ -324,9 +335,13 @@ const urls: Record<Lang, string> = {
   const { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation } = await import('../lib/map.js');
 
   initMap();
-  // initTabs' click handler only fires on a real user click on a .tab-btn (unlike
-  // setActiveTab, which is also called programmatically after search/scrub/veg) —
-  // the right place to measure whether the algorithmic preselect actually sticks.
+  // After initMap: #map has to be laid out before its top offset means
+  // anything (the desktop side panel docks to it, see ui.js).
+  initLayout();
+  // initTabs' callback only fires on a real user click that *changes* the
+  // selected route — a tab on mobile, a card in the desktop side panel (unlike
+  // setActiveTab, which is also called programmatically after search/scrub/veg)
+  // — the right place to measure whether the algorithmic preselect sticks.
   initTabs((type: string) => {
     window.umami?.track('tab_switch', { to: type });
     setActiveRoute(type);

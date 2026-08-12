@@ -2,7 +2,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-leaflet';
-import { collapseDrawer, bottomOverlayPx } from './ui.js';
+import { collapseDrawer, bottomOverlayPx, leftOverlayPx } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { tr } from './i18n.js';
 import targetIcon from '../icons/target.svg?raw';
@@ -229,10 +229,12 @@ export function displayRoutes(startC, endC, sunny, shady) {
   markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('#22c55e'), keyboard: false }).addTo(_map));
   markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('#ef4444'), keyboard: false }).addTo(_map));
 
-  // Bottom padding measured rather than assumed, so the route lands in the
-  // strip the user can actually see instead of under the drawer and scrubber.
+  // Padding measured rather than assumed, so the route lands in the strip the
+  // user can actually see instead of under the chrome. Which edge that is
+  // depends on the layout: the drawer and scrubber cover the bottom on mobile,
+  // the docked panel covers the left on desktop.
   const padding = {
-    topLeft: FIT_PADDING.topLeft,
+    topLeft: [FIT_PADDING.topLeft[0] + leftOverlayPx(), FIT_PADDING.topLeft[1]],
     bottomRight: [FIT_PADDING.bottomRight[0], bottomOverlayPx()],
   };
 
