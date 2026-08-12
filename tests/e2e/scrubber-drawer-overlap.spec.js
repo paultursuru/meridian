@@ -60,8 +60,12 @@ async function gap(page) {
   });
 }
 
+// Both bottom-sheet viewports on purpose: from 900px up the drawer docks as a
+// side panel with the scrubber inside it (main.css), where there is no top
+// edge to be pushed under and no handle to expand. That layout has its own
+// spec, desktop-side-panel.spec.js. 880 is the widest the sheet ever gets.
 for (const viewport of [
-  { name: 'desktop', width: 1280, height: 800 },
+  { name: 'wide', width: 880, height: 800 },
   { name: 'mobile', width: 390, height: 844 },
 ]) {
   test(`the expanded drawer never covers the scrubber when a note appears mid-scrub (${viewport.name})`, async ({ page }) => {
