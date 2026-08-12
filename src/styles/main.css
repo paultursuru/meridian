@@ -499,6 +499,43 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .locate-control:hover { background: #f4f4f4; }
 .locate-control svg { display: block; }
 
+/* ── "Use this point" menu, opened by a click on the map (map.js) ──
+   Rides on Leaflet's popup for the anchoring and dismissal, so all that is
+   left is to undo its white bubble and drop the app's own dark card in. */
+.pick-popup .leaflet-popup-content-wrapper {
+  background: #161b12;
+  border: 1.5px solid rgba(240,242,160,0.2);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  padding: 4px;
+  color: #d8dbc8;
+}
+.pick-popup .leaflet-popup-content { margin: 0; width: auto !important; }
+/* Leaflet's tip is a rotated square, so a full border draws two stray
+   diagonals across the bubble it is supposed to continue. The card's own
+   shadow carries the shape well enough without one. */
+.pick-popup .leaflet-popup-tip { background: #161b12; border: none; box-shadow: none; }
+.pick-menu { display: flex; flex-direction: column; }
+.pick-btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  font-family: inherit;
+  /* 16px: the same threshold the address inputs hold to, so tapping a menu
+     item can't be the thing that makes iOS Safari zoom the page. */
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  color: #d8dbc8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.pick-btn:hover { background: rgba(240,242,160,0.08); color: #f0f2a0; }
+.pick-btn[data-role="start"]:hover { color: #86beef; }
+.pick-btn[data-role="end"]:hover { color: #fca5a5; }
+
 /* Shown until the map tiles finish their first load, then faded out in map.js — masks
    the blank/white flash of the tile layer initializing (also doubles as PWA-launch splash). */
 #map-splash {

@@ -984,6 +984,41 @@ const urls: Record<Lang, string> = {
   button('geo-start').addEventListener('click', () => fillFromGeo(startAC, 'start', 'geo-start'));
   button('geo-end').addEventListener('click',   () => fillFromGeo(endAC,   'end',   'geo-end'));
 
+  // A point picked on the map (see openPickPopup in map.js). Same destination
+  // as the geolocation buttons above — setPlace + a pin + syncInputState —
+  // with the two differences a click brings: the pin is placed where the map
+  // already is rather than flown to, and the address is not known yet.
+  //
+  // Which is why the field fills twice. The coordinates go in immediately so
+  // the point is usable (they are what routing consumes; the label is for the
+  // user), then the reverse-geocoded address replaces them. A failed lookup
+  // leaves the coordinates standing: the search still works, it just can't
+  // know the country, so a Swiss route falls back to Overpass instead of
+  // swissBUILDINGS3D.
+  const pickToken = { start: 0, end: 0 };
+
+  async function fillFromMap(role: 'start' | 'end', lat: number, lng: number) {
+    const ac = role === 'start' ? startAC : endAC;
+    const token = ++pickToken[role];
+    ac.setPlace({ lat, lng, label: `${lat.toFixed(5)}, ${lng.toFixed(5)}` });
+    setPreviewPin(role, { lat, lng }, { pan: false });
+    syncInputState();
+    window.umami?.track('point_picked', { role, method: 'map' });
+    try {
+      const { short, countryCode } = await reverseGeocode(lat, lng);
+      // Dropped if the field has moved on since: two quick picks on the same
+      // role would otherwise let the first lookup land on top of the second.
+      if (token !== pickToken[role]) return;
+      ac.setPlace({ lat, lng, label: short, countryCode });
+      syncInputState();
+    } catch { /* the coordinates stay in the field */ }
+  }
+
+  window.addEventListener('map-point-picked', (e: Event) => {
+    const { role, lat, lng } = (e as CustomEvent<{ role: 'start' | 'end'; lat: number; lng: number }>).detail;
+    fillFromMap(role, lat, lng);
+  });
+
   function clearField(ac: ReturnType<typeof initAutocomplete>, role: 'start' | 'end', inputId: string) {
     ac.clear();
     clearPreviewPin(role);
