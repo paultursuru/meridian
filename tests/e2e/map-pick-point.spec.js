@@ -100,6 +100,24 @@ test('a whole search can be set up without typing anything', async ({ page }) =>
   await expect(page.locator('.leaflet-marker-icon')).toHaveCount(2);
 });
 
+test('the menu can be dismissed without picking anything', async ({ page }) => {
+  await mockGeo(page);
+  await ready(page);
+
+  await clickMap(page);
+  await expect(page.locator('.pick-menu')).toBeVisible();
+
+  // The way out of a stray click: clicking the map again would only move the
+  // menu, since that click opens a new one.
+  await page.click('.pick-popup .leaflet-popup-close-button');
+  await expect(page.locator('.pick-menu')).toHaveCount(0);
+
+  // Nothing was picked, so nothing was touched.
+  await expect(page.locator('#inp-start')).toHaveValue('');
+  await expect(page.locator('#inp-end')).toHaveValue('');
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(0);
+});
+
 test('the menu reports the pick', async ({ page }) => {
   const events = [];
   await page.exposeFunction('__track', (name, data) => events.push({ name, data }));

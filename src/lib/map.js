@@ -164,10 +164,18 @@ function openPickPopup(e) {
   // would immediately reopen the popup one pixel further along.
   L.DomEvent.disableClickPropagation(box);
 
-  L.popup({ className: 'pick-popup', closeButton: false, offset: [0, 4] })
+  // With a close button, unlike most popups: dismissing this one by clicking
+  // the map is impossible, because that click just opens another menu one
+  // spot further along. Escape closes it too, but that is no help on a phone
+  // and invisible everywhere else.
+  const popup = L.popup({ className: 'pick-popup', closeButton: true, offset: [0, 4] })
     .setLatLng(e.latlng)
     .setContent(box)
     .openOn(_map);
+
+  // Leaflet's own close button is labelled "Close popup", in English.
+  popup.getElement()?.querySelector('.leaflet-popup-close-button')
+    ?.setAttribute('aria-label', tr('aria_close'));
 }
 
 function pinIcon(color) {
