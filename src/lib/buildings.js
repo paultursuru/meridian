@@ -249,7 +249,11 @@ export async function fetchBuildings(bbox, { switzerland = false } = {}) {
     // AppLayout.astro's two-pass search) — keep the full 1s+3s+6s retry
     // ladder here rather than overpassFetch's default single retry, which is
     // sized for the now-decorative, non-blocking vegetation call instead.
-    const { data } = await overpassFetch(q, { backoffMs: [1000, 3000, 6000] });
+    // The ladder is what makes the budget necessary: unbounded, its four
+    // attempts plus 10s of sleeps are what produced the 35s searches measured
+    // on the 2026-08-16 export. 12s is the whole call, after which the route
+    // renders without shadows and the quality note says so.
+    const { data } = await overpassFetch(q, { backoffMs: [1000, 3000, 6000], deadlineMs: 12000 });
     return { buildings: parseBuildings(data.elements || []), status: 'ok', source: 'osm' };
   } catch (err) {
     console.warn('Overpass buildings failed, shadows disabled for this query', err);

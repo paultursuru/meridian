@@ -65,6 +65,34 @@ describe('overpassFetch upstream reporting', () => {
     await assertion;
   });
 
+  it('bounds every attempt with what is left of the budget', async () => {
+    // The defect this guards: the fetch carried no signal at all, so an
+    // instance that never answered held the search open indefinitely.
+    let seen;
+    globalThis.fetch = async (_url, opts) => { seen = opts.signal; return response(ELEMENTS); };
+    await overpassFetch('q', { deadlineMs: 5000 });
+    expect(seen).toBeInstanceOf(AbortSignal);
+  });
+
+  it('stops retrying once the budget is spent instead of walking the whole ladder', async () => {
+    // Four attempts and 10s of sleeps is how a single search reached 35s.
+    // Each attempt here burns 5s, so the budget runs out mid-ladder.
+    vi.useFakeTimers();
+    let calls = 0;
+    globalThis.fetch = async () => {
+      calls++;
+      await new Promise(res => setTimeout(res, 5000));
+      return response('', { 'X-Upstream': 'overpass.osm.ch' }, 504);
+    };
+    const p = overpassFetch('q', { backoffMs: [1000, 3000, 6000], deadlineMs: 12000 });
+    const assertion = expect(p).rejects.toMatchObject({ upstream: 'overpass.osm.ch' });
+    await vi.runAllTimersAsync();
+    await assertion;
+    // t=0 attempt, t=5000 sleep 1s, t=6000 attempt, t=11000 the 3s sleep would
+    // land past the deadline, so it is not started.
+    expect(calls).toBe(2);
+  });
+
   it('reports an HTML error page served with a 200 as a failure of its instance', async () => {
     vi.useFakeTimers();
     globalThis.fetch = async () => response('<html>Dispatcher timeout</html>', { 'X-Upstream': 'overpass-api.de' });

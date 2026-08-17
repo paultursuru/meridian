@@ -10,6 +10,17 @@ const RETRYABLE = new Set([429, 503, 504]);
 // just one short retry.
 const BACKOFF_MS = [1000];
 
+// Nothing here used to be bounded: the fetch below carried no AbortSignal, so
+// an instance that never answered held the search open forever, and the
+// buildings ladder re-tried that four times with 10s of sleeps in between.
+// Measured on the 2026-08-16 export: the OSM path ran at 11.2s median, and its
+// three worst searches took 35.6s, 37.8s and 24.8s before giving up.
+// deadlineMs caps the whole call — every attempt and every sleep — rather than
+// each attempt, since a per-attempt timeout still lets four of them add up.
+// Callers on the critical path pass their own budget (buildings.js); this
+// default only exists so no caller is unbounded again by omission.
+const DEADLINE_MS = 20000;
+
 // Which instance behind overpass-cache actually answered, for the 'search'
 // analytics event. The Worker sets X-Upstream on a miss only, so a KV hit is
 // reported as such rather than as a missing value: knowing what share of
@@ -30,14 +41,25 @@ function upstreamOf(res) {
 // Returns { data, upstream }. The thrown error carries the same `upstream`
 // when a response was seen at all, since which instance *failed* is the more
 // interesting half of the question the header was added to answer.
-export async function overpassFetch(query, { backoffMs = BACKOFF_MS } = {}) {
+export async function overpassFetch(query, { backoffMs = BACKOFF_MS, deadlineMs = DEADLINE_MS } = {}) {
+  const deadline = Date.now() + deadlineMs;
   let lastErr;
   for (let attempt = 0; attempt <= backoffMs.length; attempt++) {
-    if (attempt > 0) await new Promise(res => setTimeout(res, backoffMs[attempt - 1]));
+    if (attempt > 0) {
+      // Don't start a sleep we cannot afford to finish: waiting 6s to then
+      // immediately abort spends the user's time for nothing.
+      const backoff = backoffMs[attempt - 1];
+      if (Date.now() + backoff >= deadline) break;
+      await new Promise(res => setTimeout(res, backoff));
+    }
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
     try {
       const r = await fetch(ENDPOINT, {
         method: 'POST',
         body: `data=${encodeURIComponent(query)}`,
+        // What is left of the budget, so a hung request cannot outlive it.
+        signal: AbortSignal.timeout(remaining),
       });
       if (RETRYABLE.has(r.status)) {
         lastErr = new Error(`Overpass HTTP ${r.status}`);
@@ -56,5 +78,6 @@ export async function overpassFetch(query, { backoffMs = BACKOFF_MS } = {}) {
       lastErr = err;
     }
   }
-  throw lastErr;
+  // Only null when the budget was already spent before the first attempt.
+  throw lastErr ?? new Error(`Overpass budget of ${deadlineMs}ms exhausted`);
 }
