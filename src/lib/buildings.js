@@ -46,6 +46,24 @@ export function hasHeightData(tags) {
   return false;
 }
 
+// The { centroid, radius } half of a building, from its footprint vertices.
+// radius is the max distance from the centroid to any vertex — the bounding
+// radius shadow.js pre-filters on. Shared with the vector-tile path
+// (tileBuildings.js), which builds the same shape from different input.
+export function footprintShape(pts) {
+  const centroid = {
+    lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length,
+    lng: pts.reduce((s, p) => s + p.lng, 0) / pts.length,
+  };
+  const cosLat = Math.cos(centroid.lat * Math.PI / 180);
+  const radius = pts.reduce((max, p) => {
+    const dlat = (p.lat - centroid.lat) * 111000;
+    const dlng = (p.lng - centroid.lng) * 111000 * cosLat;
+    return Math.max(max, Math.sqrt(dlat * dlat + dlng * dlng));
+  }, 0);
+  return { centroid, radius };
+}
+
 function parseBuildings(els) {
   const nodes = {};
   els.filter(e => e.type === 'node').forEach(nd => { nodes[nd.id] = { lat: nd.lat, lng: nd.lon }; });
@@ -55,20 +73,8 @@ function parseBuildings(els) {
     const pts = (way.nodes || []).map(id => nodes[id]).filter(Boolean);
     if (pts.length < 3) return;
 
-    const centroid = {
-      lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length,
-      lng: pts.reduce((s, p) => s + p.lng, 0) / pts.length,
-    };
-
+    const { centroid, radius } = footprintShape(pts);
     const height = buildingHeight(way.tags);
-
-    // Max distance from centroid to any vertex — used as bounding radius for shadow pre-filter
-    const cosLat = Math.cos(centroid.lat * Math.PI / 180);
-    const radius = pts.reduce((max, p) => {
-      const dlat = (p.lat - centroid.lat) * 111000;
-      const dlng = (p.lng - centroid.lng) * 111000 * cosLat;
-      return Math.max(max, Math.sqrt(dlat * dlat + dlng * dlng));
-    }, 0);
 
     out.push({ centroid, height, verts: pts, radius, hasHeight: hasHeightData(way.tags) });
   });
@@ -111,7 +117,7 @@ export function resolveHeightNoteState(buildingsStatus, buildingsCount, vegStatu
 // (adjacent swisstopo map sheets overlap slightly, so a building near a tile
 // edge can appear in two tiles' data) both happen here instead, where CPU
 // time isn't capped.
-function insideBbox(building, bbox) {
+export function insideBbox(building, bbox) {
   const [s, w, n, e] = bbox;
   const { lat, lng } = building.centroid;
   return lng >= w && lng <= e && lat >= s && lat <= n;

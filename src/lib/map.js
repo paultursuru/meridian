@@ -8,6 +8,7 @@ import { tr } from './i18n.js';
 import targetIcon from '../icons/target.svg?raw';
 
 let _map = null;
+let _glMap = null;
 let sunnyLayers   = [];
 let shadyLayers   = [];
 let markerLayers  = [];
@@ -117,7 +118,8 @@ export function initMap() {
     attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(_map);
 
-  glLayer.getMaplibreMap().once('load', () => {
+  _glMap = glLayer.getMaplibreMap();
+  _glMap.once('load', () => {
     document.getElementById('map-splash')?.classList.add('hidden');
   });
 
@@ -288,22 +290,99 @@ export function displayRoutes(startC, endC, sunny, shady) {
   markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('#22c55e'), keyboard: false }).addTo(_map));
   markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('#ef4444'), keyboard: false }).addTo(_map));
 
-  // Padding measured rather than assumed, so the route lands in the strip the
-  // user can actually see instead of under the chrome. Which edge that is
-  // depends on the layout: the drawer and scrubber cover the bottom on mobile,
-  // the docked panel covers the left on desktop.
+  fitWithChrome(L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]));
+}
+
+// Fits `bounds` into the strip of map the user can actually see.
+//
+// Padding measured rather than assumed, so the route doesn't land under the
+// chrome. Which edge that is depends on the layout: the drawer and scrubber
+// cover the bottom on mobile, the docked panel covers the left on desktop.
+// Then clamped to whatever the container measures, and the zoom capped:
+// asking for more padding than the map is tall (a small phone in portrait
+// with the soft keyboard open measures ~204px here) makes Leaflet store an
+// Infinity zoom without complaining, and the map then dies with "Invalid
+// LatLng object: (NaN, NaN)" at the next resize. See mapFit.js.
+function fitWithChrome(bounds, options = {}) {
   const padding = {
     topLeft: [FIT_PADDING.topLeft[0] + leftOverlayPx(), FIT_PADDING.topLeft[1]],
     bottomRight: [FIT_PADDING.bottomRight[0], bottomOverlayPx()],
   };
+  _map.fitBounds(bounds, {
+    ...clampFitPadding(_map.getSize(), padding),
+    maxZoom: FIT_MAX_ZOOM,
+    ...options,
+  });
+}
 
-  // Then clamped to whatever the container measures, and the zoom capped:
-  // asking for more padding than the map is tall (a small phone in portrait
-  // with the soft keyboard open measures ~204px here) makes Leaflet store an
-  // Infinity zoom without complaining, and the map then dies with "Invalid
-  // LatLng object: (NaN, NaN)" at the next resize. See mapFit.js.
-  _map.fitBounds(
-    L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]),
-    { ...clampFitPadding(_map.getSize(), padding), maxZoom: FIT_MAX_ZOOM }
-  );
+// --- Vector-tile building source --------------------------------------------
+// The three map-side primitives tileBuildings.js needs, kept here so that
+// module stays free of Leaflet/MapLibre and testable under vitest.
+
+// The zoom fitToBbox() below would land on, without moving anything — so a
+// route too long to fit at building-tile zoom can be handed to Overpass
+// before the map has been dragged across Europe for nothing.
+//
+// Returned in MapLibre's units, like glZoom(), since MapLibre's zoom is what
+// picks the tile the buildings come from. It runs one step below Leaflet's
+// for the same scale (512px vector tiles against Leaflet's 256px grid); the
+// offset is measured off the live map rather than hardcoded, so it holds
+// whatever maplibre-gl-leaflet does internally.
+export function bboxZoom(bbox, { chrome = true } = {}) {
+  const [s, w, n, e] = bbox;
+  const padding = chrome ? chromePaddingPoint() : L.point(0, 0);
+  const fit = Math.min(_map.getBoundsZoom(L.latLngBounds([s, w], [n, e]), false, padding), FIT_MAX_ZOOM);
+  return fit + (_glMap ? _glMap.getZoom() - _map.getZoom() : 0);
+}
+
+function chromePaddingPoint() {
+  const { paddingTopLeft, paddingBottomRight } = clampFitPadding(_map.getSize(), {
+    topLeft: [FIT_PADDING.topLeft[0] + leftOverlayPx(), FIT_PADDING.topLeft[1]],
+    bottomRight: [FIT_PADDING.bottomRight[0], bottomOverlayPx()],
+  });
+  return L.point(paddingTopLeft).add(L.point(paddingBottomRight));
+}
+
+// [s, w, n, e] — same shape as routesBbox(). Moves the map there without an
+// animation (the route is drawn right after anyway) and resolves once MapLibre
+// has finished loading the tiles for the new view, since querySourceFeatures
+// only ever sees tiles that are already in memory.
+// `chrome: false` fits the bbox edge to edge, ignoring the padding that keeps
+// a route clear of the drawer. Only for this pass: nothing is drawn yet, and
+// displayRoutes re-fits with the real padding a moment later — but the padding
+// costs close to a zoom level on a phone, which is the difference between
+// reading the buildings from the tiles and waiting on Overpass.
+export function fitToBbox(bbox, { timeoutMs = 6000, chrome = true } = {}) {
+  const [s, w, n, e] = bbox;
+  const bounds = L.latLngBounds([s, w], [n, e]);
+  if (chrome) fitWithChrome(bounds, { animate: false });
+  else _map.fitBounds(bounds, { maxZoom: FIT_MAX_ZOOM, animate: false });
+  return new Promise((resolve) => {
+    if (!_glMap) return resolve();
+    // 'idle' rather than areTilesLoaded(): the layer has just been told to
+    // move, so the tiles for the *previous* view can still read as loaded for
+    // a frame. The timeout is the floor under a tile server that never
+    // answers — the caller falls back to Overpass on an empty result.
+    const done = () => { clearTimeout(timer); _glMap.off('idle', done); resolve(); };
+    const timer = setTimeout(done, timeoutMs);
+    _glMap.on('idle', done);
+  });
+}
+
+export function glZoom() {
+  return _glMap ? _glMap.getZoom() : 0;
+}
+
+// Every building feature in the currently loaded tiles, geometry already in
+// lng/lat. Not filtered to the viewport: querySourceFeatures returns whole
+// tiles, which is exactly what we want (the route bbox is the filter, and it
+// is applied in tileBuildings.js).
+export function queryBuildingFeatures() {
+  if (!_glMap) return [];
+  try {
+    return _glMap.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
+  } catch (err) {
+    console.warn('querySourceFeatures(building) failed', err);
+    return [];
+  }
 }
