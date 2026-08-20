@@ -1259,8 +1259,6 @@ p.opensource-badge {
 .about-link:hover { border-color: rgba(240,242,160,0.4); background: rgba(240,242,160,0.05); }
 .github-link { color: #f0f2a0; border-color: rgba(240,242,160,0.3); background: rgba(240,242,160,0.05); }
 .github-link:hover { border-color: rgba(240,242,160,0.6); background: rgba(240,242,160,0.1); }
-.kofi-link { color: #e8c8f0; border-color: rgba(232,200,240,0.3); background: rgba(232,200,240,0.05); }
-.kofi-link:hover { border-color: rgba(232,200,240,0.6); background: rgba(232,200,240,0.1); }
 
 .footer-links {
   display: flex;

@@ -12,6 +12,12 @@ const END = '48.8606,2.3376';
 const SEARCH_URL = `/en/?from=${START}&to=${END}&dt=2026-07-28T14:00`;
 
 async function mockUpstreams(page, { buildingsStatus = 200 } = {}) {
+  // Vector tiles blocked, style and glyphs left alone: buildings now come from
+  // the basemap first, so without this the mocked Overpass response below is
+  // never the one under test. Blocking /data/ leaves the map itself working
+  // and makes querySourceFeatures come back empty, which is the real "tiles
+  // can't answer" case the Overpass fallback exists for.
+  await page.route('https://tiles.stadiamaps.com/data/**', route => route.abort());
   await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({
     json: { display_name: 'Paris, France', address: { country_code: 'fr' } },
   }));
