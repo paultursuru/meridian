@@ -15,6 +15,7 @@ const appUrls: Record<Lang, string> = {
   de: 'https://meridian-way.ch/de/',
   it: 'https://meridian-way.ch/it/',
   en: 'https://meridian-way.ch/en/',
+  rm: 'https://meridian-way.ch/rm/',
 };
 
 const aboutUrls: Record<Lang, string> = {
@@ -22,6 +23,7 @@ const aboutUrls: Record<Lang, string> = {
   de: 'https://meridian-way.ch/de/about/',
   it: 'https://meridian-way.ch/it/about/',
   en: 'https://meridian-way.ch/en/about/',
+  rm: 'https://meridian-way.ch/rm/about/',
 };
 
 ---
@@ -42,6 +44,7 @@ const aboutUrls: Record<Lang, string> = {
   <link rel="alternate" hreflang="de" href={aboutUrls.de} />
   <link rel="alternate" hreflang="it" href={aboutUrls.it} />
   <link rel="alternate" hreflang="en" href={aboutUrls.en} />
+  <link rel="alternate" hreflang="rm" href={aboutUrls.rm} />
   <link rel="alternate" hreflang="x-default" href={aboutUrls.fr} />
   <meta property="og:type" content="website" />
   <meta property="og:url" content={aboutUrls[lang]} />
@@ -59,6 +62,7 @@ const aboutUrls: Record<Lang, string> = {
       <a class:list={['lang-link', { active: lang === 'fr' }]} href={aboutUrls.fr}>FR</a>
       <a class:list={['lang-link', { active: lang === 'de' }]} href={aboutUrls.de}>DE</a>
       <a class:list={['lang-link', { active: lang === 'it' }]} href={aboutUrls.it}>IT</a>
+      <a class:list={['lang-link', { active: lang === 'rm' }]} href={aboutUrls.rm}>RM</a>
       <a class:list={['lang-link', { active: lang === 'en' }]} href={aboutUrls.en}>EN</a>
     </div>
   </nav>

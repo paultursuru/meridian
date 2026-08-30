@@ -9,8 +9,8 @@ const placeholders = (s: string) =>
   [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort();
 
 describe('translations', () => {
-  it('cover fr, de, it, en', () => {
-    expect(langs.sort()).toEqual(['de', 'en', 'fr', 'it']);
+  it('cover fr, de, it, en, rm', () => {
+    expect(langs.sort()).toEqual(['de', 'en', 'fr', 'it', 'rm']);
   });
 
   it.each(langs)('locale "%s" has exactly the same keys as the reference (fr)', (lang) => {

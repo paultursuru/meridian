@@ -17,6 +17,7 @@ export default defineConfig({
           de: 'de',
           it: 'it',
           en: 'en',
+          rm: 'rm',
         },
       },
     }),
