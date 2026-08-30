@@ -2,7 +2,7 @@
 
 Pedestrian navigation app that finds the **sunniest** and **shadiest** walking routes between two addresses, based on real-time sun position and building/tree shadows.
 
-Live at [meridian-way.ch](https://meridian-way.ch), available in French, German, Italian and English.
+Live at [meridian-way.ch](https://meridian-way.ch), available in French, German, Italian, Romansh and English.
 
 ---
 
@@ -48,7 +48,7 @@ meridian/
 │   ├── pages/
 │   │   ├── index.astro          # French (default locale)
 │   │   ├── about.astro / privacy.astro
-│   │   └── {de,it,en}/          # per-locale routes (index, about, privacy)
+│   │   └── {de,it,rm,en}/       # per-locale routes (index, about, privacy)
 │   ├── layouts/
 │   │   ├── AppLayout.astro      # main app shell: map, search panel, results drawer, script orchestration
 │   │   ├── AboutLayout.astro
@@ -61,7 +61,7 @@ meridian/
 │   │   ├── buildings.js      # building polygon parsing + bbox helper
 │   │   ├── geocode.js        # Photon autocomplete + Nominatim geocode/reverse geocode
 │   │   ├── helpers.js        # haversine, bearing, fmtDist, fmtDur
-│   │   ├── i18n.ts           # translations (fr/de/it/en)
+│   │   ├── i18n.ts           # translations (fr/de/it/rm/en)
 │   │   ├── lastPosition.js   # localStorage cache of the last precise geolocation fix
 │   │   ├── map.js            # Leaflet + MapLibre init, gradient route drawing, pins, locate-me control
 │   │   ├── overpass.js       # Overpass proxy fetch with retry/backoff
