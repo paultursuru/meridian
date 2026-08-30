@@ -15,6 +15,7 @@ const appUrls: Record<Lang, string> = {
   de: 'https://meridian-way.ch/de/',
   it: 'https://meridian-way.ch/it/',
   en: 'https://meridian-way.ch/en/',
+  rm: 'https://meridian-way.ch/rm/',
 };
 
 const privacyUrls: Record<Lang, string> = {
@@ -22,6 +23,7 @@ const privacyUrls: Record<Lang, string> = {
   de: 'https://meridian-way.ch/de/privacy/',
   it: 'https://meridian-way.ch/it/privacy/',
   en: 'https://meridian-way.ch/en/privacy/',
+  rm: 'https://meridian-way.ch/rm/privacy/',
 };
 
 const titles: Record<Lang, string> = {
@@ -29,6 +31,7 @@ const titles: Record<Lang, string> = {
   de: 'Datenschutz — MeridianWay',
   it: 'Privacy — MeridianWay',
   en: 'Privacy — MeridianWay',
+  rm: 'Protecziun da datas — MeridianWay',
 };
 
 const backLabels: Record<Lang, string> = {
@@ -36,6 +39,7 @@ const backLabels: Record<Lang, string> = {
   de: '← Anwendung öffnen',
   it: '← Apri l\'applicazione',
   en: '← Open the app',
+  rm: '← Avri l’app',
 };
 
 ---
@@ -56,6 +60,7 @@ const backLabels: Record<Lang, string> = {
   <link rel="alternate" hreflang="de" href={privacyUrls.de} />
   <link rel="alternate" hreflang="it" href={privacyUrls.it} />
   <link rel="alternate" hreflang="en" href={privacyUrls.en} />
+  <link rel="alternate" hreflang="rm" href={privacyUrls.rm} />
   <link rel="alternate" hreflang="x-default" href={privacyUrls.fr} />
   <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false"></script>
 </head>
@@ -68,6 +73,7 @@ const backLabels: Record<Lang, string> = {
       <a class:list={['lang-link', { active: lang === 'fr' }]} href={privacyUrls.fr}>FR</a>
       <a class:list={['lang-link', { active: lang === 'de' }]} href={privacyUrls.de}>DE</a>
       <a class:list={['lang-link', { active: lang === 'it' }]} href={privacyUrls.it}>IT</a>
+      <a class:list={['lang-link', { active: lang === 'rm' }]} href={privacyUrls.rm}>RM</a>
       <a class:list={['lang-link', { active: lang === 'en' }]} href={privacyUrls.en}>EN</a>
     </div>
   </nav>

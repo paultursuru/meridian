@@ -18,6 +18,7 @@ const urls: Record<Lang, string> = {
   de: 'https://meridian-way.ch/de/',
   it: 'https://meridian-way.ch/it/',
   en: 'https://meridian-way.ch/en/',
+  rm: 'https://meridian-way.ch/rm/',
 };
 ---
 <!DOCTYPE html>
@@ -38,6 +39,7 @@ const urls: Record<Lang, string> = {
   <link rel="alternate" hreflang="de" href={urls.de} />
   <link rel="alternate" hreflang="it" href={urls.it} />
   <link rel="alternate" hreflang="en" href={urls.en} />
+  <link rel="alternate" hreflang="rm" href={urls.rm} />
   <link rel="alternate" hreflang="x-default" href={urls.fr} />
   <meta property="og:type" content="website" />
   <meta property="og:url" content={urls[lang]} />
@@ -52,7 +54,7 @@ const urls: Record<Lang, string> = {
     "description": t.meta_description,
     "applicationCategory": "TravelApplication",
     "operatingSystem": "Web",
-    "inLanguage": ["fr", "de", "it", "en"],
+    "inLanguage": ["fr", "de", "it", "en", "rm"],
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
     "author": { "@type": "Person", "url": "https://github.com/paultursuru" }
   })} />
@@ -149,6 +151,7 @@ const urls: Record<Lang, string> = {
       <a class:list={['lang-btn', { active: lang === 'fr' }]} href="/">FR</a>
       <a class:list={['lang-btn', { active: lang === 'de' }]} href="/de/">DE</a>
       <a class:list={['lang-btn', { active: lang === 'it' }]} href="/it/">IT</a>
+      <a class:list={['lang-btn', { active: lang === 'rm' }]} href="/rm/">RM</a>
       <a class:list={['lang-btn', { active: lang === 'en' }]} href="/en/">EN</a>
     </div>
     <button id="about-close" aria-label={t.aria_close}>×</button>

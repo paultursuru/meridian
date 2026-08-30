@@ -69,3 +69,18 @@ const show = (l: Lang) => allLangs || l === lang;
     </div>
   </div>
 )}
+
+{show('rm') && (
+  <div class:list={['about-pane', { active: lang === 'rm' }]} data-lang="rm">
+    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <p class="about-tagline">Giai a pe, tut tenor la glisch dal sulegl.</p>
+    <p>MeridianWay calculescha duas rutas da peduns tranter ina partenza ed ina destinaziun. La finamira n’è betg la via la pli svelta, mabain quella che maximescha u minimescha la radiaziun dal sulegl.</p>
+    <p>L’app analisescha la posiziun dal sulegl durant l’ura tschernida e las sumbrivas ch’ils edifizis en vischinanza bittan, a maun da las datas avertas da OpenStreetMap.</p>
+    <p>Ils resultats èn valurs directivas, naginas indicaziuns exactas. Las autezzas dals edifizis en OpenStreetMap n’èn betg cumplettas, ma vegnan actualisadas regularmain da la communitad: en tscherts territoris na vegnan sumbrivas betg mussadas, e tschertas rutas èn effectivamain pli sumbrivantas che inditgà.</p>
+    <p>L’enviern giudair il chaud dal sulegl. La stad tschertgar il fraid da la sumbriva.</p>
+    <div class="about-opensource">
+      <p class="opensource-badge">Funtauna averta</p>
+      Il code da MeridianWay è accessibel libramain. Mintgin po al consultar, al midar u contribuir al project. Las datas da la charta vegnan da <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a> e da sia communitad: sche quest project è util per Vus, sustegnai p.pl. <a href="https://supporting.openstreetmap.org/" target="_blank" rel="noopener">la fundaziun OSM</a>. Per las rutas en Svizra derivan las autezzas dals edifizis dal set da datas <a href="https://www.swisstopo.admin.ch/en/landscape-model-swissbuildings3d-3-0-beta" target="_blank" rel="noopener">swissBUILDINGS3D 3.0</a> da l’Uffizi federal da topografia (<a href="https://github.com/swisstopo" target="_blank" rel="noopener">swisstopo</a>).
+    </div>
+  </div>
+)}

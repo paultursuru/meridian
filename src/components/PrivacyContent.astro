@@ -164,6 +164,45 @@ const { lang } = Astro.props;
   </div>
 )}
 
+{lang === 'rm' && (
+  <div class="privacy-pane">
+    <h1>Disposiziuns davart la protecziun da datas</h1>
+    <p class="privacy-date"><em>Ultima actualisaziun: zercladur 2026</em></p>
+
+    <h2>Tge che MeridianWay fa (e na fa)</h2>
+    <p>MeridianWay è ina app cumplettamain statica: ella n’ha nagin agen server, na fa nagins contos d’utilisader e n’arcunescha naginas datas persunalas en ina banca da datas. Tut las calculaziuns (posiziun dal sulegl, evaluaziun da la sumbriva) vegnan fatgas directamain en Voss navigatur.</p>
+
+    <h2>Datas surdadas a servetschs da terzas persunas</h2>
+    <p>Per funcziunar tramet l’app tschertas datas a servetschs externs. Quests servetschs survegnan Vossa adressa IP sco er las datas menziunadas qua sutvart.</p>
+
+    <table>
+      <thead>
+        <tr><th>Servetsch</th><th>Datas transmessas</th><th>Finamira</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Text endatà en ils champs d’adressas</td><td>Propostas da cumplettaziun automatica</td></tr>
+        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Adressa endatada; coordinatas GPS sche la geolocaziun è activada</td><td>Geocodaziun e geocodaziun inversa</td></tr>
+        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Coordinatas da partenza e d’arriv</td><td>Calculaziun da la ruta</td></tr>
+        <tr><td><strong>Overpass API</strong> (servers OSM)</td><td>Zona geografica da la ruta</td><td>Datas d’edifizis e da plantas</td></tr>
+        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Zona da la charta mussada</td><td>Plattinas da charta</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Pagina visitada, tip da l’apparat, lingua dal navigatur — senza cookies, adressa IP anonimisada</td><td>Statisticas d’utilisaziun agregadas</td></tr>
+        <tr><td><strong>Sentry</strong> (servers UE, Germania)</td><td>Sbagls tecnics, URL da la pagina, tip dal navigatur — senza datas d’identitad</td><td>Chattar e reparar sbagls</td></tr>
+      </tbody>
+    </table>
+
+    <p>La geolocaziun è <strong>opziunala</strong> e vegn mo activada sche Vus cliccais sin il buttun da localisaziun.</p>
+
+    <h2>Cookies e memorisaziun locala</h2>
+    <p>MeridianWay n’utilisescha <strong>nagins cookies</strong>. Naginas datas na vegnan arcunadas en la memorisaziun locala da Voss navigatur.</p>
+
+    <h2>Voss dretgs</h2>
+    <p>Tenor la Lescha federala davart la protecziun da datas (nLPD) e tenor il DSGVO per las utilisadras ed ils utilisaders da l’Uniun europeica pudais Vus dumandar da tut temp tge datas che concernan Vus èn vegnidas elavuradas. Las datas transmessas a servetschs da terzas persunas èn suttamessas a lur atgnas disposiziuns davart la protecziun da datas.</p>
+
+    <h2>Contact</h2>
+    <p>Per mintga dumonda davart la protecziun da datas: <a href="mailto:contact@meridian-way.ch">contact@meridian-way.ch</a></p>
+  </div>
+)}
+
 <style>
   .privacy-pane h1 {
     font-size: 1.5rem;
