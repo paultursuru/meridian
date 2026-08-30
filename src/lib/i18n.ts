@@ -5,7 +5,7 @@ export const translations = {
     title: 'MeridianWay : Navigation solaire',
     meta_description: 'Choisissez votre itinéraire selon l\'ensoleillement : deux chemins proposés, l\'un au soleil, l\'autre à l\'ombre.',
     app_description: 'Choisissez votre itinéraire selon l\'ensoleillement :\ndeux chemins proposés, l\'un au <span class="meri bold">soleil</span>, l\'autre à l\'<span class="way bold">ombre</span>.',
-    placeholder_start: 'Gare de Lausanne',
+    placeholder_start: 'Lausanne-Gare',
     placeholder_end: 'Musée Olympique, Lausanne',
     btn_search: 'Calculer les itinéraires',
     btn_leave_now: 'Partir maintenant',
