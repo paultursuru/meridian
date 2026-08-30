@@ -19,6 +19,12 @@ const BUILDINGS_ELEMENTS = [
 ];
 
 async function mockCommon(page) {
+  // Buildings are read from the basemap's vector tiles before Overpass now, so
+  // block the tile data: querySourceFeatures then comes back empty and the
+  // Overpass mock below is the path under test (same fix as
+  // silent-data-failure.spec.js). Style and glyphs are left alone, the map
+  // still renders.
+  await page.route('https://tiles.stadiamaps.com/data/**', route => route.abort());
   await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({
     json: { display_name: 'Paris, France', address: { country_code: 'fr' } },
   }));
