@@ -125,7 +125,7 @@ export function initMap() {
 
   new LocateControl().addTo(_map);
 
-  _map.on('click', collapseDrawer);
+  _map.on('click', () => collapseDrawer());
   _map.on('click', openPickPopup);
 
   // The intro bubble, the splash and the sun badge are plain HTML children of

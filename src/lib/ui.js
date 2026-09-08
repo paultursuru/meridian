@@ -202,14 +202,10 @@ function initDrawer() {
     if (!isDragging) return;
     isDragging = false;
     const dy = startY - y;
-    if (!moved) {
-      drawer.classList.toggle('expanded');
-    } else if (dy > 40) {
-      drawer.classList.add('expanded');
-    } else if (dy < -40) {
-      drawer.classList.remove('expanded');
-    }
-    updateScrubberPosition();
+    if (!moved) toggleDrawer();
+    else if (dy > 40) expandDrawer();
+    else if (dy < -40) collapseDrawer();
+    else updateScrubberPosition();
   }
 
   handle.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), { passive: true });
@@ -222,14 +218,37 @@ function initDrawer() {
   handle.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      drawer.classList.toggle('expanded');
-      updateScrubberPosition();
+      toggleDrawer();
     }
   });
 }
 
-export function collapseDrawer() {
-  document.getElementById('results')?.classList.remove('expanded');
+// The drawer's full-height state as one open and one close. Every path that
+// used to flip .expanded by hand (handle tap and drag, keyboard, the
+// map-click collapse in map.js) routes through these, so AppLayout has one
+// point to push a history entry from and one to reclaim it. Each is a no-op
+// when already in the target state, so a repeat call never stacks a second
+// entry. 'drawer-toggle' fires only on a real change; fromPopstate skips it
+// because Back has already moved history itself.
+export function expandDrawer() {
+  const drawer = document.getElementById('results');
+  if (!drawer || drawer.classList.contains('expanded')) return;
+  drawer.classList.add('expanded');
+  updateScrubberPosition();
+  window.dispatchEvent(new CustomEvent('drawer-toggle', { detail: { expanded: true } }));
+}
+
+export function collapseDrawer({ fromPopstate = false } = {}) {
+  const drawer = document.getElementById('results');
+  if (!drawer || !drawer.classList.contains('expanded')) return;
+  drawer.classList.remove('expanded');
+  updateScrubberPosition();
+  if (!fromPopstate) window.dispatchEvent(new CustomEvent('drawer-toggle', { detail: { expanded: false } }));
+}
+
+function toggleDrawer() {
+  if (document.getElementById('results')?.classList.contains('expanded')) collapseDrawer();
+  else expandDrawer();
 }
 
 // single = only one unique route survived dedup: hide the sunny/shady tabs

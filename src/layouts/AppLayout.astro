@@ -309,7 +309,7 @@ const urls: Record<Lang, string> = {
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, dateValueInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather, weatherAt }     from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
-  import { setStatus, showToast, initTabs, initLayout, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, initLayout, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote, collapseDrawer } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { TZ_CENTERS } from '../lib/tzCenters.js';
@@ -1235,12 +1235,25 @@ const urls: Record<Lang, string> = {
     overlay.classList.add('on');
     el('app').setAttribute('inert', '');
     el('about-close').focus();
+    // One history entry per open, so Back (and iOS's swipe-back) closes the
+    // panel instead of leaving the site. The payload is never read back
+    // (popstate below checks the DOM), and there is no URL argument, so the
+    // share-link query stays put.
+    history.pushState({ nav: 'about' }, '');
   }
+  // The DOM half of the close: idempotent, and reused straight from popstate.
   function closeAbout() {
+    if (!drawer.classList.contains('open')) return;
     drawer.classList.remove('open');
     overlay.classList.remove('on');
     el('app').removeAttribute('inert');
     el('about-btn').focus();
+  }
+  // Manual dismiss (× button, overlay tap, Escape): step back in history and
+  // let popstate do the closing, so the entry openAbout pushed is reclaimed
+  // rather than left on the stack.
+  function dismissAbout() {
+    if (drawer.classList.contains('open')) history.back();
   }
 
   // Keeps Tab from leaving the open drawer (it has no native <dialog> to rely
@@ -1261,10 +1274,35 @@ const urls: Record<Lang, string> = {
   }
 
   el('about-btn').addEventListener('click', openAbout);
-  el('about-close').addEventListener('click', closeAbout);
-  overlay.addEventListener('click', closeAbout);
-  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeAbout(); });
+  el('about-close').addEventListener('click', dismissAbout);
+  overlay.addEventListener('click', dismissAbout);
+  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') dismissAbout(); });
   document.addEventListener('keydown', trapAboutFocus);
+
+  // Back (and iOS swipe-back) unwinds an open overlay before it leaves the
+  // page. Two states opt in: the expanded results drawer and the about panel.
+  // Each records exactly one history entry when it opens (here, and on
+  // 'drawer-toggle' from ui.js); closing it by any other route calls
+  // history.back() to reclaim that entry, so repeated open/close through the
+  // UI can't pile entries up and strand the real Back.
+  //
+  // The handler reads the DOM, never event.state: renderAt() calls
+  // history.replaceState(null, ...) on every scrubber tick (see analytics.js),
+  // which would wipe any marker left on the current entry. Order is
+  // about-then-drawer because the about panel renders over the drawer (full
+  // overlay + inert #app), so it's the layer Back peels off first. One branch
+  // runs per press.
+  window.addEventListener('drawer-toggle', (e: Event) => {
+    if ((e as CustomEvent<{ expanded: boolean }>).detail.expanded) history.pushState({ nav: 'drawer' }, '');
+    else history.back();
+  });
+  window.addEventListener('popstate', () => {
+    if (drawer.classList.contains('open')) closeAbout();
+    else if (el('results').classList.contains('expanded')) collapseDrawer({ fromPopstate: true });
+    // No entry of its own, but a Back that closed the about panel shouldn't
+    // leave this hanging open underneath with nothing left to dismiss it.
+    closeDepartPopover();
+  });
 
 </script>
 
