@@ -1,7 +1,46 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 100vh; overflow: hidden; background: #0e120a; color: #d8dbc8; }
 
-#app { display: flex; flex-direction: column; height: 100vh; }
+/* ── Standalone / installed app ──
+   What separates "a web page in a browser" from "an app", once the PWA is
+   installed. None of it changes anything in a desktop browser tab, which is
+   why none of it was here.
+
+   The insets are the strip the OS paints over: the notch and the status bar at
+   the top, the home indicator at the bottom, the rounded corners on the sides
+   in landscape. They read 0 anywhere there is nothing to avoid, so every
+   calc() below collapses back to the number it had. They only become non-zero
+   because the viewport is declared `viewport-fit=cover` (AppLayout.astro).
+   Without that, iOS letterboxes the page inside the safe area and the app
+   never reaches the edges these are meant to protect. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+html {
+  /* Grey flash on every tap, on buttons, tabs and the map's own controls. It
+     is the single most browser-looking thing left on screen. Inherited, so
+     declaring it once here covers the whole app. Replaced by a real press
+     state under `@media (hover: none)` at the end of this file: taking the
+     feedback away without giving any back is worse than the flash. */
+  -webkit-tap-highlight-color: transparent;
+  /* No pull-to-refresh, no elastic bounce past the edges. On a full-screen map
+     that drags under the finger, the bounce is what gives away that the map is
+     sitting in a document. On <html> rather than <body>: this is the property
+     the viewport takes its behaviour from. */
+  overscroll-behavior: none;
+}
+
+/* 100dvh, not 100vh: 100vh is the viewport with the browser's chrome *hidden*.
+   On iOS that puts the bottom of the app, meaning the drawer and the scrubber,
+   under the URL bar until the user scrolls it away, which this app never does
+   (body is overflow: hidden). dvh is the height actually on screen. The plain
+   vh line stays first as the fallback for browsers that don't parse dvh. */
+body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: none; background: #0e120a; color: #d8dbc8; }
+
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
 
 /* ── Fonts ── */
 /* ── Bricolage Grotesque - https://ateliertriay.github.io/bricolage/ ── */
@@ -20,7 +59,10 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Header ── */
 #header {
   background: #0e120a;
-  padding: 8px 20px;
+  /* Top inset: only non-zero if the status bar ever goes translucent over the
+     app. Side insets: the notch eats into the top-left corner in landscape,
+     which is exactly where the app's name sits. */
+  padding: calc(8px + var(--safe-top)) calc(20px + var(--safe-right)) 8px calc(20px + var(--safe-left));
   display: flex;
   align-items: center;
   gap: 12px;
@@ -209,7 +251,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   justify-content: space-between;
   gap: 12px;
   background: #161b12;
-  padding: 8px 16px;
+  padding: 8px calc(16px + var(--safe-right)) 8px calc(16px + var(--safe-left));
   border-bottom: 1px solid rgba(240,242,160,0.13);
   flex-shrink: 0;
 }
@@ -254,7 +296,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Search panel ── */
 #search-panel {
   background: #0e120a;
-  padding: 2px 16px 8px;
+  padding: 2px calc(16px + var(--safe-right)) 8px calc(16px + var(--safe-left));
   display: flex;
   gap: 8px;
   align-items: flex-end;
@@ -683,23 +725,49 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 
 /* ── Results drawer ── */
+
+/* Registered, not a plain custom property, and only because ui.js parses it.
+   `getComputedStyle().getPropertyValue()` hands back an *unresolved* token
+   stream for an ordinary custom property, so on a phone with a 34px home
+   indicator the calc() below would arrive in JS as the literal string
+   "calc(168px + 34px)" and parseFloat would read 168. The inset would be
+   honoured by CSS and dropped by JS, docking the scrubber a home indicator's
+   worth too low, over the drawer, on exactly the devices this block exists
+   for. Registering it with a <length> syntax makes it compute, so JS reads
+   "202px". Where @property is unsupported the parse fails and drawerPeekPx
+   falls back to its hardcoded 168, which is what it does today. */
+@property --drawer-peek {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 168px;
+}
+
 #results {
-  /* Also read from JS (time-scrubber positioning, see ui.js) — keep both in sync. */
-  --drawer-peek: 168px;
+  /* Also read from JS (time-scrubber positioning, see ui.js) — keep both in sync.
+     The inset belongs inside the peek rather than beside it: the peek is "how
+     much of the drawer is visible", and the padding below is part of what is
+     visible, so both the transform and the scrubber's dock point follow from
+     this one number without either learning about safe areas. */
+  --drawer-peek: calc(168px + var(--safe-bottom));
   position: fixed;
   bottom: 0; left: 0; right: 0;
+  /* Keeps the ratio bar and the tabs off the home indicator. */
+  padding-bottom: var(--safe-bottom);
   background: #0e120a;
   border-radius: 16px 16px 0 0;
   border-top: 1px solid rgba(240,242,160,0.13);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
   z-index: 2000;
   max-height: 82vh;
+  max-height: 82dvh;
   overflow: hidden;
   transform: translateY(100%);
   transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
 }
 #results.on       { transform: translateY(calc(100% - var(--drawer-peek))); }
-#results.expanded { transform: translateY(0); overflow-y: auto; }
+/* overscroll-behavior: scrolling the expanded drawer to either end must not
+   hand the gesture on to what is behind it, which is the map. */
+#results.expanded { transform: translateY(0); overflow-y: auto; overscroll-behavior: contain; }
 /* Night has nothing left to reveal by expanding (ratio-wrap/detail-split are
    hidden outright, not just clipped, and weather/quality notes are already
    suppressed) — its natural height is shorter than --drawer-peek, so the peek
@@ -710,7 +778,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Time scrubber (floats just above the results drawer, follows it up when expanded) ── */
 #time-scrubber {
   position: fixed;
-  left: 12px; right: 12px;
+  left: calc(12px + var(--safe-left)); right: calc(12px + var(--safe-right));
   z-index: 2000;
   display: none;
   align-items: center;
@@ -1121,6 +1189,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   width: 340px;
   max-width: 100vw;
   height: 100%;
+  /* Full-height and flush to the right edge: its header clears the notch, its
+     footer links clear the home indicator. */
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) 0;
   background: #0e120a;
   border-left: 1px solid rgba(240,242,160,0.13);
   z-index: 4000;
@@ -1174,6 +1245,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #about-body {
   flex: 1;
   overflow-y: auto;
+  /* Same reason as the results drawer: reaching the end of the text must not
+     scroll the map behind it. */
+  overscroll-behavior: contain;
   padding: 24px 20px;
   scrollbar-width: thin;
   scrollbar-color: rgba(240,242,160,0.1) transparent;
@@ -1287,6 +1361,20 @@ p.opensource-badge {
   #about-drawer { width: 100vw; }
 }
 
+/* ── Touch press feedback ──
+   Pays back what removing -webkit-tap-highlight-color took away. :hover never
+   fires on a touch screen, so without this a tap produces no acknowledgement
+   at all until the action itself lands, which reads as a dropped tap rather
+   than as a fast one. Instant on press and on release, like a native control:
+   no transition. Scoped to pointers that can't hover, so the desktop hover
+   states are untouched. */
+@media (hover: none) {
+  button:active,
+  .lang-btn:active,
+  .about-link:active,
+  .footer-link:active { opacity: 0.6; }
+}
+
 /* ── Desktop: the results dock as a side panel ──
    The bottom sheet is genuinely good on a phone and unreadable stretched
    across a laptop: at 1280px the two headline percentages sit ~1,100px apart
@@ -1320,8 +1408,9 @@ p.opensource-badge {
     border-right: 1px solid rgba(240,242,160,0.13);
     box-shadow: 4px 0 24px rgba(0,0,0,0.4);
     /* Clears the scrubber docked at the bottom (below): it floats over the
-       panel, so the last note has to be able to scroll out from under it. */
-    padding-bottom: 58px;
+       panel, so the last note has to be able to scroll out from under it.
+       The scrubber grew by the bottom inset, so this clearance does too. */
+    padding-bottom: calc(58px + var(--safe-bottom));
     overflow-y: auto;
     transform: translateX(-100%);
     /* Column, so the notes can be ordered below the route cards without
@@ -1440,7 +1529,9 @@ p.opensource-badge {
     right: auto;
     bottom: 0;
     width: var(--side-panel-w);
-    padding: 10px 14px;
+    /* Flush to the bottom edge, so the inset goes inside it rather than
+       leaving a strip of scrolling panel showing underneath. */
+    padding: 10px calc(14px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(14px + var(--safe-left));
     background: #0e120a;
     border: none;
     border-top: 1px solid rgba(240,242,160,0.13);
