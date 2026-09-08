@@ -1,17 +1,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ── Standalone / installed app ──
-   What separates "a web page in a browser" from "an app", once the PWA is
-   installed. None of it changes anything in a desktop browser tab, which is
-   why none of it was here.
-
-   The insets are the strip the OS paints over: the notch and the status bar at
-   the top, the home indicator at the bottom, the rounded corners on the sides
-   in landscape. They read 0 anywhere there is nothing to avoid, so every
-   calc() below collapses back to the number it had. They only become non-zero
-   because the viewport is declared `viewport-fit=cover` (AppLayout.astro).
-   Without that, iOS letterboxes the page inside the safe area and the app
-   never reaches the edges these are meant to protect. */
+/* ── Standalone / installed app ── */
 :root {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -20,24 +9,10 @@
 }
 
 html {
-  /* Grey flash on every tap, on buttons, tabs and the map's own controls. It
-     is the single most browser-looking thing left on screen. Inherited, so
-     declaring it once here covers the whole app. Replaced by a real press
-     state under `@media (hover: none)` at the end of this file: taking the
-     feedback away without giving any back is worse than the flash. */
   -webkit-tap-highlight-color: transparent;
-  /* No pull-to-refresh, no elastic bounce past the edges. On a full-screen map
-     that drags under the finger, the bounce is what gives away that the map is
-     sitting in a document. On <html> rather than <body>: this is the property
-     the viewport takes its behaviour from. */
   overscroll-behavior: none;
 }
 
-/* 100dvh, not 100vh: 100vh is the viewport with the browser's chrome *hidden*.
-   On iOS that puts the bottom of the app, meaning the drawer and the scrubber,
-   under the URL bar until the user scrolls it away, which this app never does
-   (body is overflow: hidden). dvh is the height actually on screen. The plain
-   vh line stays first as the fallback for browsers that don't parse dvh. */
 body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: none; background: #0e120a; color: #d8dbc8; }
 
 #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
@@ -59,9 +34,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Header ── */
 #header {
   background: #0e120a;
-  /* Top inset: only non-zero if the status bar ever goes translucent over the
-     app. Side insets: the notch eats into the top-left corner in landscape,
-     which is exactly where the app's name sits. */
   padding: calc(8px + var(--safe-top)) calc(20px + var(--safe-right)) 8px calc(20px + var(--safe-left));
   display: flex;
   align-items: center;
@@ -70,21 +42,12 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   z-index: 1000;
   flex-shrink: 0;
 }
-/* Never shrinks: the app name stays intact, sun-info gives up the space instead. */
 #header h1 { font-size: 1.3rem; font-weight: 700; color: #d8dbc8; letter-spacing: -0.5px; font-family: 'BricolageGrotesqueMedium'; flex-shrink: 0; }
 #header h1 a { text-decoration: none; }
 #header h1 .meri { color: #f0f2a0; }
 #header h1 .way  { color: #e8c8f0; font-style: italic; }
 #header-right { margin-left: auto; display: flex; align-items: center; justify-content: end; gap: 12px; min-width: 0; }
 
-/* Intro bubble, floated over the map instead of sitting in the flex flow
-   (review: was pushing the map/search panel down and eating screen space,
-   especially on mobile). Lives inside #map so it stacks above #map-splash
-   (z-index 1000) without having to fight #map's own stacking context.
-   The gradient arrow sits inside, on the left, pointing back up at the
-   address inputs above; align-items: stretch gives it the bubble's full
-   height as a column to sit in, but its own preserveAspectRatio keeps the
-   glyph itself proportioned (no stretch/distortion) within that column. */
 #app-description {
   position: absolute;
   top: 12px;
@@ -126,12 +89,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   transition: color 0.2s, background 0.2s;
 }
 #app-description-close:hover { color: #d8dbc8; background: rgba(240,242,160,0.08); }
-/* Tagline — static, stays up permanently (review 3.3's counter-proposal:
-   the sun position/degrees that used to cycle through here moved to
-   #map-sun-info instead, see main.css below and updateSunInfo() in
-   AppLayout.astro). No fixed width: shrinks first under pressure (h1 and
-   the about button never do) and ellipsizes rather than pushing the
-   button off-screen. */
 #sun-info {
   font-size: 0.82rem;
   font-weight: 600;
@@ -152,20 +109,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   #app-description-arrow { width: 24px; }
 }
 
-/* Plain-language sun position (review 3.2 + 3.3), floated over the map's
-   top-right corner instead of cycling through the header (see #sun-info
-   above). Same visual language as #app-description: dark badge, accent
-   border, drop shadow — but never visible at the same time as that bubble,
-   since this only appears once a search has actually run (updateSunInfo,
-   called from renderAt) and app-description is already dismissed by then.
-   A real <button>: click toggles #map-sun-info-details open (degrees,
-   date/time, weather) — collapsed, it's one line sized to its own content
-   (width: fit-content, no wrap needed) rather than the earlier fixed
-   max-width that forced ellipsis/wrapping on longer strings. max-width is
-   still capped, but wide enough for the longest realistic line ("Soleil au
-   nord-ouest · coucher 21:08" and DE's longer "im Nordwesten" compass
-   words) — a too-tight cap combined with white-space: nowrap on that line
-   let text spill past the box edge during scrubbing instead of wrapping. */
 #map-sun-info {
   display: none;
   position: absolute;
@@ -199,8 +142,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   line-height: 1.3em;
   white-space: nowrap;
 }
-/* Small down-caret, rotates to point up once expanded — the only visual
-   hint that this badge is clickable at all. */
 #map-sun-info-chevron {
   flex-shrink: 0;
   font-size: 0.7rem;
@@ -222,9 +163,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #map-sun-info-weather {
   display: block;
   text-align: right;
-  /* Wraps instead of ellipsizing: truncating a number here (e.g. "Azimut
-     1…") would defeat the point of a "technical" line — a couple of extra
-     wrapped lines cost far less than losing the data. */
   white-space: normal;
   font-size: 0.72rem;
   font-weight: 500;
@@ -351,10 +289,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   padding: 8px 60px 8px 12px;
   border: 1.5px solid rgba(240,242,160,0.2);
   border-radius: 8px;
-  /* 16px minimum, not 0.88rem/~14px: below that, iOS Safari auto-zooms the
-     whole page on focus (its own accessibility affordance for legible
-     input text) — fighting it with user-scalable=no would break WCAG 1.4.4
-     for everyone else instead, see review #2 §6.6. */
   font-size: 1rem;
   outline: none;
   transition: border-color 0.2s;
@@ -417,15 +351,14 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   padding: 8px 10px;
   border: 1.5px solid rgba(240,242,160,0.2);
   border-radius: 8px;
-  font-size: 1rem; /* same 16px iOS auto-zoom threshold as the text inputs above */
+  font-size: 1rem;
   outline: none;
   background: #161b12;
   color: #d8dbc8;
   color-scheme: dark;
 }
 
-/* ── Departure control: split button ("leave now" + dropdown to schedule
-   later), modelled on GitHub's "Update branch ▾" split button. ── */
+/* ── Departure control: split button ("leave now" + dropdown to schedule later) ── */
 .depart-row { position: relative; padding-bottom: 2px;}
 .split-btn { display: flex; }
 #search-btn {
@@ -495,9 +428,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #depart-confirm:hover { background: #e4e698; }
 
-/* ── Desktop: start/swap/end and the departure control share one line
-   instead of stacking (DOM order already puts swap between the two
-   address fields, so switching to a row just works). ── */
+/* ── Desktop: start/swap/end and departure control share one line ── */
 @media (min-width: 601px) {
   .route-inputs {
     flex-direction: row;
@@ -510,24 +441,10 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 
 /* ── Map ── */
-/* min-height: as a bare `flex: 1` item in a 100vh column, #map absorbs every
-   pixel the header and search panel don't want, and on a short viewport (a
-   phone in landscape, or in portrait with the soft keyboard open, which
-   Firefox for Android resizes the layout viewport for) that left it a sliver.
-   The fitBounds NaN crash that came out of that is fixed properly in
-   mapFit.js; this is about the map staying usable at all. Deliberately low:
-   below header + panel + 160px of viewport the bottom of the map is clipped
-   instead (body is overflow: hidden), which is the better of the two bad
-   outcomes since the results drawer covers that strip anyway. */
 #map { flex: 1; min-height: 160px; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
-/* Blurred shadow under the sun/shade route gradient (see drawGradientRoute in map.js) —
-   a soft glow reads as a shadow, unlike a crisp parallel outline. */
 #map .route-casing { filter: blur(2px); }
 
-/* "Center on my location" Leaflet control — sized/centered to match the
-   default (unstyled) zoom control it stacks under; icon inherits Leaflet's
-   default control color via currentColor. */
 .locate-control {
   display: flex;
   align-items: center;
@@ -541,9 +458,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .locate-control:hover { background: #f4f4f4; }
 .locate-control svg { display: block; }
 
-/* ── "Use this point" menu, opened by a click on the map (map.js) ──
-   Rides on Leaflet's popup for the anchoring and dismissal, so all that is
-   left is to undo its white bubble and drop the app's own dark card in. */
+/* ── "Use this point" menu, opened by a click on the map (map.js) ── */
 .pick-popup .leaflet-popup-content-wrapper {
   background: #161b12;
   border: 1.5px solid rgba(240,242,160,0.2);
@@ -553,9 +468,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: #d8dbc8;
 }
 .pick-popup .leaflet-popup-content { margin: 0; width: auto !important; }
-/* Leaflet's tip is a rotated square, so a full border draws two stray
-   diagonals across the bubble it is supposed to continue. The card's own
-   shadow carries the shape well enough without one. */
 .pick-popup .leaflet-popup-tip { background: #161b12; border: none; box-shadow: none; }
 .pick-menu { display: flex; flex-direction: column; }
 .pick-btn {
@@ -564,8 +476,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   border-radius: 7px;
   background: none;
   font-family: inherit;
-  /* 16px: the same threshold the address inputs hold to, so tapping a menu
-     item can't be the thing that makes iOS Safari zoom the page. */
   font-size: 1rem;
   font-weight: 600;
   text-align: left;
@@ -577,16 +487,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .pick-btn:hover { background: rgba(240,242,160,0.08); color: #f0f2a0; }
 .pick-btn[data-role="start"]:hover { color: #86beef; }
 .pick-btn[data-role="end"]:hover { color: #fca5a5; }
-/* A badge riding the card's corner, not a glyph inside it: sitting in the
-   flow it read as part of "Départ ici", and the padding the labels needed to
-   clear it stretched the whole box. Overhanging leaves the menu sized to its
-   own two lines. A stray click on the map is the common way to end up here,
-   so the way out gets a finger-sized target rather than Leaflet's
-   mouse-sized default. */
-/* Selector deliberately over-specified: Leaflet ships
-   `.leaflet-container a.leaflet-popup-close-button`, which outranks a plain
-   two-class rule and would keep its own corner position and transparent
-   background. */
 .leaflet-container .pick-popup a.leaflet-popup-close-button {
   display: flex;
   align-items: center;
@@ -609,8 +509,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   border-color: rgba(240,242,160,0.45);
 }
 
-/* Shown until the map tiles finish their first load, then faded out in map.js — masks
-   the blank/white flash of the tile layer initializing (also doubles as PWA-launch splash). */
 #map-splash {
   position: absolute;
   inset: 0;
@@ -645,10 +543,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #status.on { display: block; }
 
 /* ── Error toast (non-blocking, replaces alert()) ── */
-/* Fond clair et texte quasi noir : le toast se pose sur une UI sombre, souvent
-   par-dessus la carte ou une autre bulle. Un fond sombre s'y fondait et passait
-   inaperçu, ce qui est le pire défaut possible pour le seul message qui dit à
-   l'utilisateur ce qui bloque. */
 .toast {
   position: fixed;
   top: 130px;
@@ -664,8 +558,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   z-index: 4000;
   opacity: 0;
   pointer-events: none;
-  /* Ombre portée large : détache la bulle du fond sombre et de tout ce qui
-     peut se trouver dessous. */
   box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.4);
   transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
@@ -726,16 +618,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 
 /* ── Results drawer ── */
 
-/* Registered, not a plain custom property, and only because ui.js parses it.
-   `getComputedStyle().getPropertyValue()` hands back an *unresolved* token
-   stream for an ordinary custom property, so on a phone with a 34px home
-   indicator the calc() below would arrive in JS as the literal string
-   "calc(168px + 34px)" and parseFloat would read 168. The inset would be
-   honoured by CSS and dropped by JS, docking the scrubber a home indicator's
-   worth too low, over the drawer, on exactly the devices this block exists
-   for. Registering it with a <length> syntax makes it compute, so JS reads
-   "202px". Where @property is unsupported the parse fails and drawerPeekPx
-   falls back to its hardcoded 168, which is what it does today. */
 @property --drawer-peek {
   syntax: '<length>';
   inherits: false;
@@ -743,15 +625,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 
 #results {
-  /* Also read from JS (time-scrubber positioning, see ui.js) — keep both in sync.
-     The inset belongs inside the peek rather than beside it: the peek is "how
-     much of the drawer is visible", and the padding below is part of what is
-     visible, so both the transform and the scrubber's dock point follow from
-     this one number without either learning about safe areas. */
   --drawer-peek: calc(168px + var(--safe-bottom));
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  /* Keeps the ratio bar and the tabs off the home indicator. */
   padding-bottom: var(--safe-bottom);
   background: #0e120a;
   border-radius: 16px 16px 0 0;
@@ -765,14 +641,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
 }
 #results.on       { transform: translateY(calc(100% - var(--drawer-peek))); }
-/* overscroll-behavior: scrolling the expanded drawer to either end must not
-   hand the gesture on to what is behind it, which is the map. */
 #results.expanded { transform: translateY(0); overflow-y: auto; overscroll-behavior: contain; }
-/* Night has nothing left to reveal by expanding (ratio-wrap/detail-split are
-   hidden outright, not just clipped, and weather/quality notes are already
-   suppressed) — its natural height is shorter than --drawer-peek, so the peek
-   transform above would leave a gap under the drawer exposing the map. Sit
-   flush at the bottom instead of peeking. */
 #results.night.on { transform: translateY(0); }
 
 /* ── Time scrubber (floats just above the results drawer, follows it up when expanded) ── */
@@ -798,8 +667,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   min-width: 40px;
   text-align: center;
 }
-/* Wraps the range so the eclipse marker can be positioned in the track's own
-   coordinates rather than the whole bar's, which also holds the time label. */
 #scrubber-track {
   position: relative;
   flex: 1;
@@ -811,17 +678,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   accent-color: #f0f2a0;
 }
 
-/* ── Eclipse marker (2026-08-12, Swiss routes — see sun.js#ECLIPSE_2026).
-   Sits above the track at the minute of maximum, with a short stem down to it,
-   so it reads as "drag here" rather than as decoration. `left` is set from JS;
-   the translate keeps the icon centred on that point. A real button: clicking
-   it scrubs to the maximum, i.e. the thing the marker is pointing at, so the
-   hint and the shortcut are the same object. It sits clear above the track,
-   so taking pointer events back can't cost the thumb a drag.
-
-   Note the two transforms: `translateX(-50%)` is layout (it centres the icon
-   on `left`), the spin belongs to the inner <svg> instead, or the animation
-   would fight the centring every keyframe. */
+/* ── Eclipse marker (2026-08-12, Swiss routes; see sun.js#ECLIPSE_2026) ── */
 #scrubber-mark {
   display: none;
   position: absolute;
@@ -847,9 +704,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   height: 6px;
   background: rgba(28, 29, 19, 0.55);
 }
-/* One turn on click. The class is removed on animationend (ui.js), so it can
-   be replayed; without that, a second click on an element that already carries
-   the class does nothing. */
 @keyframes scrubber-mark-spin { to { transform: rotate(360deg); } }
 #scrubber-mark.spin svg { animation: scrubber-mark-spin 0.7s cubic-bezier(0.4,0,0.2,1); }
 @media (prefers-reduced-motion: reduce) {
@@ -892,9 +746,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #share-btn:hover { border-color: rgba(240,242,160,0.45); color: #f0f2a0; }
 
-/* Desktop only (see the side-panel block at the end of the file): below the
-   breakpoint the drawer handle is the control that gets the results out of
-   the way. */
 #panel-toggle { display: none; }
 
 /* ── Single-route note (replaces the tabs when only one unique route exists) ── */
@@ -908,10 +759,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #single-route-note.on { display: block; }
 
-/* ── Eclipse note (2026-08-12 window, Swiss routes only — see sun.js). Same
-   neutral note style as the two around it: the ratio above is not wrong, the
-   geometry still holds, it just describes an evening whose light is missing.
-   Shown in place of the grazing-sun note, never stacked with it. */
+/* ── Eclipse note (2026-08-12 window, Swiss routes only; see sun.js) ── */
 #eclipse-note {
   display: none;
   padding: 9px 16px 11px;
@@ -922,12 +770,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #eclipse-note.on { display: block; }
 
-/* ── Grazing-sun note (sun up but under GRAZING_SUN_DEG — the buildings-only
-   model can't see the terrain or the distant casters that decide the answer
-   at that altitude, so the estimate is flagged rather than presented flat).
-   Deliberately the neutral note style, not the amber #quality-note.warn one:
-   amber is reserved for a failure that invalidates the ratio, and a low
-   evening sun is a normal condition, not an alarm. */
+/* ── Grazing-sun note (sun up but under GRAZING_SUN_DEG) ── */
 #grazing-sun-note {
   display: none;
   padding: 9px 16px 11px;
@@ -938,8 +781,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #grazing-sun-note.on { display: block; }
 
-/* ── Weather note (overcast forecast — shown at the bottom of the drawer, below
-   the shade/sun split, so it doesn't compete with the headline stat) ── */
+/* ── Weather note (overcast forecast, at the bottom of the drawer) ── */
 #weather-note {
   display: none;
   padding: 11px 16px 9px;
@@ -950,8 +792,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #weather-note.on { display: block; }
 
-/* ── Quality note (OSM height-data coverage hint, review 3.5; data-failure
-   warning, review #2 §1.1) ── */
+/* ── Quality note (OSM height-data coverage hint, review 3.5; data-failure warning, review #2 §1.1) ── */
 #quality-note {
   display: none;
   padding: 9px 16px 11px;
@@ -959,12 +800,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   font-size: 0.78rem;
   color: rgba(216,219,200,0.62);
   text-align: left;
-  white-space: pre-line; /* renders the \n between header + bullet lines */
+  white-space: pre-line;
 }
 #quality-note.on { display: block; }
-/* A fetch outright failed: this isn't a footnote, it invalidates the ratio
-   above it, so it gets the app's one amber warning treatment instead of the
-   neutral note style. */
 #quality-note.warn {
   color: #f0b84a;
 }
@@ -995,9 +833,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #results.night .ratio-wrap,
 #results.night .detail-split { display: none; }
 
-/* Building data failed (review #2 §1.1): the sun/shade split above is
-   real routing math but incomplete input — dim it rather than hide it
-   (a park route with genuinely no buildings is still a legitimate result). */
 #results.data-failed .ratio-track { opacity: 0.4; }
 
 /* ── Tabs ── */
@@ -1026,10 +861,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .tab-pane { display: none; padding: 14px 16px; }
 .tab-pane.active { display: block; }
 
-/* Names the route inside its own card, and selects it — only ever visible in
-   the desktop side panel, where the tabs are gone and both cards are on
-   screen at once. A real button, not a heading: it is the keyboard route to
-   the selection the card click makes with a mouse. */
 .pane-title { display: none; }
 
 /* ── Ratio display ── */
@@ -1059,11 +890,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .ratio-seg-shade { background: #e8c8f0; }
 .ratio-seg-sun   { background: #f0f2a0; }
 
-/* ── Ratio delta (review #2 §4.1: what choosing this tab costs/gains versus
-   the other route, so the trade-off is stated instead of left for the user
-   to compute by switching tabs). Empty (single-route / night results, where
-   there is no second route to compare against) collapses to nothing rather
-   than leaving a blank gap. */
+/* ── Ratio delta (review #2 §4.1) ── */
 .ratio-delta {
   margin-top: 8px;
   font-size: 0.78rem;
@@ -1072,20 +899,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 .ratio-delta:empty { display: none; }
 
-/* Short viewport (a 320x640-class phone, or any phone in landscape): the map
-   is only ~420px tall there, and the drawer's 168px peek plus the scrubber
-   floating above it swallow half of it, leaving the route in a sliver. Trim
-   the drawer's *spacing* rather than its content — it's laid out for a tall
-   screen, and at 320x640 only 140 of its 264px are actual content — then lower
-   the peek to match. The headline percentages come down a step too, still the
-   biggest thing in the drawer by some way. ui.js reads --drawer-peek to dock
-   the scrubber, and map.js reads it through bottomOverlayPx() to frame the
-   route, so both follow this automatically.
-   Placed here, after every rule it overrides: a media query adds no
-   specificity, so an earlier block would simply lose to the base rules. */
 @media (max-height: 700px) {
-  /* Tuned to the compacted content below it: handle + tabs + ratio bar +
-     the delta line, which is the last thing worth reading without expanding. */
   #results { --drawer-peek: 142px; }
   #drawer-handle { padding: 6px 0 7px; }
   .tab-btn { padding: 7px 0; }
@@ -1189,8 +1003,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   width: 340px;
   max-width: 100vw;
   height: 100%;
-  /* Full-height and flush to the right edge: its header clears the notch, its
-     footer links clear the home indicator. */
   padding: var(--safe-top) var(--safe-right) var(--safe-bottom) 0;
   background: #0e120a;
   border-left: 1px solid rgba(240,242,160,0.13);
@@ -1245,8 +1057,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #about-body {
   flex: 1;
   overflow-y: auto;
-  /* Same reason as the results drawer: reaching the end of the text must not
-     scroll the map behind it. */
   overscroll-behavior: contain;
   padding: 24px 20px;
   scrollbar-width: thin;
@@ -1361,13 +1171,7 @@ p.opensource-badge {
   #about-drawer { width: 100vw; }
 }
 
-/* ── Touch press feedback ──
-   Pays back what removing -webkit-tap-highlight-color took away. :hover never
-   fires on a touch screen, so without this a tap produces no acknowledgement
-   at all until the action itself lands, which reads as a dropped tap rather
-   than as a fast one. Instant on press and on release, like a native control:
-   no transition. Scoped to pointers that can't hover, so the desktop hover
-   states are untouched. */
+/* ── Touch press feedback ── */
 @media (hover: none) {
   button:active,
   .lang-btn:active,
@@ -1375,27 +1179,8 @@ p.opensource-badge {
   .footer-link:active { opacity: 0.6; }
 }
 
-/* ── Desktop: the results dock as a side panel ──
-   The bottom sheet is genuinely good on a phone and unreadable stretched
-   across a laptop: at 1280px the two headline percentages sit ~1,100px apart
-   and stop reading as one statistic, and the scrubber becomes a 1,250px
-   slider for a 15-hour range. Docked left at 380px, the same markup gets the
-   proportions it was designed for, and both routes fit one under the other —
-   so the tabs go away and the sunny/shady comparison is just there, side by
-   side, instead of something the user has to reconstruct by alternating.
-
-   The panel floats over the map rather than shrinking it: no Leaflet resize
-   on every search, and keeping the route clear of it is the mechanism the
-   bottom sheet already uses (leftOverlayPx in ui.js, read by map.js).
-
-   --map-top is written by ui.js from #map's own offset, so the panel lines up
-   with the top of the map whatever sits above it — the install banner
-   appearing, or the search panel wrapping to a second line.
-
-   Last block in the file, after every rule it overrides: a media query adds
-   no specificity of its own. */
+/* ── Desktop: the results dock as a side panel ── */
 @media (min-width: 900px) {
-  /* Also read from JS (leftOverlayPx, see ui.js) — keep both in sync. */
   :root { --side-panel-w: 380px; }
 
   #results {
@@ -1407,48 +1192,23 @@ p.opensource-badge {
     border-top: none;
     border-right: 1px solid rgba(240,242,160,0.13);
     box-shadow: 4px 0 24px rgba(0,0,0,0.4);
-    /* Clears the scrubber docked at the bottom (below): it floats over the
-       panel, so the last note has to be able to scroll out from under it.
-       The scrubber grew by the bottom inset, so this clearance does too. */
     padding-bottom: calc(58px + var(--safe-bottom));
     overflow-y: auto;
     transform: translateX(-100%);
-    /* Column, so the notes can be ordered below the route cards without
-       moving them in the DOM (where they sit above, which is right for the
-       sheet: there they explain why the bar underneath is missing). */
     display: flex;
     flex-direction: column;
   }
   #results > * { flex: 0 0 auto; }
-  /* Slides in from the left instead of up. There is no peek state to
-     distinguish: the panel is as tall as the map, so `on` and `expanded` are
-     the same picture. */
   #results.on,
   #results.expanded,
   #results.night.on { transform: none; }
-  /* Folded away by #panel-toggle. Last, so it wins over the three above. */
   #results.collapsed { transform: translateX(-100%); }
 
-  /* The handle keeps its strip — the share button is positioned inside it —
-     but stops being a control, since there is nothing left to expand. Tall
-     enough to clear that button: without the grab bar the strip collapses to
-     its padding, and the first note underneath ran behind the button. */
   #drawer-handle { min-height: 46px; padding: 0; cursor: default; pointer-events: none; }
   #drawer-bar { display: none; }
   #results .route-details { display: block; }
 
-  /* Both routes at once, stacked, instead of two tabs to alternate between.
-     The tab buttons' `active` class lives on: it is now the selected-card
-     highlight, and clicking a card is what moves it (see initTabs in ui.js),
-     so the map still highlights exactly one route. */
   #tabs { display: none; }
-  /* Two actual cards, inset and rounded, rather than two full-bleed bands. The
-     selected one is the one that is lit: its own outline in its own route
-     colour, on a lifted background. Selection reads as the whole object being
-     picked up, which is also how the map says it (the other route drops to
-     half opacity there, scaleOpacity in map.js) — the unselected card recedes
-     a little, but nowhere near enough to stop being readable, because
-     comparing the two is the entire point of showing both. */
   .tab-pane {
     display: block;
     cursor: pointer;
@@ -1463,10 +1223,6 @@ p.opensource-badge {
   .tab-pane:not(.active):hover { opacity: 0.9; }
   #tab-sunny.active { border-color: rgba(240,242,160,0.5); background: rgba(240,242,160,0.05); }
   #tab-shady.active { border-color: rgba(232,200,240,0.5); background: rgba(232,200,240,0.05); }
-  /* Only one unique route: the shady pane was never rendered for it, so it
-     would show an empty card next to the real one. The remaining card loses
-     its title with it — "sunny" only means something against a shadier
-     alternative, and the note above it already says there is none. */
   #results.single #tab-shady { display: none; }
   #results.single .pane-title { display: none; }
 
@@ -1487,13 +1243,6 @@ p.opensource-badge {
   #tab-sunny.active .pane-title { color: #f0f2a0; }
   #tab-shady.active .pane-title { color: #e8c8f0; }
 
-  /* Every note lands under the route cards, and they all read as one kind of
-     thing. In the sheet they are split in two on purpose — night/eclipse/
-     grazing/single sit above because they explain a bar that is missing or
-     qualified, weather/quality below — but in a panel that shows everything
-     at once that split just scatters five different-looking paragraphs
-     through the results. Ordered rather than moved, so the DOM (and the
-     sheet) is untouched. */
   #night-note,
   #eclipse-note,
   #grazing-sun-note,
@@ -1512,25 +1261,14 @@ p.opensource-badge {
     font-size: 0.8rem;
     line-height: 1.45;
     color: rgba(216,219,200,0.6);
-    /* Left, not centred: the quality note is a bulleted list and has to be,
-       and ragged-centre paragraphs in a 380px column read worse anyway. The
-       amber #quality-note.warn treatment still applies over this. */
     text-align: left;
   }
 
-  /* A footer bar across the panel's bottom edge rather than a card floating
-     above the drawer: 380px wide it reads as a control for the results next to
-     it instead of a slider across the whole window, and flush to the edge
-     nothing of the scrolling panel shows underneath it. z-index: it shares
-     2000 with the panel but comes earlier in the DOM, so it needs one more to
-     stay on top of it. */
   #time-scrubber {
     left: 0;
     right: auto;
     bottom: 0;
     width: var(--side-panel-w);
-    /* Flush to the bottom edge, so the inset goes inside it rather than
-       leaving a strip of scrolling panel showing underneath. */
     padding: 10px calc(14px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(14px + var(--safe-left));
     background: #0e120a;
     border: none;
@@ -1539,24 +1277,12 @@ p.opensource-badge {
     box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
     z-index: 2001;
   }
-  /* Goes with the panel: it is that panel's control, and the point of folding
-     is to hand the whole window to the map. */
   #time-scrubber.panel-collapsed { transform: translateX(-100%); }
   #time-scrubber { transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
 
-  /* Leaflet puts zoom and locate-me in the map's top-left corner, which is
-     exactly where the panel docks — they were unreachable behind it. Slide
-     them clear for as long as it is actually on screen. :has() rather than a
-     class written from JS, because "the panel covers the map" is three states
-     at once (on, not collapsed, wide enough) and CSS already knows all three;
-     where it isn't supported the rule is dropped and the controls sit where
-     they do today. */
   .leaflet-top.leaflet-left { transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1); }
   body:has(#results.on:not(.collapsed)) .leaflet-top.leaflet-left { margin-left: var(--side-panel-w); }
 
-  /* A tab on the panel's outer edge, riding it in and out. Centred on the map
-     band rather than the window: top + bottom + a fixed height leaves the two
-     auto margins to split the leftover, which is what centres it. */
   #panel-toggle {
     display: flex;
     align-items: center;
@@ -1580,7 +1306,6 @@ p.opensource-badge {
   }
   #panel-toggle:hover { background: #1d2416; color: #f0f2a0; }
   #panel-toggle svg { display: block; transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
-  /* Nothing to fold away until a search has produced something. */
   #results:not(.on) ~ #panel-toggle { display: none; }
   #results.collapsed ~ #panel-toggle { left: 0; }
   #results.collapsed ~ #panel-toggle svg { transform: rotate(180deg); }
