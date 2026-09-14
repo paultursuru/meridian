@@ -336,7 +336,7 @@ const urls: Record<Lang, string> = {
   // until the map itself renders (the splash covers it until then), so they're
   // split into their own chunk instead of blocking the whole app script
   // (review #2 §2.3).
-  const { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation, bboxZoom, fitToBbox, glZoom, queryBuildingFeatures } = await import('../lib/map.js');
+  const { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation, bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt } = await import('../lib/map.js');
 
   initMap();
   // After initMap: #map has to be laid out before its top offset means
@@ -625,13 +625,23 @@ const urls: Record<Lang, string> = {
         setStatus(tr('status_buildings'));
         // Outside Switzerland, try the basemap's own building layer first: it
         // is already in memory, so it answers in milliseconds where Overpass
-        // takes 11s. Anything short of a usable answer (route too big to fit
-        // at z14, empty tiles, error) falls through to the Overpass path
-        // unchanged. Switzerland keeps swisstopo, a better source.
+        // takes 11s. A route too long for one view is read cell by cell, so
+        // this takes the routes rather than their bbox. Anything short of a
+        // usable answer (too many cells, empty tiles, error) falls through to
+        // the Overpass path unchanged. Switzerland keeps swisstopo, a better
+        // source.
         let buildingsRes = null;
         if (!switzerland) {
-          const tileRes = await fetchTileBuildings(bbox, { bboxZoom, fitToBbox, glZoom, queryBuildingFeatures });
+          const tileRes = await fetchTileBuildings(
+            routes,
+            { bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt },
+            (i: number, n: number) => setStatus(tr('status_buildings_segment', { i: String(i), n: String(n) })),
+          );
           if (tileRes.status === 'ok') buildingsRes = tileRes;
+          // Only reached once the segmented attempt is done (ok or not) —
+          // restore the generic message before whatever comes next
+          // (Overpass fallback, or the shadow-count status a few lines down).
+          if (tileRes.status !== 'ok') setStatus(tr('status_buildings'));
         }
         if (!buildingsRes) buildingsRes = await fetchBuildings(bbox, { switzerland });
         buildings = buildingsRes.buildings;

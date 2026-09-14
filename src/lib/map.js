@@ -332,7 +332,7 @@ export function bboxZoom(bbox, { chrome = true } = {}) {
   const [s, w, n, e] = bbox;
   const padding = chrome ? chromePaddingPoint() : L.point(0, 0);
   const fit = Math.min(_map.getBoundsZoom(L.latLngBounds([s, w], [n, e]), false, padding), FIT_MAX_ZOOM);
-  return fit + (_glMap ? _glMap.getZoom() - _map.getZoom() : 0);
+  return fit + glZoomOffset();
 }
 
 function chromePaddingPoint() {
@@ -357,12 +357,31 @@ export function fitToBbox(bbox, { timeoutMs = 6000, chrome = true } = {}) {
   const bounds = L.latLngBounds([s, w], [n, e]);
   if (chrome) fitWithChrome(bounds, { animate: false });
   else _map.fitBounds(bounds, { maxZoom: FIT_MAX_ZOOM, animate: false });
+  return whenIdle(timeoutMs);
+}
+
+// Centres the map on a point at exactly `glTarget` in MapLibre's units,
+// whatever Leaflet's own scale is. fitToBbox() lets the box decide the zoom,
+// which on a phone means the box fills the screen and the view holds nothing
+// else; this holds the zoom at the level building tiles exist at and covers
+// as much ground around it as the screen allows. Rounded up, never down: a
+// fractional offset must not land the gl layer below the level asked for.
+export function viewAt([lat, lng], glTarget, { timeoutMs = 6000 } = {}) {
+  _map.setView([lat, lng], Math.ceil(glTarget - glZoomOffset()), { animate: false });
+  return whenIdle(timeoutMs);
+}
+
+function glZoomOffset() {
+  return _glMap ? _glMap.getZoom() - _map.getZoom() : 0;
+}
+
+// 'idle' rather than areTilesLoaded(): the layer has just been told to move,
+// so the tiles for the *previous* view can still read as loaded for a frame.
+// The timeout is the floor under a tile server that never answers — the caller
+// falls back to Overpass on an empty result.
+function whenIdle(timeoutMs) {
   return new Promise((resolve) => {
     if (!_glMap) return resolve();
-    // 'idle' rather than areTilesLoaded(): the layer has just been told to
-    // move, so the tiles for the *previous* view can still read as loaded for
-    // a frame. The timeout is the floor under a tile server that never
-    // answers — the caller falls back to Overpass on an empty result.
     const done = () => { clearTimeout(timer); _glMap.off('idle', done); resolve(); };
     const timer = setTimeout(done, timeoutMs);
     _glMap.on('idle', done);
@@ -371,6 +390,17 @@ export function fitToBbox(bbox, { timeoutMs = 6000, chrome = true } = {}) {
 
 export function glZoom() {
   return _glMap ? _glMap.getZoom() : 0;
+}
+
+// What the map is actually showing, [s, w, n, e] like the rest of this file.
+// A pan fits one cell but fills a whole viewport, so tileBuildings.js reads
+// every other cell this already covers rather than panning to it too.
+// Deliberately conservative: the tiles queryBuildingFeatures() returns always
+// reach past these bounds, never stop short of them.
+export function viewportBbox() {
+  if (!_map) return null;
+  const b = _map.getBounds();
+  return [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()];
 }
 
 // Every building feature in the currently loaded tiles, geometry already in
