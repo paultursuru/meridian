@@ -309,7 +309,7 @@ const urls: Record<Lang, string> = {
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, dateValueInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather, weatherAt }     from '../lib/weather.js';
   import { preselectTab }                from '../lib/preselect.js';
-  import { setStatus, showToast, initTabs, initLayout, showResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote, collapseDrawer } from '../lib/ui.js';
+  import { setStatus, showToast, initTabs, initLayout, showResults, hideResults, setActiveTab, showScrubber, hideScrubber, setScrubberLabel, showQualityNote } from '../lib/ui.js';
   import { initAutocomplete }            from '../lib/autocomplete.js';
   import { buildShareQuery, parseShareQuery } from '../lib/share.js';
   import { TZ_CENTERS } from '../lib/tzCenters.js';
@@ -336,7 +336,7 @@ const urls: Record<Lang, string> = {
   // until the map itself renders (the splash covers it until then), so they're
   // split into their own chunk instead of blocking the whole app script
   // (review #2 §2.3).
-  const { initMap, displayRoutes, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation, bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt } = await import('../lib/map.js');
+  const { initMap, displayRoutes, clearMap, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation, bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt } = await import('../lib/map.js');
 
   initMap();
   // After initMap: #map has to be laid out before its top offset means
@@ -389,9 +389,7 @@ const urls: Record<Lang, string> = {
   }
   button('app-description-close').addEventListener('click', hideAppDescription);
 
-  const now = new Date();
-  input('inp-date').value = localDateValue(now);
-  input('inp-time').value = now.toTimeString().slice(0, 5);
+  setDepartureNow();
 
   // Reflects whether each address field has text: toggles the ✕ clear button
   // (`.has-value` on `.input-wrap`, see main.css) and the Calculate button.
@@ -469,6 +467,18 @@ const urls: Record<Lang, string> = {
   // and skip touching the DOM instead of clobbering the newer search.
   let searchGeneration = 0;
 
+  // A search's routes are on screen (set at its first render, cleared by
+  // resetSearch). Stays true through a later search that is still loading,
+  // whose old routes are still drawn.
+  let searchShown = false;
+
+  // A complete search (from and to) in the current URL: what tells the search's
+  // history entry apart from the empty app's under it.
+  function urlHasSearch() {
+    const q = parseShareQuery(location.search);
+    return !!(q.start && q.end);
+  }
+
   // Coded like the ones routing.js and geocode.js raise: translated message
   // for the toast, code for the `search` event.
   type CodedError = Error & { code?: string; role?: string };
@@ -478,8 +488,13 @@ const urls: Record<Lang, string> = {
     return err;
   }
 
+  function setSearchBusy(busy: boolean) {
+    button('search-btn').disabled = busy;
+    button('depart-toggle').disabled = busy;
+    button('depart-confirm').disabled = busy;
+  }
+
   async function handleSearch() {
-    const mySearchGen = ++searchGeneration;
     const searchStart = performance.now(); // review #2 §7: "ms" is wall-clock to first render
     const startQ = input('inp-start').value.trim();
     const endQ   = input('inp-end').value.trim();
@@ -500,17 +515,25 @@ const urls: Record<Lang, string> = {
       return;
     }
 
-    const btn = button('search-btn');
-    btn.disabled = true;
-    button('depart-toggle').disabled = true;
-    button('depart-confirm').disabled = true;
+    // Counted only past the check above: a refused search must not make the
+    // one still running stale.
+    const mySearchGen = ++searchGeneration;
+    // Superseded by a newer search, or undone by Back (resetSearch): checked
+    // after each long await so a stale search never draws over what's there.
+    const stale = () => mySearchGen !== searchGeneration;
+    // Status writes from a stale search, including those from inside
+    // buildRoutes and the tile pass, would otherwise linger on an app that has
+    // moved on.
+    const searchStatus = (msg: string | null) => { if (!stale()) setStatus(msg); };
+
+    setSearchBusy(true);
     closeDepartPopover();
     hideAppDescription();
     el('results').classList.remove('on');
     hideScrubber();
 
     try {
-      setStatus(tr('status_geocoding'));
+      searchStatus(tr('status_geocoding'));
       const [startC, endC] = await Promise.all([
         startAC.getPlace() ?? geocode(startQ, { role: 'start' }),
         endAC.getPlace()   ?? geocode(endQ, { role: 'end' }),
@@ -596,7 +619,8 @@ const urls: Record<Lang, string> = {
         };
       }
 
-      const routes = await buildRoutes(startC, endC, setStatus);
+      const routes = await buildRoutes(startC, endC, searchStatus);
+      if (stale()) return;
       if (!routes.length) throw noRouteError();
 
       const bbox = routesBbox(routes);
@@ -622,7 +646,7 @@ const urls: Record<Lang, string> = {
       if (!night) {
         // At night every route scores 0 — shadow geometry is pointless,
         // so skip both Overpass round trips entirely.
-        setStatus(tr('status_buildings'));
+        searchStatus(tr('status_buildings'));
         // Outside Switzerland, try the basemap's own building layer first: it
         // is already in memory, so it answers in milliseconds where Overpass
         // takes 11s. A route too long for one view is read cell by cell, so
@@ -635,20 +659,23 @@ const urls: Record<Lang, string> = {
           const tileRes = await fetchTileBuildings(
             routes,
             { bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt },
-            (i: number, n: number) => setStatus(tr('status_buildings_segment', { i: String(i), n: String(n) })),
+            (i: number, n: number) => searchStatus(tr('status_buildings_segment', { i: String(i), n: String(n) })),
           );
           if (tileRes.status === 'ok') buildingsRes = tileRes;
           // Only reached once the segmented attempt is done (ok or not) —
           // restore the generic message before whatever comes next
           // (Overpass fallback, or the shadow-count status a few lines down).
-          if (tileRes.status !== 'ok') setStatus(tr('status_buildings'));
+          if (tileRes.status !== 'ok') searchStatus(tr('status_buildings'));
         }
         if (!buildingsRes) buildingsRes = await fetchBuildings(bbox, { switzerland });
+        // Before the vegetation fetch: no Overpass call for a search nobody
+        // will see.
+        if (stale()) return;
         buildings = buildingsRes.buildings;
         buildingsStatus = buildingsRes.status;
         buildingsSource = buildingsRes.source;
         leafFrac = deciduousLeafFrac(tDate, midLat);
-        setStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
+        searchStatus(tr('status_shadows', { n: String(buildings.length), r: String(routes.length) }));
         vegP = fetchVegetation(bbox);
       }
       const single = night || routes.length === 1;
@@ -723,6 +750,14 @@ const urls: Record<Lang, string> = {
         updateMapWeatherInfo(w);
       }
 
+      // The share link for a given instant of this search.
+      const shareUrl = (atDate: Date) => location.pathname + '?' + buildShareQuery({
+        start: { ...startC, label: startQ },
+        end:   { ...endC,   label: endQ },
+        date: dateValueInZone(atDate, destTz),
+        time: formatTimeInZone(atDate, destTz),
+      });
+
       // Re-scores every already-fetched route for a given instant and re-renders
       // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole
       // search (same corridor all day); only the sun's position changes, so this
@@ -779,16 +814,21 @@ const urls: Record<Lang, string> = {
         // review #2 §3.1: re-derived from `atDate` on every render (not just
         // once from the search form's dateV/timeV) so a shared link always
         // captures whatever instant is actually on screen, scrubbed or not.
-        history.replaceState(null, '', location.pathname + '?' + buildShareQuery({
-          start: { ...startC, label: startQ },
-          end:   { ...endC,   label: endQ },
-          date: dateValueInZone(atDate, destTz),
-          time: formatTimeInZone(atDate, destTz),
-        }));
+        history.replaceState(null, '', shareUrl(atDate));
       }
 
       // First render: buildings only (or nothing, at night) — the drawer must
       // not sit inert waiting for vegetation's up-to-~13s Overpass round trip.
+      //
+      // Back undoes the search, so a search started from the empty app gets
+      // one history entry of its own. It is pushed with the share URL, before
+      // renderAt's replaceState can write that URL onto the empty app's entry
+      // underneath, which must stay bare. Every later search, scrub or
+      // re-render replaces this entry in place, so the stack never grows past
+      // it. A shared link lands with its search already in the URL and pushes
+      // nothing: Back there returns to wherever the link was opened from.
+      if (!urlHasSearch()) history.pushState(null, '', shareUrl(tDate));
+      searchShown = true;
       renderAt(tDate);
       // Results are on screen: the install banner has something to argue from
       // now, which it did not have at page load.
@@ -824,6 +864,7 @@ const urls: Record<Lang, string> = {
       });
 
       hourlyWeather = await weatherP;
+      if (stale()) return;
       // Refreshes the note/badge immediately at whatever instant is current
       // (a scrub could already have moved past tDate while this was in
       // flight) instead of waiting for the next scrub tick to show weather
@@ -842,7 +883,7 @@ const urls: Record<Lang, string> = {
       });
       setActiveTab(preselect);
       setActiveRoute(preselect);
-      setStatus(null);
+      searchStatus(null);
 
       // Time scrubber: bounded to sunrise..sunset (outside that, "night" already
       // means no shadow computation at all — see above). Dragging shifts the
@@ -921,6 +962,9 @@ const urls: Record<Lang, string> = {
       }
 
     } catch (err) {
+      // A search undone or superseded while in flight: its failure is nobody's
+      // news, and the status belongs to whatever replaced it.
+      if (stale()) return;
       setStatus(null);
       // Codes set by routing.js and geocode.js: the technical detail stays on
       // the error for the console and Sentry, the user gets a sentence that
@@ -953,9 +997,9 @@ const urls: Record<Lang, string> = {
         ms: Math.round(performance.now() - searchStart),
       });
     } finally {
-      button('search-btn').disabled = false;
-      button('depart-toggle').disabled = false;
-      button('depart-confirm').disabled = false;
+      // A stale search leaves the buttons to whoever made it stale: the newer
+      // search still running, or resetSearch, which has already freed them.
+      if (!stale()) setSearchBusy(false);
     }
   }
 
@@ -1072,10 +1116,13 @@ const urls: Record<Lang, string> = {
   // over from a previous session never silently gets reused. Scheduling a
   // later departure instead goes through the popover below, which leaves
   // whatever the user picked untouched.
-  function leaveNow() {
+  function setDepartureNow() {
     const n = new Date();
     input('inp-date').value = localDateValue(n);
     input('inp-time').value = n.toTimeString().slice(0, 5);
+  }
+  function leaveNow() {
+    setDepartureNow();
     handleSearch();
   }
 
@@ -1127,14 +1174,18 @@ const urls: Record<Lang, string> = {
     }
   });
 
-  // Shared/bookmarked link: restore start/end/datetime from the URL and search.
-  const shared = parseShareQuery(location.search);
-  if (shared.date) input('inp-date').value = shared.date;
-  if (shared.time) input('inp-time').value = shared.time;
-  if (shared.start) { startAC.setPlace(shared.start); setPreviewPin('start', shared.start); }
-  if (shared.end)   { endAC.setPlace(shared.end);     setPreviewPin('end',   shared.end); }
-  syncInputState();
-  if (shared.start && shared.end) {
+  // Shared/bookmarked link, and Forward onto a search's history entry: restore
+  // start/end/datetime from the URL and search. False when the URL holds no
+  // complete search (a partial one still fills what it has).
+  async function restoreFromUrl(): Promise<boolean> {
+    const search = location.search;
+    const shared = parseShareQuery(search);
+    if (shared.date) input('inp-date').value = shared.date;
+    if (shared.time) input('inp-time').value = shared.time;
+    if (shared.start) { startAC.setPlace(shared.start); setPreviewPin('start', shared.start); }
+    if (shared.end)   { endAC.setPlace(shared.end);     setPreviewPin('end',   shared.end); }
+    syncInputState();
+    if (!shared.start || !shared.end) return false;
     // A shared link only carries lat/lng/label, not country — resolve it now
     // so a Swiss link reliably uses swissBUILDINGS3D on reload instead of
     // silently falling back to Overpass (which is flaky enough on its own
@@ -1143,17 +1194,25 @@ const urls: Record<Lang, string> = {
       reverseGeocode(shared.start.lat, shared.start.lng).then(r => r.countryCode).catch(() => undefined),
       reverseGeocode(shared.end.lat, shared.end.lng).then(r => r.countryCode).catch(() => undefined),
     ]);
+    // Back again while this was resolving: the entry no longer holds this
+    // search, and running it here would push one nobody asked for.
+    if (location.search !== search) return true;
     startAC.setPlace({ ...shared.start, countryCode: startCC });
     endAC.setPlace({ ...shared.end, countryCode: endCC });
     handleSearch();
-  } else if (isStandalone()) {
-    // Installed-app relaunch (review 6.2): try to prefill "start" from the
-    // phone's position first — if that gives us nothing (denied, and no
-    // cached fix either), fall back to the same passive centering a regular
-    // browser tab gets.
-    prefillFromRelaunch().then((filled) => { if (!filled) initInitialMapCenter(); });
-  } else {
-    initInitialMapCenter();
+    return true;
+  }
+
+  if (!(await restoreFromUrl())) {
+    if (isStandalone()) {
+      // Installed-app relaunch (review 6.2): try to prefill "start" from the
+      // phone's position first — if that gives us nothing (denied, and no
+      // cached fix either), fall back to the same passive centering a regular
+      // browser tab gets.
+      prefillFromRelaunch().then((filled) => { if (!filled) initInitialMapCenter(); });
+    } else {
+      initInitialMapCenter();
+    }
   }
 
   // Standalone-only: reopening the installed app still shows two empty
@@ -1289,29 +1348,63 @@ const urls: Record<Lang, string> = {
   document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') dismissAbout(); });
   document.addEventListener('keydown', trapAboutFocus);
 
-  // Back (and iOS swipe-back) unwinds an open overlay before it leaves the
-  // page. Two states opt in: the expanded results drawer and the about panel.
-  // Each records exactly one history entry when it opens (here, and on
-  // 'drawer-toggle' from ui.js); closing it by any other route calls
-  // history.back() to reclaim that entry, so repeated open/close through the
-  // UI can't pile entries up and strand the real Back.
+  // Back from a search: the app as it was before it, without a reload. The
+  // URL needs nothing, since the entry Back landed on already holds the bare
+  // one. The map view stays where it was, the intro bubble stays dismissed,
+  // and focus stays out of the fields so no keyboard pops up.
+  function resetSearch() {
+    // A search still in flight, and any vegetation pass, is now stale.
+    searchGeneration++;
+    searchShown = false;
+    clearMap();
+    startAC.clear();
+    endAC.clear();
+    // A reverse geocode still running for a map pick must not refill a field.
+    pickToken.start++;
+    pickToken.end++;
+    syncInputState();
+    setDepartureNow();
+    hideResults();
+    hideScrubber();
+    showQualityNote(null);
+    setStatus(null);
+    // Rather than waiting on the upstreams of a search that no longer counts.
+    setSearchBusy(false);
+    sunInfoBtn.classList.remove('on', 'day', 'night', 'expanded');
+    sunInfoBtn.setAttribute('aria-expanded', 'false');
+    el('map-sun-info-weather').textContent = '';
+  }
+
+  // Back (and iOS swipe-back) peels one layer per press: the about panel,
+  // which has its own entry, then the search, which owns the one entry above
+  // the empty app. The drawer has none: it already has its own vertical
+  // gesture. Manual dismissals of the about panel go through history.back(),
+  // so they land here too.
   //
-  // The handler reads the DOM, never event.state: renderAt() calls
-  // history.replaceState(null, ...) on every scrubber tick (see analytics.js),
-  // which would wipe any marker left on the current entry. Order is
-  // about-then-drawer because the about panel renders over the drawer (full
-  // overlay + inert #app), so it's the layer Back peels off first. One branch
-  // runs per press.
-  window.addEventListener('drawer-toggle', (e: Event) => {
-    if ((e as CustomEvent<{ expanded: boolean }>).detail.expanded) history.pushState({ nav: 'drawer' }, '');
-    else history.back();
-  });
+  // Which entry Back landed on is read from the URL, never event.state:
+  // renderAt() calls history.replaceState(null, ...) on every scrubber tick
+  // (see analytics.js), which wipes any marker on the entry. A search entry is
+  // one whose URL holds from and to. Landing on one with nothing on screen
+  // means Forward, which runs that search again.
   window.addEventListener('popstate', () => {
-    if (drawer.classList.contains('open')) closeAbout();
-    else if (el('results').classList.contains('expanded')) collapseDrawer({ fromPopstate: true });
-    // No entry of its own, but a Back that closed the about panel shouldn't
-    // leave this hanging open underneath with nothing left to dismiss it.
+    // No entry of its own, but a Back shouldn't leave it hanging open.
     closeDepartPopover();
+    if (drawer.classList.contains('open')) {
+      closeAbout();
+      return;
+    }
+    const inUrl = urlHasSearch();
+    if (!inUrl && searchShown) {
+      // Whether the gesture is used at all, and whether it's a way out of a
+      // search that is taking too long: one is running (read before the reset
+      // frees the button) and none of it is drawn yet. The button alone would
+      // also count a drawn route still waiting on its weather.
+      const loading = button('search-btn').disabled && !el('results').classList.contains('on');
+      window.umami?.track('back_reset', { loading });
+      resetSearch();
+    } else if (inUrl && !searchShown) {
+      restoreFromUrl();
+    }
   });
 
 </script>
