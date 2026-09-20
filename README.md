@@ -276,6 +276,16 @@ that R2 bucket): given a bbox, finds the overlapping chunks, fetches them
 from R2, deduplicates buildings that fall in the slight overlap margin
 between adjacent map sheets, and returns those inside the exact bbox —
 same response shape Overpass-derived data already has downstream.
+- **Anchored lookups** (`geocode.js`): an address is resolved against the
+region the user is looking at, not against the whole planet. Both `geocode()`
+and `suggest()` take a `near` anchor: the other endpoint once it resolves,
+otherwise the map centre. Nominatim gets a 250 km `viewbox` around it and
+returns 8 candidates, which are then ranked by
+`importance - 0.15 * log10(km / 10)`. The distance term stops `Ouchy` from
+resolving to a farm in Queensland; the importance term stops `Rome` from
+resolving to the nearest lane of the same name. The box is a bias and never a
+filter (no `bounded`, no `countrycodes`), because the app routes outside
+Switzerland too.
 - **Country detection** (`geocode.js`): `geocode()`/`suggest()`/
 `reverseGeocode()` all resolve a `countryCode` alongside coordinates
 (Nominatim `addressdetails=1`, Photon's `properties.countrycode`).

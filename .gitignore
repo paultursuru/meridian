@@ -45,3 +45,4 @@ swisstopo-etl/build_log.jsonl
 
 miscs/
 tmp/
+graphify-out/

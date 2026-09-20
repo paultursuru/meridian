@@ -392,6 +392,15 @@ export function glZoom() {
   return _glMap ? _glMap.getZoom() : 0;
 }
 
+// Where the user is currently looking. Used as the geographic anchor for a
+// search: both the autocomplete and the typed path bias their lookup towards
+// it rather than resolving a bare name against the whole planet.
+export function mapCenter() {
+  if (!_map) return null;
+  const { lat, lng } = _map.getCenter();
+  return { lat, lng };
+}
+
 // What the map is actually showing, [s, w, n, e] like the rest of this file.
 // A pan fits one cell but fills a whole viewport, so tileBuildings.js reads
 // every other cell this already covers rather than panning to it too.

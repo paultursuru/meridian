@@ -14,6 +14,26 @@ function mockJson(payload) {
   globalThis.fetch = async () => ({ ok: true, json: async () => payload });
 }
 
+// Same, but keeps the URL so the tests can assert on the query string.
+function mockJsonCapturing(payload) {
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(url);
+    return { ok: true, json: async () => payload };
+  };
+  return calls;
+}
+
+// Trimmed Nominatim rows: the scoring only reads lat, lon and importance.
+const LAUSANNE = { lat: 46.5197, lng: 6.6323 };
+const place = (name, lat, lon, importance) => ({
+  display_name: name,
+  lat: String(lat),
+  lon: String(lon),
+  importance,
+  address: { country_code: name.includes('Suisse') ? 'ch' : 'xx' },
+});
+
 // These assert on `code` rather than on the message: the message is what a
 // human reads, the code is what the Umami export groups by.
 describe('geocode', () => {
@@ -47,6 +67,60 @@ describe('geocode', () => {
       lat: 46.5171,
       lng: 6.6331,
       countryCode: 'ch',
+    });
+  });
+
+  it('asks for a single result and no viewbox when it has no anchor', async () => {
+    const calls = mockJsonCapturing([{ lat: '46.5171', lon: '6.6331', address: {} }]);
+    await geocode('lausanne');
+    expect(calls[0]).toContain('limit=1');
+    expect(calls[0]).not.toContain('viewbox');
+  });
+
+  it('biases the lookup with a viewbox around the anchor, without filtering', async () => {
+    const calls = mockJsonCapturing([{ lat: '46.5171', lon: '6.6331', address: {} }]);
+    await geocode('lausanne', { near: LAUSANNE });
+    expect(calls[0]).toContain('viewbox=');
+    // A wider list for the scoring to choose from.
+    expect(calls[0]).toContain('limit=8');
+    // The app routes outside Switzerland too (buildings.js falls back to
+    // Overpass), so the box must stay a bias: neither of these may appear.
+    expect(calls[0]).not.toContain('bounded');
+    expect(calls[0]).not.toContain('countrycodes');
+  });
+
+  it('prefers the local match over a better-ranked one on another continent', async () => {
+    // The 2026-09-17 measurement: `Ouchy` resolved to a farm in Queensland.
+    mockJsonCapturing([
+      place('Ouchy, Taldora, Queensland, Australie', -19.0, 141.0, 0.107),
+      place('Ouchy, Place de la Navigation, Lausanne, Suisse', 46.5069, 6.6277, 0),
+    ]);
+    await expect(geocode('Ouchy', { near: LAUSANNE })).resolves.toMatchObject({
+      lat: 46.5069,
+      countryCode: 'ch',
+    });
+  });
+
+  it('still lets a distant well-known place win over a nearby obscure one', async () => {
+    // The other half of the bias: proximity alone would answer `Rome` with a
+    // lane outside Lausanne.
+    mockJsonCapturing([
+      place('Rome, Roma Capitale, Latium, Italie', 41.8933, 12.4829, 0.856),
+      place('Rome, Quintenas, Ardèche, France', 46.55, 6.65, 0.3),
+    ]);
+    await expect(geocode('Rome', { near: LAUSANNE })).resolves.toMatchObject({
+      lat: 41.8933,
+    });
+  });
+
+  it('keeps the anchor out of the way of results in the same town', async () => {
+    // Inside the free radius the penalty is nil, so importance decides.
+    mockJsonCapturing([
+      place('Lausanne-Ouchy, Lausanne, Suisse', 46.5069, 6.6277, 0.107),
+      place("Château d'Ouchy, Place du Port, Lausanne, Suisse", 46.5063, 6.6289, 0.354),
+    ]);
+    await expect(geocode('Ouchy', { near: LAUSANNE })).resolves.toMatchObject({
+      lat: 46.5063,
     });
   });
 });
