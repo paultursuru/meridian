@@ -223,27 +223,22 @@ function initDrawer() {
   });
 }
 
-// The drawer's full-height state as one open and one close. Every path that
-// used to flip .expanded by hand (handle tap and drag, keyboard, the
-// map-click collapse in map.js) routes through these, so AppLayout has one
-// point to push a history entry from and one to reclaim it. Each is a no-op
-// when already in the target state, so a repeat call never stacks a second
-// entry. 'drawer-toggle' fires only on a real change; fromPopstate skips it
-// because Back has already moved history itself.
+// The drawer's full-height state as one open and one close, shared by every
+// path that flips it (handle tap and drag, keyboard, the map-click collapse in
+// map.js). Deliberately not a history entry: the sheet already has its own
+// vertical gesture, and Back undoes the search instead (see AppLayout).
 export function expandDrawer() {
   const drawer = document.getElementById('results');
   if (!drawer || drawer.classList.contains('expanded')) return;
   drawer.classList.add('expanded');
   updateScrubberPosition();
-  window.dispatchEvent(new CustomEvent('drawer-toggle', { detail: { expanded: true } }));
 }
 
-export function collapseDrawer({ fromPopstate = false } = {}) {
+export function collapseDrawer() {
   const drawer = document.getElementById('results');
   if (!drawer || !drawer.classList.contains('expanded')) return;
   drawer.classList.remove('expanded');
   updateScrubberPosition();
-  if (!fromPopstate) window.dispatchEvent(new CustomEvent('drawer-toggle', { detail: { expanded: false } }));
 }
 
 function toggleDrawer() {
@@ -281,6 +276,13 @@ export function showResults(sunny, shady, single = false, night = false, heightF
   setPanelCollapsed(false);
   drawer.classList.add('on');
   initDrawer();
+}
+
+// Takes the drawer off screen, collapsed, for a search that was undone. The
+// notes inside it go with it; showResults re-sets every class on the next one.
+export function hideResults() {
+  const drawer = document.getElementById('results');
+  drawer.classList.remove('on', 'expanded');
 }
 
 // ── Time scrubber ──
