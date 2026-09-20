@@ -1,4 +1,5 @@
 import { tr, getLang } from './i18n.js';
+import { haversine } from './helpers.js';
 
 const NOM_BASE = 'https://nominatim.openstreetmap.org';
 const PHOTON_BASE = 'https://photon.komoot.io/api';
@@ -101,17 +102,70 @@ function positionUnknownError() {
   return err;
 }
 
+// A typed search is resolved against the region the user is looking at rather
+// than against the whole planet. Asked cold, Nominatim answered `Ouchy` with a
+// farm in Queensland and `Zermat` with a shop in San José: 2 of 8 typed
+// queries landed on the wrong continent, and nothing on screen said so.
+//
+// The box is a bias, never a filter: no `bounded`, no `countrycodes`. The app
+// works outside Switzerland and fetchBuildings swaps in Overpass when the
+// country isn't ch, so a hard filter would break that case instead of tilting
+// it. 250 km is wide enough to keep Zermatt in reach of an anchor on Lausanne
+// and narrow enough to still surface it above the Central American matches.
+const NEAR_BOX_KM = 250;
+const KM_PER_DEG_LAT = 111;
+
+// Nominatim wants two opposite corners, `lon,lat,lon,lat`.
+function viewboxAround({ lat, lng }, km) {
+  const dLat = km / KM_PER_DEG_LAT;
+  // Meridians converge towards the poles; the floor keeps a high-latitude
+  // anchor from stretching the box around the whole world.
+  const dLng = km / (KM_PER_DEG_LAT * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+  return [lng - dLng, lat + dLat, lng + dLng, lat - dLat].map(n => n.toFixed(4)).join(',');
+}
+
+// Picking the nearest candidate is not enough on its own: it answers
+// `Gruyères` with the village down the road, which is right, but it would also
+// answer `Rome` with a lane in the Ardèche. Nominatim's own `importance` has
+// the opposite failure: it ranks the Ardennes Gruyères above the Swiss one.
+//
+// So the two are combined: importance buys distance, at DISTANCE_WEIGHT per
+// tenfold increase. A place roughly ten times further away needs 0.15 more
+// importance to win; a world capital clears that against a hamlet, a farm in
+// Queensland does not. Inside FREE_RADIUS_KM the penalty is nil, so results in
+// the same town are ordered by importance alone.
+const DISTANCE_WEIGHT = 0.15;
+const FREE_RADIUS_KM = 10;
+
+function candidateScore(item, anchor) {
+  const importance = Number(item.importance) || 0;
+  const metres = haversine(anchor.lat, anchor.lng, parseFloat(item.lat), parseFloat(item.lon));
+  const km = Math.max(metres / 1000, FREE_RADIUS_KM);
+  return importance - DISTANCE_WEIGHT * Math.log10(km / FREE_RADIUS_KM);
+}
+
+// Enough candidates for the scoring above to have something to choose from.
+// At 5, a viewbox anchored on Lausanne pushed Venice out of the list entirely.
+const NEAR_LIMIT = 8;
+
 // countryCode: lowercase ISO 3166-1 alpha-2 (e.g. 'ch'), or undefined when
 // unknown — used to route Swiss searches to the swissBUILDINGS3D pipeline
 // instead of Overpass (see buildings.js's fetchBuildings).
 // role: optional 'start' | 'end', used only to tag a failure (see above).
-export async function geocode(q, { role } = {}) {
-  const url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1&accept-language=${getLang()}`;
+// near: optional { lat, lng } to bias results by proximity, same meaning as in
+// suggest(). Without it the query is resolved cold, as it was before.
+export async function geocode(q, { role, near } = {}) {
+  const limit = near ? NEAR_LIMIT : 1;
+  let url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=${limit}&addressdetails=1&accept-language=${getLang()}`;
+  if (near) url += `&viewbox=${viewboxAround(near, NEAR_BOX_KM)}`;
   const r = await fetch(url);
   const d = await r.json();
   if (!d.length) throw addressNotFoundError(q, role);
-  const countryCode = d[0].address?.country_code;
-  return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon), countryCode };
+  const best = near
+    ? d.reduce((a, b) => (candidateScore(b, near) > candidateScore(a, near) ? b : a))
+    : d[0];
+  const countryCode = best.address?.country_code;
+  return { lat: parseFloat(best.lat), lng: parseFloat(best.lon), countryCode };
 }
 
 export async function reverseGeocode(lat, lng) {

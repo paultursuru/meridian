@@ -336,7 +336,7 @@ const urls: Record<Lang, string> = {
   // until the map itself renders (the splash covers it until then), so they're
   // split into their own chunk instead of blocking the whole app script
   // (review #2 §2.3).
-  const { initMap, displayRoutes, clearMap, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation, bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt } = await import('../lib/map.js');
+  const { initMap, displayRoutes, clearMap, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation, bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt, mapCenter } = await import('../lib/map.js');
 
   initMap();
   // After initMap: #map has to be laid out before its top offset means
@@ -410,8 +410,16 @@ const urls: Record<Lang, string> = {
 
   let startAC: ReturnType<typeof initAutocomplete>;
   let endAC:   ReturnType<typeof initAutocomplete>;
-  startAC = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => { setPreviewPin('start', p); syncInputState(); }, getAnchor: () => endAC?.getPlace() });
-  endAC   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => { setPreviewPin('end',   p); syncInputState(); }, getAnchor: () => startAC.getPlace() });
+
+  // Where a lookup for this field should be biased: the other endpoint once it
+  // is resolved, the map otherwise. The map fallback is what makes the anchor
+  // exist on a first search. Until it was added, the very common case of one
+  // empty field left the lookup with no anchor at all.
+  const searchAnchor = (other?: ReturnType<typeof initAutocomplete>) =>
+    other?.getPlace() ?? mapCenter();
+
+  startAC = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => { setPreviewPin('start', p); syncInputState(); }, getAnchor: () => searchAnchor(endAC) });
+  endAC   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => { setPreviewPin('end',   p); syncInputState(); }, getAnchor: () => searchAnchor(startAC) });
   ['inp-start', 'inp-end'].forEach(id => input(id).addEventListener('input', syncInputState));
   syncInputState();
 
@@ -534,9 +542,12 @@ const urls: Record<Lang, string> = {
 
     try {
       searchStatus(tr('status_geocoding'));
+      // Same anchor the autocomplete uses: a name typed straight into the field
+      // and confirmed with Enter has to resolve where the suggestions would
+      // have, not on whatever continent happens to rank first.
       const [startC, endC] = await Promise.all([
-        startAC.getPlace() ?? geocode(startQ, { role: 'start' }),
-        endAC.getPlace()   ?? geocode(endQ, { role: 'end' }),
+        startAC.getPlace() ?? geocode(startQ, { role: 'start', near: searchAnchor(endAC) }),
+        endAC.getPlace()   ?? geocode(endQ, { role: 'end', near: searchAnchor(startAC) }),
       ]);
 
       const midLat = (startC.lat + endC.lat) / 2;
