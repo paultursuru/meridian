@@ -4,16 +4,27 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-leaflet';
 import { collapseDrawer, bottomOverlayPx, leftOverlayPx } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
+import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
 import targetIcon from '../icons/target.svg?raw';
 
 let _map = null;
 let _glMap = null;
-let sunnyLayers   = [];
-let shadyLayers   = [];
+let routeLayers   = [];
+let routeLabels   = {};
 let markerLayers  = [];
 let previewMarkers = { start: null, end: null };
 let hereMarker = null;
+// The routes last handed to displayRoutes, and which one the drawer has
+// selected. Kept here because the two are drawn differently (see drawRoutes):
+// a change of selection is a redraw, and the selection has to survive the
+// redraw renderAt does on every scrubber tick.
+let drawn = null;
+let activeType = 'sunny';
+
+// The unselected route. Neutral on purpose: it only has to say "the other
+// way", its sun and shade are in its own tab.
+const ALT_COLOR = '#7f8391';
 
 // Gradient endpoints: following brand light yellow (sun, #f0f2a0) → brand violet/lilac (shade, #e8c8f0) 
 // but a little bit less pale for contrast purposes
@@ -29,7 +40,7 @@ function lerpColor(t) {
 
 // Draws a route as per-segment colored polylines using shade data.
 // segShade covers every segment (i → i+1), so each entry maps directly to its two endpoints.
-function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
+function drawGradientRoute(coords, segShade, weight, onClick) {
   const N = coords.length;
 
   // Build a shade value [0=sun … 1=shade] for every point by averaging adjacent segment values.
@@ -58,13 +69,12 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
   const casing = L.polyline(coords.map(([lng, lat]) => [lat, lng]), {
     color: '#444444',
     weight: weight + 3,
-    opacity,
+    opacity: 0.75,
     lineCap: 'round',
     lineJoin: 'round',
     interactive: false,
     className: 'route-casing',
   });
-  casing._baseOpacity = opacity * 0.75;
   layers.push(casing.addTo(_map));
 
   // Draw each individual sub-segment with the average shade of its two endpoints.
@@ -75,12 +85,11 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
     const seg = L.polyline([[lat1, lng1], [lat2, lng2]], {
       color: lerpColor(t),
       weight,
-      opacity,
+      opacity: 1,
       lineCap: 'round',
       lineJoin: 'round',
       bubblingMouseEvents: false, // keep route clicks from also closing the drawer via the map click below
     });
-    seg._baseOpacity = opacity;
     // Stopped, not just handled: a click on a route means "show me this one",
     // and letting it through to the map would also collapse the drawer and
     // offer to drop an endpoint on top of the route the user just picked.
@@ -88,6 +97,93 @@ function drawGradientRoute(coords, segShade, weight, opacity, onClick) {
     layers.push(seg.addTo(_map));
   }
   return layers;
+}
+
+// The unselected route: one plain line under the selected one, which covers
+// it wherever the two share a street. Still a way to select it.
+function drawAltRoute(coords, onClick) {
+  const line = L.polyline(coords.map(([lng, lat]) => [lat, lng]), {
+    color: ALT_COLOR,
+    weight: 4.5,
+    opacity: 0.9,
+    lineCap: 'round',
+    lineJoin: 'round',
+    className: 'route-alt',
+    bubblingMouseEvents: false,
+  });
+  line.on('click', (ev) => { L.DomEvent.stopPropagation(ev); onClick(); });
+  return line.addTo(_map);
+}
+
+// What says which route is which: a pill in the colour its gradient runs to,
+// with the share the drawer shows for it (same rounding as ui.js renderTab).
+// Positioned by placeLabels.
+function drawRouteLabel(type, rt, active, onClick) {
+  const sunPct = Math.round(rt.sunScore * 100);
+  const pct = type === 'sunny' ? sunPct : 100 - sunPct;
+  const icon = L.divIcon({
+    className: 'route-label',
+    // No size: the element is a bare anchor, and a size makes Leaflet write
+    // width, height and margins inline on it.
+    iconSize: null,
+    html: `<div class="route-label-pill ${type}${active ? ' active' : ''}" title="${tr('tab_' + type)}">`
+      + `${type === 'sunny' ? '☀️' : '🌑'} ${pct}%</div>`,
+  });
+  const [lng, lat] = rt.geometry.coordinates[0];
+  const marker = L.marker([lat, lng], { icon, keyboard: false, zIndexOffset: active ? 1000 : 0 });
+  // Markers don't bubble clicks to the map, so no pick menu opens under it.
+  marker.on('click', onClick);
+  return marker.addTo(_map);
+}
+
+// Where each label goes doesn't depend on the zoom, but whether the two would
+// collide does, so this runs again on every zoomend.
+function placeLabels() {
+  if (!drawn?.shady || !routeLabels.sunny) return;
+  const zoom = _map.getZoom();
+  const px = (rt) => rt.geometry.coordinates.map(([lng, lat]) => {
+    const p = _map.project([lat, lng], zoom);
+    return [p.x, p.y];
+  });
+  const other = activeType === 'sunny' ? 'shady' : 'sunny';
+  // The selected route's label gets first pick of the spots.
+  const { a, b } = labelAnchors(px(drawn[activeType]), px(drawn[other]));
+  for (const [type, i] of [[activeType, a], [other, b]]) {
+    const [lng, lat] = drawn[type].geometry.coordinates[i];
+    routeLabels[type].setLatLng([lat, lng]);
+  }
+}
+
+function clearRoutes() {
+  [...routeLayers, ...Object.values(routeLabels)].forEach(l => _map.removeLayer(l));
+  routeLayers = [];
+  routeLabels = {};
+}
+
+// Identity is carried by the line style and the labels, not by colour: with
+// both routes in the same gradient and the unselected one dimmed, a pale
+// yellow stretch all but vanished on the light basemap, and nothing on the
+// map said which line was the sunny one.
+function drawRoutes() {
+  clearRoutes();
+  const { sunny, shady } = drawn;
+  const select = (type) => () =>
+    window.dispatchEvent(new CustomEvent('route-select', { detail: { type } }));
+
+  // Night, or ORS had one route: nothing to tell apart.
+  if (!shady) {
+    routeLayers.push(...drawGradientRoute(sunny.geometry.coordinates, sunny.segShade ?? [], 5.5, select('sunny')));
+    return;
+  }
+
+  const other = activeType === 'sunny' ? 'shady' : 'sunny';
+  const active = drawn[activeType];
+  routeLayers.push(drawAltRoute(drawn[other].geometry.coordinates, select(other)));
+  routeLayers.push(...drawGradientRoute(active.geometry.coordinates, active.segShade ?? [], 5.5, select(activeType)));
+  for (const type of ['sunny', 'shady']) {
+    routeLabels[type] = drawRouteLabel(type, drawn[type], type === activeType, select(type));
+  }
+  placeLabels();
 }
 
 // "Center on my location" control, Leaflet-native (stacks under the default
@@ -127,6 +223,7 @@ export function initMap() {
 
   _map.on('click', () => collapseDrawer());
   _map.on('click', openPickPopup);
+  _map.on('zoomend', placeLabels);
 
   // The intro bubble, the splash and the sun badge are plain HTML children of
   // #map, so a click on any of them reaches Leaflet's container underneath.
@@ -180,18 +277,16 @@ function openPickPopup(e) {
     ?.setAttribute('aria-label', tr('aria_close'));
 }
 
-function pinIcon(color) {
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:13px;height:13px;background:${color};border:2.5px solid white;border-radius:50%;box-shadow:0 2px 5px rgba(0,0,0,.3)"></div>`,
-    iconAnchor: [6, 6],
-  });
+// Styled in main.css (.map-pin). No size or anchor here: Leaflet writes those
+// inline on the element, and the CSS centres the pin on its point itself.
+function pinIcon(role) {
+  return L.divIcon({ className: `map-pin ${role}`, iconSize: null });
 }
 
 export function clearMap() {
-  [...sunnyLayers, ...shadyLayers, ...markerLayers].forEach(l => _map.removeLayer(l));
-  sunnyLayers  = [];
-  shadyLayers  = [];
+  clearRoutes();
+  drawn = null;
+  markerLayers.forEach(l => _map.removeLayer(l));
   markerLayers = [];
   for (const role of ['start', 'end']) {
     if (previewMarkers[role]) { _map.removeLayer(previewMarkers[role]); previewMarkers[role] = null; }
@@ -207,8 +302,7 @@ export function setPreviewPin(role, coords, { pan = true } = {}) {
   // A real pin supersedes the rough "my location" marker, if one is showing.
   clearApproxLocation();
   if (previewMarkers[role]) _map.removeLayer(previewMarkers[role]);
-  const color = role === 'start' ? '#22c55e' : '#ef4444';
-  previewMarkers[role] = L.marker([coords.lat, coords.lng], { icon: pinIcon(color), keyboard: false }).addTo(_map);
+  previewMarkers[role] = L.marker([coords.lat, coords.lng], { icon: pinIcon(role), keyboard: false }).addTo(_map);
   if (pan) _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
@@ -252,45 +346,32 @@ export function clearPreviewPin(role) {
 export function swapPreviewPins() {
   const start = previewMarkers.start;
   const end   = previewMarkers.end;
-  if (start) start.setIcon(pinIcon('#ef4444'));
-  if (end)   end.setIcon(pinIcon('#22c55e'));
+  if (start) start.setIcon(pinIcon('end'));
+  if (end)   end.setIcon(pinIcon('start'));
   previewMarkers.start = end;
   previewMarkers.end   = start;
 }
 
-// type: 'sunny' | 'shady' — full opacity for the active route, dimmed for the other.
-// Scales each layer's own base opacity (colored segments vs. their dimmer casing)
-// rather than a flat 1/0.5, so the casing stays proportionally subtler.
-function scaleOpacity(layer, active) {
-  layer.setStyle({ opacity: (layer._baseOpacity ?? 1) * (active ? 1 : 0.5) });
-}
+// type: 'sunny' | 'shady'. A no-op for the route already selected, which is what the callers that
+// re-assert the selection after a render (scrubber ticks) pass.
 export function setActiveRoute(type) {
-  sunnyLayers.forEach(l => scaleOpacity(l, type === 'sunny'));
-  shadyLayers.forEach(l => scaleOpacity(l, type === 'shady'));
+  if (type === activeType) return;
+  activeType = type;
+  if (drawn) drawRoutes();
 }
 
 export function displayRoutes(startC, endC, sunny, shady) {
   clearMap();
+  drawn = { sunny, shady };
+  drawRoutes();
 
-  const dispatch = (type) => () =>
-    window.dispatchEvent(new CustomEvent('route-select', { detail: { type } }));
-
-  // Shady route — gradient, drawn below sunny
-  if (shady) {
-    drawGradientRoute(shady.geometry.coordinates, shady.segShade ?? [], 5.5, 1, dispatch('shady'))
-      .forEach(l => shadyLayers.push(l));
-  }
-
-  // Sunny route — gradient, drawn on top
-  if (sunny) {
-    drawGradientRoute(sunny.geometry.coordinates, sunny.segShade ?? [], 5.5, 1, dispatch('sunny'))
-      .forEach(l => sunnyLayers.push(l));
-  }
-
-  markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('#22c55e'), keyboard: false }).addTo(_map));
-  markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('#ef4444'), keyboard: false }).addTo(_map));
+  markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('start'), keyboard: false }).addTo(_map));
+  markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('end'), keyboard: false }).addTo(_map));
 
   fitWithChrome(L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]));
+  // The fit may not fire a zoomend (same zoom as before), and the labels were
+  // placed at the zoom before it.
+  placeLabels();
 }
 
 // Fits `bounds` into the strip of map the user can actually see.
