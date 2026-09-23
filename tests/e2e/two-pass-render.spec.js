@@ -66,15 +66,14 @@ test('drawer renders from buildings before slow vegetation resolves', async ({ p
   // Moved onto the first render per step 3 — should already be usable here.
   await expect(page.locator('#time-scrubber')).toHaveClass(/on/);
 
-  // renderAt -> displayRoutes redraws both route polylines at full opacity
-  // (map.js); setActiveRoute is what dims the non-active one back down.
-  // Right after the first render this should already hold...
+  // renderAt -> displayRoutes redraws the route from scratch (map.js), so the
+  // drawn route must be the full-strength one right after the first render...
   const sunnyPath = page.locator('#map path.leaflet-interactive').first();
   await expect(sunnyPath).toHaveCSS('stroke-opacity', '1');
 
-  // ...and must *still* hold once vegetation's re-render redraws the map a
-  // second time — the exact regression risk of adding a renderAt() call
-  // without re-applying setActiveTab/setActiveRoute afterward.
+  // ...and must *still* be once vegetation's re-render redraws the map a
+  // second time. The selection itself surviving redraws is pinned in
+  // route-identity.spec.js.
   await page.waitForTimeout(VEG_DELAY_MS + 500);
   await expect(page.locator('#results')).toHaveClass(/on/);
   await expect(sunnyPath).toHaveCSS('stroke-opacity', '1');
