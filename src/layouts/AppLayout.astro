@@ -4,7 +4,9 @@ import { translations, type Lang } from '../lib/i18n';
 import AboutContent from '../components/AboutContent.astro';
 import targetIcon from '../icons/target.svg?raw';
 import arrowIcon from '../icons/arrow.svg?raw';
+import calendarClockIcon from '../icons/calendar-clock.svg?raw';
 import eclipseIcon from '../icons/eclipse-marker.svg?raw';
+import { onboardingQuery } from '../lib/onboarding.js';
 
 interface Props {
   lang: Lang;
@@ -20,6 +22,15 @@ const urls: Record<Lang, string> = {
   en: 'https://meridian-way.ch/en/',
   rm: 'https://meridian-way.ch/rm/',
 };
+
+// The demo's note repeats the bubble's arrow. Its gradient needs its own id:
+// the note comes first in the page and starts hidden, and a gradient defined
+// in a hidden element paints nothing wherever else its id is used.
+const noteArrowIcon = arrowIcon.replaceAll('meridianArrowGradient', 'meridianArrowGradientNote');
+
+// The demo is this page's own path plus a search, so it opens in the same
+// language, and the button works as a plain link before the script runs.
+const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from: t.onboarding_from, to: t.onboarding_to })}`;
 ---
 <!DOCTYPE html>
 <html lang={lang}>
@@ -103,22 +114,29 @@ const urls: Record<Lang, string> = {
     <div class="depart-row">
       <div class="split-btn">
         <button id="search-btn" type="button">{t.btn_leave_now}</button>
-        <button id="depart-toggle" type="button" aria-haspopup="true" aria-expanded="false" title={t.depart_toggle_title} aria-label={t.depart_toggle_title}>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 3.5L5 7L8.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+        <button id="depart-toggle" type="button" aria-haspopup="true" aria-expanded="false" title={t.depart_toggle_title} aria-label={t.depart_toggle_title} set:html={calendarClockIcon} />
       </div>
-      <div class="depart-popover" id="depart-popover" role="dialog" aria-label={t.depart_later_label}>
-        <div class="depart-popover-fields">
-          <div class="">
-            <label for="inp-date"><span class="input-label">{t.label_date}</span></label>
-            <input type="date" id="inp-date" />
+      <!-- One stack under the button: the date popover, then the demo's note,
+           which moves up on its own when the popover closes. -->
+      <div class="depart-overlays" id="depart-overlays">
+        <div class="depart-popover" id="depart-popover" role="dialog" aria-label={t.depart_later_label}>
+          <div class="depart-popover-fields">
+            <div class="">
+              <label for="inp-date"><span class="input-label">{t.label_date}</span></label>
+              <input type="date" id="inp-date" />
+            </div>
+            <div class="">
+              <label for="inp-time"><span class="input-label">{t.label_time}</span></label>
+              <input type="time" id="inp-time" />
+            </div>
           </div>
-          <div class="">
-            <label for="inp-time"><span class="input-label">{t.label_time}</span></label>
-            <input type="time" id="inp-time" />
-          </div>
+          <button id="depart-confirm" type="button">{t.btn_search}</button>
         </div>
-        <button id="depart-confirm" type="button">{t.btn_search}</button>
+        <div id="onboarding-note">
+          <div class="onboarding-note-arrow" set:html={noteArrowIcon} />
+          <p set:html={t.onboarding_description}></p>
+          <button id="onboarding-note-close" aria-label={t.aria_close}>×</button>
+        </div>
       </div>
     </div>
   </div>
@@ -131,6 +149,7 @@ const urls: Record<Lang, string> = {
       <button id="app-description-close" aria-label={t.aria_close}>×</button>
     </div>
     <div id="map-splash"><span>{t.map_loading}</span></div>
+    <a id="onboarding-btn" href={onboardingHref}>{t.onboarding_btn}</a>
     <button id="map-sun-info" type="button" aria-expanded="false" aria-label={t.aria_sun_info}>
       <div id="map-sun-info-row">
         <span id="map-sun-info-human"></span>
@@ -317,6 +336,7 @@ const urls: Record<Lang, string> = {
   import { localDateValue, fmtHm }        from '../lib/helpers.js';
   import { initInstallPrompt, registerServiceWorker, isStandalone, notifySearchSucceeded } from '../lib/pwa.js';
   import { saveLastPosition, getLastPosition } from '../lib/lastPosition.js';
+  import { ONBOARDING } from '../lib/onboarding.js';
   import { trackPageview } from '../lib/analytics.js';
 
   // Umami's script (loaded below) attaches this global; it's absent until the
@@ -388,6 +408,11 @@ const urls: Record<Lang, string> = {
     el('app-description').classList.add('hidden');
   }
   button('app-description-close').addEventListener('click', hideAppDescription);
+  // The demo's own note, under the date popover. Closing it keeps the demo.
+  function hideOnboardingNote() {
+    el('onboarding-note').classList.remove('on');
+  }
+  button('onboarding-note-close').addEventListener('click', hideOnboardingNote);
 
   setDepartureNow();
 
@@ -480,6 +505,15 @@ const urls: Record<Lang, string> = {
   // whose old routes are still drawn.
   let searchShown = false;
 
+  // The search on screen, or loading, is the demo the "what do I do?" button
+  // opens. Cleared by the next ordinary search and by resetSearch.
+  let onboarding = false;
+  // The current search pushed its own history entry over the empty app's
+  // (started from the app, not landed on as a link).
+  let searchEntryPushed = false;
+  // A history.back() of ours, whose popstate must not be taken for the user's.
+  let skipNextPop = false;
+
   // A complete search (from and to) in the current URL: what tells the search's
   // history entry apart from the empty app's under it.
   function urlHasSearch() {
@@ -502,7 +536,7 @@ const urls: Record<Lang, string> = {
     button('depart-confirm').disabled = busy;
   }
 
-  async function handleSearch() {
+  async function handleSearch({ onboarding: demo = false }: { onboarding?: boolean } = {}) {
     const searchStart = performance.now(); // review #2 §7: "ms" is wall-clock to first render
     const startQ = input('inp-start').value.trim();
     const endQ   = input('inp-end').value.trim();
@@ -526,6 +560,8 @@ const urls: Record<Lang, string> = {
     // Counted only past the check above: a refused search must not make the
     // one still running stale.
     const mySearchGen = ++searchGeneration;
+    onboarding = demo;
+    searchEntryPushed = false;
     // Superseded by a newer search, or undone by Back (resetSearch): checked
     // after each long await so a stale search never draws over what's there.
     const stale = () => mySearchGen !== searchGeneration;
@@ -537,6 +573,9 @@ const urls: Record<Lang, string> = {
     setSearchBusy(true);
     closeDepartPopover();
     hideAppDescription();
+    el('onboarding-note').classList.toggle('on', demo);
+    // The demo is at a set date: its note points up at the popover showing it.
+    if (demo) openDepartPopover({ focus: false });
     el('results').classList.remove('on');
     hideScrubber();
 
@@ -767,6 +806,8 @@ const urls: Record<Lang, string> = {
         end:   { ...endC,   label: endQ },
         date: dateValueInZone(atDate, destTz),
         time: formatTimeInZone(atDate, destTz),
+        // Kept through scrubs, so a reload or a shared demo opens as the demo.
+        onboarding: demo,
       });
 
       // Re-scores every already-fetched route for a given instant and re-renders
@@ -838,8 +879,13 @@ const urls: Record<Lang, string> = {
       // re-render replaces this entry in place, so the stack never grows past
       // it. A shared link lands with its search already in the URL and pushes
       // nothing: Back there returns to wherever the link was opened from.
-      if (!urlHasSearch()) history.pushState(null, '', shareUrl(tDate));
+      if (!urlHasSearch()) {
+        history.pushState(null, '', shareUrl(tDate));
+        searchEntryPushed = true;
+      }
       searchShown = true;
+      // The demo button is for the empty app only.
+      el('onboarding-btn').classList.add('off');
       renderAt(tDate);
       // Results are on screen: the install banner has something to argue from
       // now, which it did not have at page load.
@@ -872,6 +918,8 @@ const urls: Record<Lang, string> = {
         delta,
         eclipse: eclipseDay,
         ...(vegUpstream ? { upstream: vegUpstream } : {}),
+        // The demo is the same search for everyone: kept apart from real ones.
+        ...(demo ? { onboarding: true } : {}),
       });
 
       hourlyWeather = await weatherP;
@@ -1140,10 +1188,12 @@ const urls: Record<Lang, string> = {
   const departPopover = el('depart-popover');
   const departToggle  = button('depart-toggle');
 
-  function openDepartPopover() {
+  // focus: false for the demo, which opens it to show its date, not to have
+  // it edited (on a phone, focusing the date field opens the picker).
+  function openDepartPopover({ focus = true }: { focus?: boolean } = {}) {
     departPopover.classList.add('open');
     departToggle.setAttribute('aria-expanded', 'true');
-    input('inp-date').focus();
+    if (focus) input('inp-date').focus();
   }
   function closeDepartPopover() {
     departPopover.classList.remove('open');
@@ -1210,9 +1260,54 @@ const urls: Record<Lang, string> = {
     if (location.search !== search) return true;
     startAC.setPlace({ ...shared.start, countryCode: startCC });
     endAC.setPlace({ ...shared.end, countryCode: endCC });
-    handleSearch();
+    if (shared.onboarding) window.umami?.track('onboarding', { via: 'link' });
+    handleSearch({ onboarding: shared.onboarding });
     return true;
   }
+
+  // The demo from the button: the same search the link holds, run like a typed
+  // one, so it pushes its history entry at first render and Back returns to
+  // the empty app. Swiss already, so no reverse geocode to wait for.
+  function startOnboarding() {
+    window.umami?.track('onboarding', { via: 'button' });
+    const start = { ...ONBOARDING.start, label: tr('onboarding_from') };
+    const end = { ...ONBOARDING.end, label: tr('onboarding_to') };
+    input('inp-date').value = ONBOARDING.date;
+    input('inp-time').value = ONBOARDING.time;
+    startAC.setPlace(start);
+    endAC.setPlace(end);
+    setPreviewPin('start', start, { pan: false });
+    setPreviewPin('end', end, { pan: false });
+    syncInputState();
+    handleSearch({ onboarding: true });
+  }
+  el('onboarding-btn').addEventListener('click', (e: MouseEvent) => {
+    // A modified click opens the link in a new tab, as any link would.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    // Otherwise it reaches the document's outside-click handler, which would
+    // close the date popover the demo has just opened.
+    e.stopPropagation();
+    startOnboarding();
+  });
+
+  // Starting to type in the demo leaves it, back to the empty app it came
+  // from, so what follows is an ordinary first search. Landed on as a link,
+  // there is no empty app underneath: the entry itself becomes one.
+  function leaveOnboarding() {
+    if (!onboarding) return;
+    resetSearch();
+    if (searchEntryPushed) {
+      skipNextPop = true;
+      history.back();
+    } else {
+      history.replaceState(null, '', location.pathname);
+    }
+  }
+  ['inp-start', 'inp-end'].forEach(id => input(id).addEventListener('focus', leaveOnboarding));
+
+  // A link with a search is about to show results: no demo button over them.
+  el('onboarding-btn').classList.toggle('off', urlHasSearch());
 
   if (!(await restoreFromUrl())) {
     if (isStandalone()) {
@@ -1367,6 +1462,12 @@ const urls: Record<Lang, string> = {
     // A search still in flight, and any vegetation pass, is now stale.
     searchGeneration++;
     searchShown = false;
+    // Out of the demo too: its note and date go, the button comes back.
+    onboarding = false;
+    hideAppDescription();
+    hideOnboardingNote();
+    closeDepartPopover();
+    el('onboarding-btn').classList.remove('off');
     clearMap();
     startAC.clear();
     endAC.clear();
@@ -1398,6 +1499,11 @@ const urls: Record<Lang, string> = {
   // one whose URL holds from and to. Landing on one with nothing on screen
   // means Forward, which runs that search again.
   window.addEventListener('popstate', () => {
+    // leaveOnboarding's own step back: the app is already reset.
+    if (skipNextPop) {
+      skipNextPop = false;
+      return;
+    }
     // No entry of its own, but a Back shouldn't leave it hanging open.
     closeDepartPopover();
     if (drawer.classList.contains('open')) {
