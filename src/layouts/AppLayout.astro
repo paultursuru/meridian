@@ -23,9 +23,8 @@ const urls: Record<Lang, string> = {
   rm: 'https://meridian-way.ch/rm/',
 };
 
-// The demo's note repeats the bubble's arrow. Its gradient needs its own id:
-// the note comes first in the page and starts hidden, and a gradient defined
-// in a hidden element paints nothing wherever else its id is used.
+// The note's copy of the arrow needs its own gradient id: the note comes
+// first and starts hidden, and a hidden gradient paints nothing elsewhere.
 const noteArrowIcon = arrowIcon.replaceAll('meridianArrowGradient', 'meridianArrowGradientNote');
 
 // The demo is this page's own path plus a search, so it opens in the same
@@ -307,11 +306,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   <div id="quality-note"></div>
 </div>
 
-<!-- Folds the desktop side panel away to give the map the whole window, the
-     one thing the bottom sheet's handle does that a docked panel otherwise
-     loses. Never shown below the breakpoint, where the handle itself is the
-     control. A sibling of #results rather than a child: the panel clips its
-     own overflow, and this has to stay reachable once it has slid out. -->
+<!-- Desktop only: folds the side panel away. A sibling of #results, which
+     clips its overflow, so it stays reachable once the panel has slid out. -->
 <button id="panel-toggle" type="button" aria-controls="results" aria-expanded="true" title={t.panel_toggle_title} aria-label={t.panel_toggle_title}>
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12l7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 </button>
@@ -339,33 +335,26 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   import { ONBOARDING } from '../lib/onboarding.js';
   import { trackPageview } from '../lib/analytics.js';
 
-  // Umami's script (loaded below) attaches this global; it's absent until the
-  // script loads (and never present at all if an ad/tracker blocker strips
-  // it), so every call site must go through the optional-chained window.umami.
+  // Absent until Umami's script loads, and for good behind a blocker: always
+  // call it through window.umami?.
   declare global {
     interface Window {
       umami?: { track: (event?: string, data?: Record<string, unknown>) => void };
     }
   }
 
-  // The tag carries data-auto-pageview="false" (see analytics.js for why), so
-  // the arrival page view is ours to send. Custom events are unaffected.
+  // Auto page views are off on the tag (see analytics.js): this one is ours.
   trackPageview();
 
-  // Leaflet + MapLibre are ~330 KB of the first-load bundle and aren't needed
-  // until the map itself renders (the splash covers it until then), so they're
-  // split into their own chunk instead of blocking the whole app script
-  // (review #2 §2.3).
+  // Leaflet + MapLibre (~330 KB) get their own chunk: nothing needs them
+  // before the map renders, and the splash covers it until then.
   const { initMap, displayRoutes, clearMap, setActiveRoute, setPreviewPin, clearPreviewPin, swapPreviewPins, centerMap, showMyLocation, bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt, mapCenter } = await import('../lib/map.js');
 
   initMap();
-  // After initMap: #map has to be laid out before its top offset means
-  // anything (the desktop side panel docks to it, see ui.js).
+  // After initMap: the desktop side panel docks to #map's laid-out offset.
   initLayout();
-  // initTabs' callback only fires on a real user click that *changes* the
-  // selected route — a tab on mobile, a card in the desktop side panel (unlike
-  // setActiveTab, which is also called programmatically after search/scrub/veg)
-  // — the right place to measure whether the algorithmic preselect sticks.
+  // Fires only on a user click that changes the route (setActiveTab is also
+  // called by code): where to measure whether the preselect sticks.
   initTabs((type: string) => {
     window.umami?.track('tab_switch', { to: type });
     setActiveRoute(type);
@@ -383,32 +372,21 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   const input  = (id: string) => el<HTMLInputElement>(id);
   const button = (id: string) => el<HTMLButtonElement>(id);
 
-  // review #2 §3.4: night is a dead end — the note now doubles as a "jump to
-  // sunrise" button. One listener, rebound each search (like the scrubber's
-  // scrubOnChange) since the target date/time depend on that search's sun times.
+  // One listener; each night search rebuilds its target.
   let goToSunrise: () => void = () => {};
   button('night-sunrise-btn').addEventListener('click', () => goToSunrise());
 
-  // review #2 §3.3 follow-up: click to reveal the technical/weather detail
-  // lines instead of always showing them (that's what forced the wrapping
-  // fix in the first place — the collapsed badge now only ever needs to fit
-  // its one plain-language line). State lives entirely in the DOM (a class +
-  // aria-expanded), untouched by updateSunInfo/renderAt, so it survives
-  // scrub ticks and re-renders without any extra bookkeeping.
   const sunInfoBtn = button('map-sun-info');
   sunInfoBtn.addEventListener('click', () => {
     const expanded = sunInfoBtn.classList.toggle('expanded');
     sunInfoBtn.setAttribute('aria-expanded', String(expanded));
   });
 
-  // App description bubble: intro shown over the map on load, dismissed by
-  // its own close button or, automatically, the moment a search starts —
-  // it's onboarding, not something worth keeping around once the user acts.
   function hideAppDescription() {
     el('app-description').classList.add('hidden');
   }
   button('app-description-close').addEventListener('click', hideAppDescription);
-  // The demo's own note, under the date popover. Closing it keeps the demo.
+  // Closing the note doesn't leave the demo.
   function hideOnboardingNote() {
     el('onboarding-note').classList.remove('on');
   }
@@ -416,16 +394,9 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
 
   setDepartureNow();
 
-  // Reflects whether each address field has text: toggles the ✕ clear button
-  // (`.has-value` on `.input-wrap`, see main.css) and the Calculate button.
-  // Only drives the ✕ clear button's visibility. The search buttons are
-  // deliberately NOT disabled on empty fields: handleSearch already refuses
-  // empty input with a translated message, and a disabled button receives no
-  // click at all. A field filled without firing `input` — dictation, autofill,
-  // a browser extension, some assistive input methods — used to leave the user
-  // with two visible addresses and a button that did nothing, with no way to
-  // find out why (reported by a user, 2026-08-05). The buttons are still
-  // disabled while a search is in flight, which is a different concern.
+  // Only drives the ✕ buttons. Search buttons stay enabled on empty fields:
+  // one filled without an `input` event (autofill, dictation) must still
+  // search, and handleSearch says what's missing.
   function syncInputState() {
     const sVal = input('inp-start').value.trim();
     const eVal = input('inp-end').value.trim();
@@ -436,10 +407,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   let startAC: ReturnType<typeof initAutocomplete>;
   let endAC:   ReturnType<typeof initAutocomplete>;
 
-  // Where a lookup for this field should be biased: the other endpoint once it
-  // is resolved, the map otherwise. The map fallback is what makes the anchor
-  // exist on a first search. Until it was added, the very common case of one
-  // empty field left the lookup with no anchor at all.
+  // Bias a lookup towards the other endpoint once resolved, else the map.
   const searchAnchor = (other?: ReturnType<typeof initAutocomplete>) =>
     other?.getPlace() ?? mapCenter();
 
@@ -451,12 +419,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   // Cloud cover (%) above which the sunny/shady distinction stops mattering
   const OVERCAST_PCT = 60;
 
-  // review #2 §3.3 (Paul's counter-proposal, 2026-07-30): the plain-language
-  // sun position and exact degrees live on the map now, not in a header
-  // carousel — they change with the scrubber, same as the shadows the map is
-  // already drawing, so showing them there instead of cycling through a
-  // cramped header pill removes the "can't read what you want when you want
-  // it" problem outright. The header keeps only the static tagline.
+  // On the map, not the header: it follows the scrubber like the shadows.
   function updateSunInfo(sun: { azDeg: number; altDeg: number }, times: { sunrise: Date; sunset: Date }, timeZone: string, atDate: Date) {
     const badge = el('map-sun-info');
     badge.classList.toggle('day',   sun.altDeg > 0);
@@ -467,13 +430,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       ? tr('night_position', { time: formatTimeInZone(times.sunrise, timeZone) })
       : tr('sun_position', { dir: tr(('dir_' + compassDir(sun.azDeg)) as TranslationKey), time: formatTimeInZone(times.sunset, timeZone) });
     const technical = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
-    // Locale-aware, and in the *destination's* zone like the rest of this
-    // panel (not the browser's) — timeZone can only be baked into the
-    // formatter's constructor, not passed per-call, so this is built fresh
-    // each render rather than hoisted (same pattern as formatTimeInZone/
-    // dateValueInZone in timezone.js). No year: every date this can show is
-    // either "today-ish" (search) or within the scrubber's own day, so
-    // day+month+time reads as "when" without the clutter.
+    // Built per call: the destination's zone can only go in the constructor.
+    // No year: every date shown is within the searched day.
     const dateTimeFmt = new Intl.DateTimeFormat(document.documentElement.lang, {
       timeZone, day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
     });
@@ -483,9 +441,6 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     el('map-sun-info-datetime').textContent = datetime;
   }
 
-  // Weather is a single sample at the searched instant (see fetchWeather),
-  // not scrub-reactive — same known limitation as #weather-note, which this
-  // mirrors. Called once weatherP resolves, not from updateSunInfo/renderAt.
   function updateMapWeatherInfo(weather: { cloudCover: number; temperature: number | null } | null) {
     el('map-sun-info-weather').textContent = weather && weather.temperature != null
       ? tr('map_weather', { temp: String(Math.round(weather.temperature)), cloud: String(Math.round(weather.cloudCover)) })
@@ -493,29 +448,21 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   }
 
 
-  // Bumped once per handleSearch call. The vegetation continuation below
-  // fires after the button has already re-enabled (first render no longer
-  // waits on it), so a second search can genuinely start before the first
-  // one's vegetation lands — this lets that continuation detect it's stale
-  // and skip touching the DOM instead of clobbering the newer search.
+  // Bumped by each search and by resetSearch, so a stale search's
+  // continuations (vegetation lands after the buttons re-enable) skip the DOM.
   let searchGeneration = 0;
 
-  // A search's routes are on screen (set at its first render, cleared by
-  // resetSearch). Stays true through a later search that is still loading,
-  // whose old routes are still drawn.
+  // Routes are on screen. Stays true while a newer search loads over them.
   let searchShown = false;
 
-  // The search on screen, or loading, is the demo the "what do I do?" button
-  // opens. Cleared by the next ordinary search and by resetSearch.
+  // The search on screen, or loading, is the demo.
   let onboarding = false;
-  // The current search pushed its own history entry over the empty app's
-  // (started from the app, not landed on as a link).
+  // The current search pushed its own history entry (not landed on as a link).
   let searchEntryPushed = false;
   // A history.back() of ours, whose popstate must not be taken for the user's.
   let skipNextPop = false;
 
-  // A complete search (from and to) in the current URL: what tells the search's
-  // history entry apart from the empty app's under it.
+  // A complete search in the URL marks a search's history entry.
   function urlHasSearch() {
     const q = parseShareQuery(location.search);
     return !!(q.start && q.end);
@@ -537,37 +484,29 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   }
 
   async function handleSearch({ onboarding: demo = false }: { onboarding?: boolean } = {}) {
-    const searchStart = performance.now(); // review #2 §7: "ms" is wall-clock to first render
+    const searchStart = performance.now();
     const startQ = input('inp-start').value.trim();
     const endQ   = input('inp-end').value.trim();
     const dateV  = input('inp-date').value;
     const timeV  = input('inp-time').value;
 
-    // Focus the offending field on top of the message: with the buttons no
-    // longer disabled, this is now the only signal telling the user what is
-    // missing, so it has to point at it rather than just say it.
+    // Point at the missing field, not just name it.
     if (!startQ || !endQ) {
-      // Sans ça, le message se superpose à la bulle d'accueil, qui dit déjà de
-      // remplir les champs : deux textes empilés, dont le nouveau se remarque
-      // à peine. hideAppDescription() est appelé plus bas pour les recherches
-      // qui aboutissent, mais ce chemin-ci sort avant.
+      // Otherwise the toast stacks on the intro bubble, which already says
+      // to fill the fields.
       hideAppDescription();
       showToast(tr('alert_empty'));
       input(startQ ? 'inp-end' : 'inp-start').focus();
       return;
     }
 
-    // Counted only past the check above: a refused search must not make the
-    // one still running stale.
+    // Past the check: a refused search must not make the running one stale.
     const mySearchGen = ++searchGeneration;
     onboarding = demo;
     searchEntryPushed = false;
-    // Superseded by a newer search, or undone by Back (resetSearch): checked
-    // after each long await so a stale search never draws over what's there.
+    // Superseded, or undone by Back: checked after each long await.
     const stale = () => mySearchGen !== searchGeneration;
-    // Status writes from a stale search, including those from inside
-    // buildRoutes and the tile pass, would otherwise linger on an app that has
-    // moved on.
+    // Also silences the status writes from inside buildRoutes and the tile pass.
     const searchStatus = (msg: string | null) => { if (!stale()) setStatus(msg); };
 
     setSearchBusy(true);
@@ -581,9 +520,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
 
     try {
       searchStatus(tr('status_geocoding'));
-      // Same anchor the autocomplete uses: a name typed straight into the field
-      // and confirmed with Enter has to resolve where the suggestions would
-      // have, not on whatever continent happens to rank first.
+      // Same anchor as the autocomplete: typed + Enter resolves where the
+      // suggestions would.
       const [startC, endC] = await Promise.all([
         startAC.getPlace() ?? geocode(startQ, { role: 'start', near: searchAnchor(endAC) }),
         endAC.getPlace()   ?? geocode(endQ, { role: 'end', near: searchAnchor(startAC) }),
@@ -592,66 +530,45 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       const midLat = (startC.lat + endC.lat) / 2;
       const midLng = (startC.lng + endC.lng) / 2;
 
-      // Both endpoints must resolve to Switzerland — a route with only one
-      // Swiss endpoint might still cross the border, so treat that case as
-      // OSM (the safe default when a countryCode is missing, e.g. geolocation
-      // or a restored shared link that skipped geocode()).
+      // Both ends Swiss, since a route could cross the border. A missing
+      // countryCode counts as not Swiss.
       const switzerland = startC.countryCode === 'ch' && endC.countryCode === 'ch';
 
-      // Date/time inputs are wall-clock values for the route's location, not
-      // the browser's — resolve the destination's IANA zone and convert.
+      // The date/time fields are wall-clock time at the route, not the browser.
       const destTz = await resolveTimeZone(midLat, midLng);
       let tDate = new Date();
       if (dateV) {
         tDate = zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz);
       }
 
-      // Settled once, here, rather than per render: the scrubber only ever
-      // moves within the searched day, so this can't change under it. Gates
-      // the marker below, and rides along on the `search` event as the
-      // denominator any eclipse_jump count needs.
+      // Fixed per search (the scrubber stays in the day). Gates the marker and
+      // is the denominator for eclipse_jump.
       const eclipseDay = switzerland && dateValueInZone(tDate, destTz) === ECLIPSE_2026.date;
 
       const sun = getSun(tDate, midLat, midLng);
-      // Night: sun exposure doesn't apply — no weather badge, no shadow
-      // computation; just show the shortest route and say so.
+      // Night: no weather, no shadows, just the shortest route.
       const night = sun.altDeg <= 0;
 
-      // Fired now, awaited only before rendering results: the routing +
-      // Overpass calls below dwarf it, so it's effectively free. Resolves
-      // to null when the date is beyond the forecast horizon or on error.
-      // Holds the whole day's hourly data (not one sample) so the scrubber
-      // can re-sample it via weatherAt() below on every tick, no 2nd fetch.
+      // Started now, awaited late. The whole day, hourly, so the scrubber can
+      // re-sample it. Null beyond the forecast horizon or on error.
       const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
       let hourlyWeather: Awaited<typeof weatherP> = null;
 
       const sunTimes = getSunTimes(tDate, midLat, midLng);
 
-      // review #2 §3.4: at night, turn the note's sunrise time into a way
-      // forward instead of a dead end. SunCalc.getTimes anchors to the
-      // *nearest* solar transit, not the calendar day, so a late-evening
-      // search (e.g. 23:00) gets back that same morning's already-passed
-      // sunrise — roll forward a day whenever that happens so the button
-      // always points at the next real sunrise, not one already behind us.
+      // SunCalc anchors to the nearest solar transit: a 23:00 search gets that
+      // morning's sunrise back, so roll to the next day.
       if (night) {
         let nextSunrise = sunTimes.sunrise > tDate
           ? sunTimes.sunrise
           : getSunTimes(new Date(tDate.getTime() + 86_400_000), midLat, midLng).sunrise;
-        // SunCalc's 'sunrise' is when the sun's upper limb clears the horizon
-        // (-0.833°), not when its true center crosses 0° — the altitude this
-        // app's own `night` check uses — so landing exactly on it can still
-        // read as night. Step forward in 1-minute ticks until it doesn't (a
-        // handful of minutes in practice; capped so a polar edge case can't
-        // loop forever).
+        // SunCalc's sunrise is the upper limb at -0.833°, still night by our
+        // altitude check: step a minute at a time (capped for polar cases).
         for (let i = 0; i < 60 && getSun(nextSunrise, midLat, midLng).altDeg <= 0; i++) {
           nextSunrise = new Date(nextSunrise.getTime() + 60_000);
         }
-        // The `<input type="time">` this feeds only holds whole minutes, and
-        // formatTimeInZone floors rather than rounds — so a safe instant like
-        // 06:19:23 would truncate to "06:19", i.e. 06:19:00, up to 59 s
-        // *before* the point just verified safe above. Round up to the next
-        // full minute instead: altitude only keeps rising here, so later is
-        // always still safe, never a step back into night.
+        // The time input holds whole minutes and formatTimeInZone floors:
+        // round up, later is still daylight.
         nextSunrise = new Date(Math.ceil(nextSunrise.getTime() / 60_000) * 60_000);
         const sunriseDateV = dateValueInZone(nextSunrise, destTz);
         const sunriseTimeV = formatTimeInZone(nextSunrise, destTz);
@@ -681,29 +598,17 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       let buildingsStatus: Awaited<ReturnType<typeof fetchBuildings>>['status'] = 'ok';
       let buildingsSource: Awaited<ReturnType<typeof fetchBuildings>>['source'] = switzerland ? 'swisstopo' : 'osm';
       let vegStatus: Awaited<ReturnType<typeof fetchVegetation>>['status'] = 'ok';
-      // Which instance behind overpass-cache served (or failed). Vegetation is
-      // the one Overpass call every daytime search makes, and a non-Swiss
-      // search's buildings call shares its bbox, so it would report the same
-      // instance: one field says it for both. Null for a night search, which
-      // makes no Overpass call at all.
+      // The Overpass instance behind vegetation, which stands for buildings
+      // too (same bbox). Null at night.
       let vegUpstream: string | null = null;
-      // Kicked off once buildings resolve, awaited only inside its own .then()
-      // below — never blocking the first render. Buildings dominate urban
-      // shade and land in ~1s from R2; vegetation is decorative and the one
-      // call that always hits Overpass, at up to ~13s including retries.
-      // Switzerland especially shouldn't pay that tax to see a result.
+      // Never blocks the first render: vegetation always hits Overpass, up to
+      // ~13s with retries, where buildings land in ~1s.
       let vegP: ReturnType<typeof fetchVegetation> | null = null;
       if (!night) {
-        // At night every route scores 0 — shadow geometry is pointless,
-        // so skip both Overpass round trips entirely.
         searchStatus(tr('status_buildings'));
-        // Outside Switzerland, try the basemap's own building layer first: it
-        // is already in memory, so it answers in milliseconds where Overpass
-        // takes 11s. A route too long for one view is read cell by cell, so
-        // this takes the routes rather than their bbox. Anything short of a
-        // usable answer (too many cells, empty tiles, error) falls through to
-        // the Overpass path unchanged. Switzerland keeps swisstopo, a better
-        // source.
+        // Outside Switzerland, the basemap's building layer answers in ms
+        // where Overpass takes ~11s. Read cell by cell along the routes;
+        // anything short of a usable answer falls through to Overpass.
         let buildingsRes = null;
         if (!switzerland) {
           const tileRes = await fetchTileBuildings(
@@ -712,9 +617,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
             (i: number, n: number) => searchStatus(tr('status_buildings_segment', { i: String(i), n: String(n) })),
           );
           if (tileRes.status === 'ok') buildingsRes = tileRes;
-          // Only reached once the segmented attempt is done (ok or not) —
-          // restore the generic message before whatever comes next
-          // (Overpass fallback, or the shadow-count status a few lines down).
+          // Back to the generic message after the per-segment ones.
           if (tileRes.status !== 'ok') searchStatus(tr('status_buildings'));
         }
         if (!buildingsRes) buildingsRes = await fetchBuildings(bbox, { switzerland });
@@ -730,22 +633,13 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       }
       const single = night || routes.length === 1;
 
-      // Hoisted so renderAt (below) can dim the ratio bar for a 'failed'
-      // search, and so the vegetation continuation can refine it once known.
+      // renderAt dims the ratio bar on 'failed'; vegetation refines it.
       let heightState: ReturnType<typeof resolveHeightNoteState> = 'ok';
-      // Set inside renderAt below; read once at first render for the 'search'
-      // analytics event (captured then, not re-read at track time — see
-      // msToFirstRender below).
+      // Sunny minus shady score, set by renderAt.
       let delta = 0;
 
-      // Night: no fetch is attempted at all, so there is nothing to report —
-      // the night note already explains the lack of a sun/shade split. For a
-      // real search, vegStatus may still be its optimistic 'ok' default on
-      // this first call: resolveHeightNoteState checks buildingsStatus and
-      // buildingsCount before vegStatus, so 'failed'/'empty' are already
-      // correct here — only 'partial' (buildings ok, vegetation actually
-      // failed) can be wrong until the vegetation continuation re-runs this
-      // with the real vegStatus.
+      // On the first call vegStatus is still an optimistic 'ok', so only
+      // 'partial' can be wrong: the vegetation continuation re-runs this.
       function updateHeightNote() {
         if (night) { showQualityNote(null); return; }
         heightState = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
@@ -757,14 +651,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
           showQualityNote(tr('height_data_none'));
           return;
         }
-        // 'ok' and 'partial' both have real building coverage to report —
-        // resolveHeightNoteState only reaches 'partial' once buildingsCount
-        // > 0. Build that note the same way for both, appending the
-        // vegetation-failed line for 'partial' instead of replacing the
-        // buildings note with it: with the two-pass render, this note can
-        // already be showing the full buildings stats by the time vegetation
-        // fails in the background, and swapping it out would erase
-        // information the user already saw rather than add to it.
+        // 'partial' appends the vegetation line: the buildings note may
+        // already be on screen, and replacing it would erase what was read.
         const stats = heightStats(buildings)!;
         const heightNoteKey = buildingsSource === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm';
         const pct = Math.round(stats.pct * 100);
@@ -773,21 +661,14 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
           tr(heightNoteKey),
           tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
         ];
-        // Only show the "rest estimated" breakdown when there actually is a
-        // rest — gated on the displayed (rounded) pct, not the raw fraction,
-        // so a note never reads "100% measured" right above "rest estimated".
+        // Rounded pct, so "100% measured" never sits above "rest estimated".
         if (pct < 100) lines.push(tr('height_data_line_estimated'));
         if (heightState === 'partial') lines.push(tr('vegetation_failed'));
         showQualityNote(lines.join('\n'));
       }
       updateHeightNote();
 
-      // Sampled from hourlyWeather (a whole day, fetched once) at whatever
-      // instant is being rendered — called from renderAt below so both the
-      // overcast note and the map badge's weather line stay in sync with
-      // the scrubber instead of freezing at the searched hour. hourlyWeather
-      // is still null on the very first render (weatherP hasn't resolved
-      // yet); both targets simply show nothing until it does.
+      // At the rendered instant. Empty until weatherP resolves.
       function updateWeatherInfo(atDate: Date) {
         const w = weatherAt(hourlyWeather, atDate);
         const weatherEl = el('weather-note');
@@ -800,7 +681,6 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
         updateMapWeatherInfo(w);
       }
 
-      // The share link for a given instant of this search.
       const shareUrl = (atDate: Date) => location.pathname + '?' + buildShareQuery({
         start: { ...startC, label: startQ },
         end:   { ...endC,   label: endQ },
@@ -810,42 +690,22 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
         onboarding: demo,
       });
 
-      // Re-scores every already-fetched route for a given instant and re-renders
-      // the map + drawer. Buildings/trees/forests/leafFrac are fixed for the whole
-      // search (same corridor all day); only the sun's position changes, so this
-      // is pure client-side math — cheap enough to call on every scrubber tick
-      // (review 3.4: the drag-through-the-day interaction, scoped to re-scoring
-      // the routes ORS already returned, not re-fetching new route alternatives
-      // per hour — that would be a much heavier, separate feature).
+      // Re-scores the fetched routes for one instant and redraws. Only the sun
+      // moves, so this is cheap enough for every scrubber tick.
       function renderAt(atDate: Date) {
-        // review #2 §3.2: the header must track whatever instant is actually
-        // rendered, not just the time originally searched — recomputed here
-        // so scrubbing keeps "Altitude/Azimut" in sync with the map's shadows.
         const sunNow = getSun(atDate, midLat, midLng);
         updateSunInfo(sunNow, sunTimes, destTz, atDate);
-        // The 2026-08-12 eclipse: Swiss routes only, and read in the route's
-        // own zone so it tracks the scrubber like everything else here. It
-        // takes precedence over the grazing-sun note below, which it would
-        // otherwise sit next to for most of the window (the sun is under 5°
-        // from ~20:05): both say "trust this less", and the eclipse says why
-        // more precisely.
+        // Swiss routes only. Wins over the grazing-sun note: both say "trust
+        // this less", the eclipse says why.
         const eclipse = switzerland && !night
           && isEclipseWindow(dateValueInZone(atDate, destTz), minutesInZone(atDate, destTz));
         document.getElementById('eclipse-note')?.classList.toggle('on', eclipse);
-        // Grazing sun: recomputed per render like the header above, since
-        // scrubbing towards sunset is exactly how a user crosses the
-        // threshold. Suppressed at night, which has its own note and its own
-        // reason — showing both would say the same thing twice.
         document.getElementById('grazing-sun-note')
           ?.classList.toggle('on', !night && !eclipse && isGrazingSun(sunNow.altDeg));
-        // review #2 §3.3 follow-up: weather re-sampled per instant too, same
-        // reasoning as the sun position above — it used to freeze at the
-        // searched hour even while everything else tracked the scrubber.
         updateWeatherInfo(atDate);
 
-        // The sun moves ~11° azimuth over a 45-min walk — enough to flip which
-        // side of a street is shaded. Score each segment with the sun at its
-        // estimated arrival time instead of freezing it at departure.
+        // The sun moves ~11° over a 45-min walk: each segment is scored at its
+        // estimated arrival time.
         const sunSampler = makeSunSampler(atDate, midLat, midLng);
         routes.forEach(rt => {
           const { score, segShade } = scoreRoute(rt, buildings, trees, sunSampler, leafFrac, forests);
@@ -863,22 +723,13 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
         displayRoutes(startC, endC, sunnyRt, single ? null : shadyRt);
         showResults(sunnyRt, shadyRt, single, night, heightState === 'failed');
 
-        // review #2 §3.1: re-derived from `atDate` on every render (not just
-        // once from the search form's dateV/timeV) so a shared link always
-        // captures whatever instant is actually on screen, scrubbed or not.
+        // The URL always holds the instant on screen, scrubbed or not.
         history.replaceState(null, '', shareUrl(atDate));
       }
 
-      // First render: buildings only (or nothing, at night) — the drawer must
-      // not sit inert waiting for vegetation's up-to-~13s Overpass round trip.
-      //
-      // Back undoes the search, so a search started from the empty app gets
-      // one history entry of its own. It is pushed with the share URL, before
-      // renderAt's replaceState can write that URL onto the empty app's entry
-      // underneath, which must stay bare. Every later search, scrub or
-      // re-render replaces this entry in place, so the stack never grows past
-      // it. A shared link lands with its search already in the URL and pushes
-      // nothing: Back there returns to wherever the link was opened from.
+      // A search started from the empty app pushes its own entry so Back
+      // undoes it, before renderAt's replaceState can touch the empty app's.
+      // Later searches and scrubs replace it; a shared link pushes nothing.
       if (!urlHasSearch()) {
         history.pushState(null, '', shareUrl(tDate));
         searchEntryPushed = true;
@@ -887,27 +738,16 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       // The demo button is for the empty app only.
       el('onboarding-btn').classList.add('off');
       renderAt(tDate);
-      // Results are on screen: the install banner has something to argue from
-      // now, which it did not have at page load.
       notifySearchSucceeded();
-      // The night note only reaches the screen once the drawer opens, and
-      // buildRoutes above can still throw before that — reporting it where
-      // goToSunrise is built would count searches nobody ever saw and deflate
-      // the click rate. Once per search, not per renderAt.
+      // Here, not where goToSunrise is built: buildRoutes can still throw
+      // before the note is ever seen.
       if (night) window.umami?.track('sunrise_jump', { stage: 'shown' });
       let currentInstant = tDate;
-      // Captured once, here, so the 'search' event's ms keeps meaning
-      // "wall-clock to first render" even though for a real search it now
-      // fires later (once vegetation below has resolved), not read fresh at
-      // track time.
+      // Captured now: the search event fires later, after vegetation.
       const msToFirstRender = Math.round(performance.now() - searchStart);
 
-      // review #2 §7: the §2 success metric (status) and the separate,
-      // uncomfortable question of whether the sunny/shady choice is even
-      // meaningful (delta). Fired once per search: immediately for night
-      // (nothing left to wait for), otherwise once the vegetation
-      // continuation below has resolved or failed and delta/status reflect
-      // the real, final state.
+      // Once per search: right away at night, else once vegetation settles
+      // and status and delta are final.
       const trackSearch = () => window.umami?.track('search', {
         status: heightState,
         source: buildingsSource,
@@ -924,18 +764,13 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
 
       hourlyWeather = await weatherP;
       if (stale()) return;
-      // Refreshes the note/badge immediately at whatever instant is current
-      // (a scrub could already have moved past tDate while this was in
-      // flight) instead of waiting for the next scrub tick to show weather
-      // at all. Doesn't re-run renderAt's route scoring/map redraw — weather
-      // doesn't affect either, so a full re-render here would be pure waste.
+      // At the current instant, a scrub may have moved on. No renderAt:
+      // weather changes neither scores nor the map.
       updateWeatherInfo(currentInstant);
 
       const preselect = single ? 'sunny' : preselectTab({
         altDeg: sun.altDeg,
-        // Preselection reflects the searched instant, not wherever the user
-        // may have scrubbed to while this was in flight — same reasoning as
-        // `month: tDate.getUTCMonth()` right below, already tDate-pinned.
+        // The searched instant, not a scrubbed one.
         temperature: weatherAt(hourlyWeather, tDate)?.temperature ?? null,
         month: tDate.getUTCMonth(),
         lat: midLat,
@@ -944,25 +779,17 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       setActiveRoute(preselect);
       searchStatus(null);
 
-      // Time scrubber: bounded to sunrise..sunset (outside that, "night" already
-      // means no shadow computation at all — see above). Dragging shifts the
-      // instant by a plain minute delta from the searched time, so it's immune
-      // to any wall-clock/DST parsing ambiguity across the day.
+      // Sunrise to sunset. Minutes are offsets from the searched time, which
+      // sidesteps DST parsing.
       if (night) {
         hideScrubber();
       } else {
         const initialMinutes = minutesInZone(tDate, destTz);
-        // One 'scrub' event per search, on the first move only — the callback
-        // fires on every drag tick, and per-tick tracking would swamp Umami
-        // with noise instead of answering "is the scrubber used at all".
+        // One 'scrub' per search, on the first move.
         let scrubbed = false;
-        // Same idea for the marker, and kept separate from 'scrub' on purpose:
-        // one is "did anyone drag the thing", the other is "did the eclipse
-        // shortcut get used". Folding the travel's frames into 'scrub' would
-        // inflate a metric that's already being read.
+        // Kept apart from 'scrub': dragging and the eclipse shortcut are two
+        // separate questions.
         let jumped = false;
-        // The marker is the one hint that survives being scrubbed past, which
-        // is the point: it shows where to drag to.
         showScrubber({
           min: minutesInZone(sunTimes.sunrise, destTz),
           max: minutesInZone(sunTimes.sunset, destTz),
@@ -981,9 +808,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
             scrubbed = true;
             window.umami?.track('scrub');
           }
-          // Tracked in currentInstant (not re-derived from the range input)
-          // so the vegetation continuation below can re-render at wherever
-          // the user actually scrubbed to, not snap back to tDate.
+          // So the vegetation pass re-renders where the user scrubbed to.
           currentInstant = new Date(tDate.getTime() + (minutes - initialMinutes) * 60_000);
           renderAt(currentInstant);
           setScrubberLabel(fmtHm(minutes));
@@ -995,10 +820,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
 
       if (vegP) {
         vegP.then(vegRes => {
-          // A newer search may have started while this one's vegetation was
-          // still in flight — the button re-enables as soon as buildings
-          // render, well before this resolves. Its renderAt/note would be
-          // stale against whatever that newer search already drew: drop it.
+          // Dropped if a newer search started meanwhile.
           if (mySearchGen !== searchGeneration) return;
           trees = vegRes.trees;
           forests = vegRes.forests;
@@ -1006,11 +828,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
           vegUpstream = vegRes.upstream;
           updateHeightNote();
           renderAt(currentInstant);
-          // renderAt -> displayRoutes redraws both route layers at full
-          // opacity (map.js), same as every scrubber tick — re-apply
-          // whichever tab is actually active (the user may have switched
-          // tabs while vegetation was in flight) or both routes look
-          // selected until the next interaction.
+          // displayRoutes redraws both routes at full opacity: re-apply the
+          // active tab.
           const active = (document.querySelector<HTMLButtonElement>('.tab-btn.active')?.dataset.tab ?? 'sunny') as 'sunny' | 'shady';
           setActiveTab(active);
           setActiveRoute(active);
@@ -1021,13 +840,11 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       }
 
     } catch (err) {
-      // A search undone or superseded while in flight: its failure is nobody's
-      // news, and the status belongs to whatever replaced it.
+      // Undone or superseded: its failure is nobody's news.
       if (stale()) return;
       setStatus(null);
-      // Codes set by routing.js and geocode.js: the technical detail stays on
-      // the error for the console and Sentry, the user gets a sentence that
-      // describes their problem rather than a raw "Error: ORS 400".
+      // The user gets a sentence; the technical detail stays on the error for
+      // the console and Sentry.
       const { code, role } = (err ?? {}) as CodedError;
       // Codes whose error carries only technical detail: translated here.
       const TECHNICAL = {
@@ -1036,8 +853,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
         ROUTE_FAILED: 'error_route_failed',
         ROUTING_UNAVAILABLE: 'error_routing_unavailable',
       } as const;
-      // Codes whose message is already the sentence to show: displayed as-is,
-      // without the "Error: " prefix.
+      // Codes whose message is already the sentence: shown as-is.
       const READY = new Set(['ADDRESS_NOT_FOUND', 'POSITION_UNKNOWN', 'NO_ROUTE']);
       const technicalKey = code ? TECHNICAL[code as keyof typeof TECHNICAL] : undefined;
       if (technicalKey) {
@@ -1056,16 +872,12 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
         ms: Math.round(performance.now() - searchStart),
       });
     } finally {
-      // A stale search leaves the buttons to whoever made it stale: the newer
-      // search still running, or resetSearch, which has already freed them.
+      // A stale search leaves the buttons to whoever made it stale.
       if (!stale()) setSearchBusy(false);
     }
   }
 
-  // Two families of error land here: a GeolocationPositionError's code is
-  // numeric (1/2/3), ours is a string. A reverseGeocode failure used to be
-  // reported as a timeout even though geolocation had worked. The event only
-  // fires on failure, so its volume is negligible.
+  // Geolocation error codes are numeric, ours (reverseGeocode) are strings.
   const GEO_CODES: Record<number, string> = { 1: 'GEO_DENIED', 2: 'GEO_UNAVAILABLE', 3: 'GEO_TIMEOUT' };
   function handleGeoError(err: unknown, source: 'field' | 'locate') {
     const code = (err as { code?: number | string })?.code;
@@ -1111,17 +923,9 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   button('geo-start').addEventListener('click', () => fillFromGeo(startAC, 'start', 'geo-start'));
   button('geo-end').addEventListener('click',   () => fillFromGeo(endAC,   'end',   'geo-end'));
 
-  // A point picked on the map (see openPickPopup in map.js). Same destination
-  // as the geolocation buttons above — setPlace + a pin + syncInputState —
-  // with the two differences a click brings: the pin is placed where the map
-  // already is rather than flown to, and the address is not known yet.
-  //
-  // Which is why the field fills twice. The coordinates go in immediately so
-  // the point is usable (they are what routing consumes; the label is for the
-  // user), then the reverse-geocoded address replaces them. A failed lookup
-  // leaves the coordinates standing: the search still works, it just can't
-  // know the country, so a Swiss route falls back to Overpass instead of
-  // swissBUILDINGS3D.
+  // A point picked on the map (openPickPopup in map.js). The coordinates fill
+  // the field at once so the point is usable, then the address replaces them.
+  // A failed lookup keeps them, with no country: a Swiss route uses Overpass.
   const pickToken = { start: 0, end: 0 };
 
   async function fillFromMap(role: 'start' | 'end', lat: number, lng: number) {
@@ -1133,8 +937,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     window.umami?.track('point_picked', { role, method: 'map' });
     try {
       const { short, countryCode } = await reverseGeocode(lat, lng);
-      // Dropped if the field has moved on since: two quick picks on the same
-      // role would otherwise let the first lookup land on top of the second.
+      // Dropped if a newer pick on this field has started.
       if (token !== pickToken[role]) return;
       ac.setPlace({ lat, lng, label: short, countryCode });
       syncInputState();
@@ -1170,11 +973,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   }
   button('swap-btn').addEventListener('click', swapEndpoints);
 
-  // Departure control (review 7.2): "Partir maintenant" always resets the
-  // date/time fields to this instant before searching, so a stale time left
-  // over from a previous session never silently gets reused. Scheduling a
-  // later departure instead goes through the popover below, which leaves
-  // whatever the user picked untouched.
+  // "Leave now" resets the date/time first, so a stale value is never reused.
+  // A later departure goes through the popover.
   function setDepartureNow() {
     const n = new Date();
     input('inp-date').value = localDateValue(n);
@@ -1188,8 +988,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   const departPopover = el('depart-popover');
   const departToggle  = button('depart-toggle');
 
-  // focus: false for the demo, which opens it to show its date, not to have
-  // it edited (on a phone, focusing the date field opens the picker).
+  // focus: false for the demo: on a phone, focusing the date opens the picker.
   function openDepartPopover({ focus = true }: { focus?: boolean } = {}) {
     departPopover.classList.add('open');
     departToggle.setAttribute('aria-expanded', 'true');
@@ -1219,9 +1018,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     input(id).addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') handleSearch(); })
   );
 
-  // Share the current URL (kept in sync by handleSearch). navigator.share opens
-  // the native share sheet on mobile (WhatsApp, SMS, copy link…); elsewhere we
-  // fall back to copying the link.
+  // renderAt keeps location.href in sync with the search.
   button('share-btn').addEventListener('click', async () => {
     const url = location.href;
     if (navigator.share) {
@@ -1235,9 +1032,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     }
   });
 
-  // Shared/bookmarked link, and Forward onto a search's history entry: restore
-  // start/end/datetime from the URL and search. False when the URL holds no
-  // complete search (a partial one still fills what it has).
+  // Shared link, or Forward onto a search entry. False without a complete
+  // search in the URL; a partial one still fills what it has.
   async function restoreFromUrl(): Promise<boolean> {
     const search = location.search;
     const shared = parseShareQuery(search);
@@ -1247,16 +1043,12 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     if (shared.end)   { endAC.setPlace(shared.end);     setPreviewPin('end',   shared.end); }
     syncInputState();
     if (!shared.start || !shared.end) return false;
-    // A shared link only carries lat/lng/label, not country — resolve it now
-    // so a Swiss link reliably uses swissBUILDINGS3D on reload instead of
-    // silently falling back to Overpass (which is flaky enough on its own
-    // that the coverage note was coming back empty).
+    // Links carry no country: resolve it so a Swiss link uses swisstopo.
     const [startCC, endCC] = await Promise.all([
       reverseGeocode(shared.start.lat, shared.start.lng).then(r => r.countryCode).catch(() => undefined),
       reverseGeocode(shared.end.lat, shared.end.lng).then(r => r.countryCode).catch(() => undefined),
     ]);
-    // Back again while this was resolving: the entry no longer holds this
-    // search, and running it here would push one nobody asked for.
+    // Back again meanwhile: running it now would push an unwanted entry.
     if (location.search !== search) return true;
     startAC.setPlace({ ...shared.start, countryCode: startCC });
     endAC.setPlace({ ...shared.end, countryCode: endCC });
@@ -1265,9 +1057,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     return true;
   }
 
-  // The demo from the button: the same search the link holds, run like a typed
-  // one, so it pushes its history entry at first render and Back returns to
-  // the empty app. Swiss already, so no reverse geocode to wait for.
+  // Run like a typed search, so Back returns to the empty app. Already Swiss:
+  // no reverse geocode.
   function startOnboarding() {
     window.umami?.track('onboarding', { via: 'button' });
     const start = { ...ONBOARDING.start, label: tr('onboarding_from') };
@@ -1285,15 +1076,13 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     // A modified click opens the link in a new tab, as any link would.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    // Otherwise it reaches the document's outside-click handler, which would
-    // close the date popover the demo has just opened.
+    // Or the outside-click handler closes the popover the demo just opened.
     e.stopPropagation();
     startOnboarding();
   });
 
-  // Starting to type in the demo leaves it, back to the empty app it came
-  // from, so what follows is an ordinary first search. Landed on as a link,
-  // there is no empty app underneath: the entry itself becomes one.
+  // Typing leaves the demo for the empty app. Landed on as a link, there is
+  // none underneath: the entry becomes one.
   function leaveOnboarding() {
     if (!onboarding) return;
     resetSearch();
@@ -1311,22 +1100,16 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
 
   if (!(await restoreFromUrl())) {
     if (isStandalone()) {
-      // Installed-app relaunch (review 6.2): try to prefill "start" from the
-      // phone's position first — if that gives us nothing (denied, and no
-      // cached fix either), fall back to the same passive centering a regular
-      // browser tab gets.
+      // Installed app: prefill "start" from the phone's position, else
+      // center like a browser tab.
       prefillFromRelaunch().then((filled) => { if (!filled) initInitialMapCenter(); });
     } else {
       initInitialMapCenter();
     }
   }
 
-  // Standalone-only: reopening the installed app still shows two empty
-  // inputs even though the phone's position is right there. A permission
-  // prompt here is expected — this is an app-like relaunch, not a passive
-  // browser-tab visit (contrast with initInitialMapCenter below, which never
-  // prompts). Silent on failure: nothing was explicitly requested this
-  // session, so no toast — just leaves the field empty as before.
+  // Standalone only, so a permission prompt is expected. Silent on failure:
+  // nothing was asked for this session.
   async function prefillFromRelaunch(): Promise<boolean> {
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -1340,8 +1123,7 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
       saveLastPosition(lat, lng);
       return true;
     } catch {
-      // Denied, timed out, or reverse-geocode failed — try the last known
-      // fix (persisted from any earlier successful precise geolocation).
+      // Denied, timed out or reverse geocode failed: try the last known fix.
       const cached = getLastPosition();
       if (!cached) return false;
       try {
@@ -1356,16 +1138,9 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     }
   }
 
-  // No shared link to restore, and not a standalone relaunch (or that gave us
-  // nothing): give the initial view a better guess than the Lausanne default
-  // (review 3.2/4.1). Two passive sources, neither of which is an explicit
-  // action in this session, so neither shows the "my location" dot (that's
-  // reserved for an explicit locate — see the 'locate-me' listener below):
-  //  1. If geolocation permission was already granted (e.g. a past visit, or
-  //     the locate control below earlier this session) — precise, and no
-  //     fresh permission prompt, since the browser already has consent.
-  //  2. Otherwise, the browser's IANA timezone — coarse, but zero permission
-  //     and zero network call. See src/lib/tzCenters.js for its known limits.
+  // A better first view than the Lausanne default, without prompting or
+  // showing the location dot: the position if permission is already granted,
+  // else the browser's timezone (see tzCenters.js).
   async function initInitialMapCenter() {
     try {
       const status = await navigator.permissions?.query({ name: 'geolocation' as PermissionName });
@@ -1377,16 +1152,14 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
         return;
       }
     } catch {
-      // Permissions API unsupported (older Safari), or the silent fetch
-      // failed despite 'granted' — fall through to the timezone guess.
+      // No Permissions API (older Safari), or the fix failed: use the timezone.
     }
     const tzCenter = TZ_CENTERS[Intl.DateTimeFormat().resolvedOptions().timeZone];
     if (tzCenter) centerMap(tzCenter[0], tzCenter[1], 10);
   }
 
-  // "Center on my location" map control (map.js) — unlike the geo-start/geo-end
-  // buttons, this never touches an address field or pin; it's purely "show me
-  // where I am," so it's the one place the "my location" dot appears.
+  // The map's locate control: never fills a field, and the only place the
+  // location dot appears.
   window.addEventListener('locate-me', async () => {
     setStatus(tr('geo_loading'));
     try {
@@ -1410,10 +1183,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     overlay.classList.add('on');
     el('app').setAttribute('inert', '');
     el('about-close').focus();
-    // One history entry per open, so Back (and iOS's swipe-back) closes the
-    // panel instead of leaving the site. The payload is never read back
-    // (popstate below checks the DOM), and there is no URL argument, so the
-    // share-link query stays put.
+    // Its own entry, so Back and swipe-back close the panel. No URL argument:
+    // the share query stays.
     history.pushState({ nav: 'about' }, '');
   }
   // The DOM half of the close: idempotent, and reused straight from popstate.
@@ -1424,15 +1195,12 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     el('app').removeAttribute('inert');
     el('about-btn').focus();
   }
-  // Manual dismiss (× button, overlay tap, Escape): step back in history and
-  // let popstate do the closing, so the entry openAbout pushed is reclaimed
-  // rather than left on the stack.
+  // Manual dismiss goes through history, so the pushed entry is reclaimed.
   function dismissAbout() {
     if (drawer.classList.contains('open')) history.back();
   }
 
-  // Keeps Tab from leaving the open drawer (it has no native <dialog> to rely
-  // on for this — role="dialog" alone doesn't trap focus).
+  // role="dialog" alone doesn't trap focus.
   function trapAboutFocus(e: KeyboardEvent) {
     if (e.key !== 'Tab' || !drawer.classList.contains('open')) return;
     const focusable = Array.from(drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
@@ -1454,10 +1222,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
   document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') dismissAbout(); });
   document.addEventListener('keydown', trapAboutFocus);
 
-  // Back from a search: the app as it was before it, without a reload. The
-  // URL needs nothing, since the entry Back landed on already holds the bare
-  // one. The map view stays where it was, the intro bubble stays dismissed,
-  // and focus stays out of the fields so no keyboard pops up.
+  // Back from a search, without a reload. The map view stays, and focus
+  // stays out of the fields so no keyboard pops up.
   function resetSearch() {
     // A search still in flight, and any vegetation pass, is now stale.
     searchGeneration++;
@@ -1487,17 +1253,11 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     el('map-sun-info-weather').textContent = '';
   }
 
-  // Back (and iOS swipe-back) peels one layer per press: the about panel,
-  // which has its own entry, then the search, which owns the one entry above
-  // the empty app. The drawer has none: it already has its own vertical
-  // gesture. Manual dismissals of the about panel go through history.back(),
-  // so they land here too.
-  //
-  // Which entry Back landed on is read from the URL, never event.state:
-  // renderAt() calls history.replaceState(null, ...) on every scrubber tick
-  // (see analytics.js), which wipes any marker on the entry. A search entry is
-  // one whose URL holds from and to. Landing on one with nothing on screen
-  // means Forward, which runs that search again.
+  // Back peels one layer per press: the about panel, then the search. The
+  // results drawer has no entry, it has its own gesture.
+  // The URL tells where Back landed, never event.state: renderAt's
+  // replaceState(null) wipes it on every scrub. A search entry with nothing
+  // on screen means Forward.
   window.addEventListener('popstate', () => {
     // leaveOnboarding's own step back: the app is already reset.
     if (skipNextPop) {
@@ -1512,10 +1272,8 @@ const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from:
     }
     const inUrl = urlHasSearch();
     if (!inUrl && searchShown) {
-      // Whether the gesture is used at all, and whether it's a way out of a
-      // search that is taking too long: one is running (read before the reset
-      // frees the button) and none of it is drawn yet. The button alone would
-      // also count a drawn route still waiting on its weather.
+      // loading: a search runs (read before the reset frees the button) and
+      // nothing is drawn yet.
       const loading = button('search-btn').disabled && !el('results').classList.contains('on');
       window.umami?.track('back_reset', { loading });
       resetSearch();
