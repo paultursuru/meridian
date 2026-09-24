@@ -1,0 +1,53 @@
+---
+import { translations, type Lang } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  kind: 'sunny' | 'shady';
+  active?: boolean;
+}
+
+const { lang, kind, active = false } = Astro.props;
+const t = translations[lang];
+const title = kind === 'sunny' ? t.tab_sunny : t.tab_shady;
+---
+<div id={`tab-${kind}`} class:list={['tab-pane', { active }]} role="tabpanel" aria-labelledby={`tab-btn-${kind}`}>
+  <button class="pane-title" type="button" data-tab={kind}>{title}</button>
+  <div class="ratio-wrap">
+    <div class="ratio-nums">
+      <span class="ratio-shade-num">{t.label_shade} <strong id={`${kind}-shade-pct`}></strong></span>
+      <span class="ratio-sun-num"><strong id={`${kind}-sun-pct`}></strong> {t.label_sun}</span>
+    </div>
+    <div class="ratio-track">
+      <div class="ratio-seg ratio-seg-shade" id={`${kind}-shade-fill`} style="width:0%"></div>
+      <div class="ratio-seg ratio-seg-sun" id={`${kind}-sun-fill`} style="width:0%"></div>
+    </div>
+  </div>
+  <div class="ratio-delta" id={`${kind}-delta`}></div>
+  <div class="route-details">
+    <div class="detail-stats">
+      <div class="detail-stat">
+        <span class="stat-val" id={`${kind}-dist`}></span>
+        <span class="stat-lbl">{t.label_distance}</span>
+      </div>
+      <div class="detail-stat">
+        <span class="stat-val" id={`${kind}-dur`}></span>
+        <span class="stat-lbl">{t.label_duration}</span>
+      </div>
+      <div class="detail-stat" id={`${kind}-elev-stat`} style="display:none">
+        <span class="stat-val elev-val" id={`${kind}-elev`}></span>
+        <span class="stat-lbl">{t.label_elevation}</span>
+      </div>
+    </div>
+    <div class="detail-split">
+      <div class="detail-split-shade">
+        <span class="split-val" id={`${kind}-shaded-dist`}></span>
+        <span class="split-lbl">{t.label_shade}</span>
+      </div>
+      <div class="detail-split-sun">
+        <span class="split-val" id={`${kind}-sun-dist`}></span>
+        <span class="split-lbl">{t.label_sun}</span>
+      </div>
+    </div>
+  </div>
+</div>

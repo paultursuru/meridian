@@ -1,0 +1,44 @@
+---
+import { translations, LANGS, langUrl, SITE_URL, type Lang } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>{t.title}</title>
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#0e120a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="description" content={t.meta_description} />
+<link rel="canonical" href={langUrl(lang)} />
+{LANGS.map(l => <link rel="alternate" hreflang={l} href={langUrl(l)} />)}
+<link rel="alternate" hreflang="x-default" href={langUrl('fr')} />
+<meta property="og:type" content="website" />
+<meta property="og:url" content={langUrl(lang)} />
+<meta property="og:title" content={t.title} />
+<meta property="og:description" content={t.meta_description} />
+<meta property="og:image" content={`${SITE_URL}/meridian-way-og.png`} />
+<script is:inline type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MeridianWay",
+  "url": langUrl(lang),
+  "description": t.meta_description,
+  "applicationCategory": "TravelApplication",
+  "operatingSystem": "Web",
+  "inLanguage": LANGS,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
+  "author": { "@type": "Person", "url": "https://github.com/paultursuru" }
+})} />
+<script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false"></script>

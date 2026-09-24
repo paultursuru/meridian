@@ -1,0 +1,28 @@
+---
+import { translations, type Lang } from '../../lib/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+---
+<div id="header">
+  <h1>
+    <a href="/">
+      <span class="meri">Meridian</span><span class="way">Way</span>
+    </a>
+  </h1>
+  <div id="header-right">
+    <div id="sun-info">{t.navbar_tagline}</div>
+    <button id="about-btn" aria-label={t.aria_about}>i</button>
+  </div>
+</div>
+<div id="install-banner">
+  <span id="install-banner-text"></span>
+  <div id="install-banner-actions">
+    <button id="install-banner-btn">{t.install_banner_btn}</button>
+    <button id="install-banner-close" aria-label={t.aria_close}>×</button>
+  </div>
+</div>

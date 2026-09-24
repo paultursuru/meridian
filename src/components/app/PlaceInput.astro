@@ -1,0 +1,20 @@
+---
+import { translations, type Lang } from '../../lib/i18n';
+import targetIcon from '../../icons/target.svg?raw';
+
+interface Props {
+  lang: Lang;
+  role: 'start' | 'end';
+}
+
+const { lang, role } = Astro.props;
+const t = translations[lang];
+const label = role === 'start' ? t.label_start : t.label_end;
+const placeholder = role === 'start' ? t.placeholder_start : t.placeholder_end;
+---
+<div class="input-wrap">
+  <label for={`inp-${role}`}><span class="input-label">{label}</span></label>
+  <input type="text" id={`inp-${role}`} placeholder={placeholder} />
+  <button class="clear-btn" id={`clear-${role}`} type="button" title={t.clear_btn_title} aria-label={t.clear_btn_title}>✕</button>
+  <button class="geo-btn" id={`geo-${role}`} type="button" title={t.geo_btn_title} aria-label={t.geo_btn_title} set:html={targetIcon} />
+</div>

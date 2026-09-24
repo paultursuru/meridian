@@ -1,0 +1,52 @@
+---
+import { translations, type Lang } from '../../lib/i18n';
+import PlaceInput from './PlaceInput.astro';
+import arrowIcon from '../../icons/arrow.svg?raw';
+import calendarClockIcon from '../../icons/calendar-clock.svg?raw';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+
+// The note's copy of the arrow needs its own gradient id: the note comes
+// first and starts hidden, and a hidden gradient paints nothing elsewhere.
+const noteArrowIcon = arrowIcon.replaceAll('meridianArrowGradient', 'meridianArrowGradientNote');
+---
+<div id="search-panel">
+  <div class="route-inputs">
+    <PlaceInput lang={lang} role="start" />
+    <button id="swap-btn" type="button" title={t.swap_btn_title} aria-label={t.swap_btn_title}><span class="swap-ico">⇅</span></button>
+    <PlaceInput lang={lang} role="end" />
+  </div>
+  <div class="depart-row">
+    <div class="split-btn">
+      <button id="search-btn" type="button">{t.btn_leave_now}</button>
+      <button id="depart-toggle" type="button" aria-haspopup="true" aria-expanded="false" title={t.depart_toggle_title} aria-label={t.depart_toggle_title} set:html={calendarClockIcon} />
+    </div>
+    <!-- One stack under the button: the date popover, then the demo's note,
+         which moves up on its own when the popover closes. -->
+    <div class="depart-overlays" id="depart-overlays">
+      <div class="depart-popover" id="depart-popover" role="dialog" aria-label={t.depart_later_label}>
+        <div class="depart-popover-fields">
+          <div>
+            <label for="inp-date"><span class="input-label">{t.label_date}</span></label>
+            <input type="date" id="inp-date" />
+          </div>
+          <div>
+            <label for="inp-time"><span class="input-label">{t.label_time}</span></label>
+            <input type="time" id="inp-time" />
+          </div>
+        </div>
+        <button id="depart-confirm" type="button">{t.btn_search}</button>
+      </div>
+      <div id="onboarding-note">
+        <div class="onboarding-note-arrow" set:html={noteArrowIcon} />
+        <p set:html={t.onboarding_description}></p>
+        <button id="onboarding-note-close" aria-label={t.aria_close}>×</button>
+      </div>
+    </div>
+  </div>
+</div>

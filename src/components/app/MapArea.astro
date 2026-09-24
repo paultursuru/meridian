@@ -1,0 +1,38 @@
+---
+import { translations, langPath, type Lang } from '../../lib/i18n';
+import { onboardingQuery } from '../../lib/onboarding.js';
+import arrowIcon from '../../icons/arrow.svg?raw';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+
+// The demo is this page's own path plus a search, so it opens in the same
+// language, and the button works as a plain link before the script runs.
+const onboardingHref = `${langPath(lang)}?${onboardingQuery({ from: t.onboarding_from, to: t.onboarding_to })}`;
+---
+<div id="map" role="region" aria-label={t.aria_map}>
+  <div id="app-description">
+    <div id="app-description-arrow" set:html={arrowIcon} />
+    <div id="app-description-content">
+      <p set:html={t.app_description}></p>
+    </div>
+    <button id="app-description-close" aria-label={t.aria_close}>×</button>
+  </div>
+  <div id="map-splash"><span>{t.map_loading}</span></div>
+  <a id="onboarding-btn" href={onboardingHref}>{t.onboarding_btn}</a>
+  <button id="map-sun-info" type="button" aria-expanded="false" aria-label={t.aria_sun_info}>
+    <div id="map-sun-info-row">
+      <span id="map-sun-info-human"></span>
+      <span id="map-sun-info-chevron" aria-hidden="true"></span>
+    </div>
+    <div id="map-sun-info-details">
+      <span id="map-sun-info-technical"></span>
+      <span id="map-sun-info-datetime"></span>
+      <span id="map-sun-info-weather"></span>
+    </div>
+  </button>
+</div>

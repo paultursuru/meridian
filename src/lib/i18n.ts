@@ -1,4 +1,17 @@
-export type Lang = 'fr' | 'de' | 'it' | 'en' | 'rm';
+// In the order the language switchers show them.
+export const LANGS = ['fr', 'de', 'it', 'rm', 'en'] as const;
+export type Lang = (typeof LANGS)[number];
+
+export const SITE_URL = 'https://meridian-way.ch';
+
+// French lives at the root, the others under their code.
+export function langPath(lang: Lang, page = ''): string {
+  return (lang === 'fr' ? '/' : `/${lang}/`) + page;
+}
+
+export function langUrl(lang: Lang, page = ''): string {
+  return SITE_URL + langPath(lang, page);
+}
 
 export const translations = {
   fr: {
