@@ -15,6 +15,25 @@ export function getSunTimes(date, lat, lng) {
   return { sunrise, sunset };
 }
 
+// The next sunrise after `date`, on a whole minute with the sun above the
+// horizon: where the night note's button jumps to.
+export function nextSunriseAfter(date, lat, lng) {
+  // SunCalc anchors to the nearest solar transit: a 23:00 search gets that
+  // morning's sunrise back, so roll to the next day.
+  const { sunrise } = getSunTimes(date, lat, lng);
+  let next = sunrise > date
+    ? sunrise
+    : getSunTimes(new Date(date.getTime() + 86_400_000), lat, lng).sunrise;
+  // SunCalc's sunrise is the upper limb at -0.833°, still night by our
+  // altitude check: step a minute at a time (capped for polar cases).
+  for (let i = 0; i < 60 && getSun(next, lat, lng).altDeg <= 0; i++) {
+    next = new Date(next.getTime() + 60_000);
+  }
+  // The time input holds whole minutes and formatTimeInZone floors: round up,
+  // later is still daylight.
+  return new Date(Math.ceil(next.getTime() / 60_000) * 60_000);
+}
+
 // Below this altitude the sun is grazing and the shade model stops being
 // trustworthy, for two reasons that both bite at once:
 //

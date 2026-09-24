@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { buildingHeight, hasHeightData, heightStats, resolveHeightNoteState } from '../src/lib/buildings.js';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { buildingHeight, hasHeightData, heightStats, resolveHeightNoteState, heightNote } from '../src/lib/buildings.js';
+import { tr } from '../src/lib/i18n.ts';
 
 describe('buildingHeight', () => {
   it('defaults ordinary untagged buildings to 10 m', () => {
@@ -98,5 +99,65 @@ describe('resolveHeightNoteState (review #2 §1.1)', () => {
 
   it('prioritises "empty" over a vegetation failure when there are simply no buildings', () => {
     expect(resolveHeightNoteState('ok', 0, 'failed')).toBe('empty');
+  });
+});
+
+describe('heightNote', () => {
+  // tr() reads document.documentElement.lang; the vitest environment is 'node'.
+  beforeAll(() => {
+    globalThis.document = { documentElement: { lang: 'fr' } };
+  });
+
+  const measured = (n) => Array.from({ length: n }, () => ({ hasHeight: true, height: 12 }));
+  const guessed = (n) => Array.from({ length: n }, () => ({ hasHeight: false, height: 10 }));
+  const note = (buildings, { buildingsStatus = 'ok', vegStatus = 'ok', source = 'osm' } = {}) =>
+    heightNote({ buildingsStatus, buildings, vegStatus, source });
+
+  it('warns when the buildings fetch failed', () => {
+    expect(note([], { buildingsStatus: 'failed' })).toEqual({
+      state: 'failed',
+      text: tr('height_data_failed') + ' ' + tr('height_data_retry'),
+      level: 'warn',
+    });
+  });
+
+  it('says so when no building came back', () => {
+    expect(note([])).toEqual({ state: 'empty', text: tr('height_data_none'), level: 'info' });
+  });
+
+  it('names the source and gives the stats, with no "estimated" line at 100%', () => {
+    const { state, text, level } = note(measured(3), { source: 'swisstopo' });
+    expect(state).toBe('ok');
+    expect(level).toBe('info');
+    expect(text.split('\n')).toEqual([
+      tr('height_data_note_swisstopo'),
+      tr('height_data_line_stats', { n: '3', pct: '100', avgPart: tr('height_data_avg_suffix', { avg: '12' }) }),
+    ]);
+  });
+
+  it('adds the "estimated" line below 100%', () => {
+    expect(note([...measured(1), ...guessed(1)]).text.split('\n')).toEqual([
+      tr('height_data_note_osm'),
+      tr('height_data_line_stats', { n: '2', pct: '50', avgPart: tr('height_data_avg_suffix', { avg: '12' }) }),
+      tr('height_data_line_estimated'),
+    ]);
+  });
+
+  it('gates the "estimated" line on the rounded pct', () => {
+    // 249 of 250 is 99.6%, shown as 100%.
+    expect(note([...measured(249), ...guessed(1)]).text).not.toContain(tr('height_data_line_estimated'));
+  });
+
+  it('leaves the average out when no height was measured', () => {
+    expect(note(guessed(2)).text.split('\n')[1])
+      .toBe(tr('height_data_line_stats', { n: '2', pct: '0', avgPart: '' }));
+  });
+
+  it('appends the vegetation line on a partial result, keeping the buildings note', () => {
+    const { state, text } = note(measured(2), { vegStatus: 'failed' });
+    const lines = text.split('\n');
+    expect(state).toBe('partial');
+    expect(lines[0]).toBe(tr('height_data_note_osm'));
+    expect(lines.at(-1)).toBe(tr('vegetation_failed'));
   });
 });

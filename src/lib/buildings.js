@@ -1,4 +1,5 @@
 import { overpassFetch } from './overpass.js';
+import { tr } from './i18n.js';
 
 const SWISSBUILDINGS_ENDPOINT = 'https://swissbuildings-lookup.meridianway.workers.dev';
 
@@ -107,6 +108,30 @@ export function resolveHeightNoteState(buildingsStatus, buildingsCount, vegStatu
   if (buildingsCount === 0) return 'empty';
   if (vegStatus === 'failed') return 'partial';
   return 'ok';
+}
+
+// The coverage note under the results: its state, its text and its level.
+export function heightNote({ buildingsStatus, buildings, vegStatus, source }) {
+  const state = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
+  if (state === 'failed') {
+    return { state, text: tr('height_data_failed') + ' ' + tr('height_data_retry'), level: 'warn' };
+  }
+  if (state === 'empty') {
+    return { state, text: tr('height_data_none'), level: 'info' };
+  }
+  // 'partial' appends the vegetation line: the buildings note may already be
+  // on screen, and replacing it would erase what was read.
+  const stats = heightStats(buildings);
+  const pct = Math.round(stats.pct * 100);
+  const avgPart = stats.avgHeight == null ? '' : tr('height_data_avg_suffix', { avg: String(Math.round(stats.avgHeight)) });
+  const lines = [
+    tr(source === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm'),
+    tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
+  ];
+  // Rounded pct, so "100% measured" never sits above "rest estimated".
+  if (pct < 100) lines.push(tr('height_data_line_estimated'));
+  if (state === 'partial') lines.push(tr('vegetation_failed'));
+  return { state, text: lines.join('\n'), level: 'info' };
 }
 
 

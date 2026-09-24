@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scoreRoute } from '../src/lib/shadow.js';
+import { scoreRoute, rankRoutes } from '../src/lib/shadow.js';
 
 // --- Test geometry helpers --------------------------------------------------
 
@@ -192,5 +192,28 @@ describe('scoreRoute — building takes priority over tree', () => {
     // but the building must win and keep the score at 0.
     const res = scoreRoute(rt, [building], [tree], SUN, 0.05);
     expect(res.score).toBe(0);
+  });
+});
+
+describe('rankRoutes', () => {
+  const route = (sunScore, distance) => ({ sunScore, distance });
+
+  it('sorts in place, sunniest first, and returns both ends with their gap', () => {
+    const routes = [route(0.4, 1000), route(0.9, 1200), route(0.6, 900)];
+    const { sunny, shady, delta } = rankRoutes(routes, false);
+    expect(sunny.sunScore).toBe(0.9);
+    expect(shady.sunScore).toBe(0.4);
+    expect(delta).toBe(50);
+    expect(routes.map(r => r.sunScore)).toEqual([0.9, 0.6, 0.4]);
+  });
+
+  it('uses the single route for both ends', () => {
+    const only = route(0.7, 800);
+    expect(rankRoutes([only], false)).toEqual({ sunny: only, shady: only, delta: 0 });
+  });
+
+  it('picks the shortest route at night, whatever its score', () => {
+    const shortest = route(0.5, 700);
+    expect(rankRoutes([route(0.9, 1200), shortest, route(0.2, 900)], true).sunny).toBe(shortest);
   });
 });

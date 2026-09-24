@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import SunCalc from 'suncalc';
-import { getSun, makeSunSampler, isGrazingSun, GRAZING_SUN_DEG, isEclipseWindow, ECLIPSE_2026 } from '../src/lib/sun.js';
+import { getSun, nextSunriseAfter, makeSunSampler, isGrazingSun, GRAZING_SUN_DEG, isEclipseWindow, ECLIPSE_2026 } from '../src/lib/sun.js';
 
 // Lausanne — a fixed location for deterministic results.
 const LAT = 46.52, LNG = 6.63;
@@ -26,6 +26,41 @@ describe('getSun', () => {
       expect(azDeg).toBeGreaterThanOrEqual(0);
       expect(azDeg).toBeLessThan(360);
     }
+  });
+});
+
+describe('nextSunriseAfter', () => {
+  it('rolls a late-evening search to the next morning', () => {
+    const evening = new Date('2026-06-21T21:00:00Z'); // 23:00 in Lausanne
+    const sunrise = nextSunriseAfter(evening, LAT, LNG);
+    expect(sunrise > evening).toBe(true);
+    expect(sunrise.toISOString().slice(0, 10)).toBe('2026-06-22');
+  });
+
+  it('keeps a pre-dawn search on the same morning', () => {
+    const preDawn = new Date('2026-06-21T02:00:00Z'); // 04:00 in Lausanne
+    const sunrise = nextSunriseAfter(preDawn, LAT, LNG);
+    expect(sunrise > preDawn).toBe(true);
+    expect(sunrise.toISOString().slice(0, 10)).toBe('2026-06-21');
+  });
+
+  it('lands on a whole minute with the sun up, a few minutes after SunCalc', () => {
+    const night = new Date('2026-03-10T01:00:00Z');
+    const sunrise = nextSunriseAfter(night, LAT, LNG);
+    const minutesAfter = (sunrise - SunCalc.getTimes(sunrise, LAT, LNG).sunrise) / 60_000;
+    expect(sunrise.getTime() % 60_000).toBe(0);
+    expect(getSun(sunrise, LAT, LNG).altDeg).toBeGreaterThan(0);
+    expect(minutesAfter).toBeGreaterThan(0);
+    expect(minutesAfter).toBeLessThan(10);
+  });
+
+  it('gives up an hour after SunCalc when the sun barely clears the horizon', () => {
+    // Tromsø, first sunrise after the polar night: the centre never reaches 0°.
+    const [lat, lng] = [69.65, 18.96];
+    const date = new Date('2026-01-15T00:00:00Z');
+    const sunrise = nextSunriseAfter(date, lat, lng);
+    expect((sunrise - SunCalc.getTimes(date, lat, lng).sunrise) / 60_000).toBeLessThanOrEqual(61);
+    expect(getSun(sunrise, lat, lng).altDeg).toBeLessThanOrEqual(0);
   });
 });
 
