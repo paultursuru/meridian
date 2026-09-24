@@ -1,6 +1,6 @@
 ---
 import '../styles/main.css';
-import { translations, type Lang } from '../lib/i18n';
+import { translations, LANGS, langPath, langUrl, type Lang } from '../lib/i18n';
 import PrivacyContent from '../components/PrivacyContent.astro';
 
 interface Props {
@@ -9,22 +9,7 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = translations[lang];
-
-const appUrls: Record<Lang, string> = {
-  fr: 'https://meridian-way.ch/',
-  de: 'https://meridian-way.ch/de/',
-  it: 'https://meridian-way.ch/it/',
-  en: 'https://meridian-way.ch/en/',
-  rm: 'https://meridian-way.ch/rm/',
-};
-
-const privacyUrls: Record<Lang, string> = {
-  fr: 'https://meridian-way.ch/privacy/',
-  de: 'https://meridian-way.ch/de/privacy/',
-  it: 'https://meridian-way.ch/it/privacy/',
-  en: 'https://meridian-way.ch/en/privacy/',
-  rm: 'https://meridian-way.ch/rm/privacy/',
-};
+const pageUrl = (l: Lang) => langUrl(l, 'privacy/');
 
 const titles: Record<Lang, string> = {
   fr: 'Confidentialité — MeridianWay',
@@ -55,26 +40,20 @@ const backLabels: Record<Lang, string> = {
   <link rel="manifest" href="/site.webmanifest" />
   <meta name="theme-color" content="#0e120a" />
   <meta name="robots" content="noindex" />
-  <link rel="canonical" href={privacyUrls[lang]} />
-  <link rel="alternate" hreflang="fr" href={privacyUrls.fr} />
-  <link rel="alternate" hreflang="de" href={privacyUrls.de} />
-  <link rel="alternate" hreflang="it" href={privacyUrls.it} />
-  <link rel="alternate" hreflang="en" href={privacyUrls.en} />
-  <link rel="alternate" hreflang="rm" href={privacyUrls.rm} />
-  <link rel="alternate" hreflang="x-default" href={privacyUrls.fr} />
+  <link rel="canonical" href={pageUrl(lang)} />
+  {LANGS.map(l => <link rel="alternate" hreflang={l} href={pageUrl(l)} />)}
+  <link rel="alternate" hreflang="x-default" href={pageUrl('fr')} />
   <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false"></script>
 </head>
 <body class="privacy-page">
 
 <div id="about-page-wrap">
   <nav id="about-page-nav">
-    <a href={appUrls[lang]} class="back-link">{backLabels[lang]}</a>
+    <a href={langUrl(lang)} class="back-link">{backLabels[lang]}</a>
     <div id="about-page-lang">
-      <a class:list={['lang-link', { active: lang === 'fr' }]} href={privacyUrls.fr}>FR</a>
-      <a class:list={['lang-link', { active: lang === 'de' }]} href={privacyUrls.de}>DE</a>
-      <a class:list={['lang-link', { active: lang === 'it' }]} href={privacyUrls.it}>IT</a>
-      <a class:list={['lang-link', { active: lang === 'rm' }]} href={privacyUrls.rm}>RM</a>
-      <a class:list={['lang-link', { active: lang === 'en' }]} href={privacyUrls.en}>EN</a>
+      {LANGS.map(l => (
+        <a class:list={['lang-link', { active: lang === l }]} href={pageUrl(l)}>{l.toUpperCase()}</a>
+      ))}
     </div>
   </nav>
 
@@ -83,9 +62,9 @@ const backLabels: Record<Lang, string> = {
   </main>
 
   <div class="footer-links">
-    <a href={lang === 'fr' ? '/about' : `/${lang}/about`} class="footer-link">{t.aria_about}</a>
+    <a href={langPath(lang, 'about')} class="footer-link">{t.aria_about}</a>
     <span class="footer-link">-</span>
-    <a href={lang === 'fr' ? '/privacy' : `/${lang}/privacy`} class="footer-link">{t.about_privacy}</a>
+    <a href={langPath(lang, 'privacy')} class="footer-link">{t.about_privacy}</a>
   </div>
 </div>
 

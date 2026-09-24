@@ -1,316 +1,38 @@
 ---
 import '../styles/main.css';
-import { translations, type Lang } from '../lib/i18n';
-import AboutContent from '../components/AboutContent.astro';
-import targetIcon from '../icons/target.svg?raw';
-import arrowIcon from '../icons/arrow.svg?raw';
-import calendarClockIcon from '../icons/calendar-clock.svg?raw';
-import eclipseIcon from '../icons/eclipse-marker.svg?raw';
-import { onboardingQuery } from '../lib/onboarding.js';
+import type { Lang } from '../lib/i18n';
+import AppHead from '../components/app/AppHead.astro';
+import Header from '../components/app/Header.astro';
+import SearchPanel from '../components/app/SearchPanel.astro';
+import MapArea from '../components/app/MapArea.astro';
+import AboutDrawer from '../components/app/AboutDrawer.astro';
+import TimeScrubber from '../components/app/TimeScrubber.astro';
+import ResultsPanel from '../components/app/ResultsPanel.astro';
 
 interface Props {
   lang: Lang;
 }
 
 const { lang } = Astro.props;
-const t = translations[lang];
-
-const urls: Record<Lang, string> = {
-  fr: 'https://meridian-way.ch/',
-  de: 'https://meridian-way.ch/de/',
-  it: 'https://meridian-way.ch/it/',
-  en: 'https://meridian-way.ch/en/',
-  rm: 'https://meridian-way.ch/rm/',
-};
-
-// The note's copy of the arrow needs its own gradient id: the note comes
-// first and starts hidden, and a hidden gradient paints nothing elsewhere.
-const noteArrowIcon = arrowIcon.replaceAll('meridianArrowGradient', 'meridianArrowGradientNote');
-
-// The demo is this page's own path plus a search, so it opens in the same
-// language, and the button works as a plain link before the script runs.
-const onboardingHref =`${new URL(urls[lang]).pathname}?${onboardingQuery({ from: t.onboarding_from, to: t.onboarding_to })}`;
 ---
 <!DOCTYPE html>
 <html lang={lang}>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>{t.title}</title>
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/site.webmanifest" />
-  <meta name="theme-color" content="#0e120a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-  <meta name="description" content={t.meta_description} />
-  <link rel="canonical" href={urls[lang]} />
-  <link rel="alternate" hreflang="fr" href={urls.fr} />
-  <link rel="alternate" hreflang="de" href={urls.de} />
-  <link rel="alternate" hreflang="it" href={urls.it} />
-  <link rel="alternate" hreflang="en" href={urls.en} />
-  <link rel="alternate" hreflang="rm" href={urls.rm} />
-  <link rel="alternate" hreflang="x-default" href={urls.fr} />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content={urls[lang]} />
-  <meta property="og:title" content={t.title} />
-  <meta property="og:description" content={t.meta_description} />
-  <meta property="og:image" content="https://meridian-way.ch/meridian-way-og.png" />
-  <script is:inline type="application/ld+json" set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "MeridianWay",
-    "url": urls[lang],
-    "description": t.meta_description,
-    "applicationCategory": "TravelApplication",
-    "operatingSystem": "Web",
-    "inLanguage": ["fr", "de", "it", "en", "rm"],
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
-    "author": { "@type": "Person", "url": "https://github.com/paultursuru" }
-  })} />
-  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false"></script>
+  <AppHead lang={lang} />
 </head>
 <body>
 
 <div id="app">
-  <div id="header">
-    <h1>
-      <a href="/">
-        <span class="meri">Meridian</span><span class="way">Way</span>
-      </a>
-    </h1>
-    <div id="header-right">
-      <div id="sun-info">{t.navbar_tagline}</div>
-      <button id="about-btn" aria-label={t.aria_about}>i</button>
-    </div>
-  </div>
-  <div id="install-banner">
-    <span id="install-banner-text"></span>
-    <div id="install-banner-actions">
-      <button id="install-banner-btn">{t.install_banner_btn}</button>
-      <button id="install-banner-close" aria-label={t.aria_close}>×</button>
-    </div>
-  </div>
-  <div id="search-panel">
-    <div class="route-inputs">
-      <div class="input-wrap">
-        <label for="inp-start"><span class="input-label">{t.label_start}</span></label>
-        <input type="text" id="inp-start" placeholder={t.placeholder_start} />
-        <button class="clear-btn" id="clear-start" type="button" title={t.clear_btn_title} aria-label={t.clear_btn_title}>✕</button>
-        <button class="geo-btn" id="geo-start" type="button" title={t.geo_btn_title} aria-label={t.geo_btn_title} set:html={targetIcon} />
-      </div>
-      <button id="swap-btn" type="button" title={t.swap_btn_title} aria-label={t.swap_btn_title}><span class="swap-ico">⇅</span></button>
-      <div class="input-wrap">
-        <label for="inp-end"><span class="input-label">{t.label_end}</span></label>
-        <input type="text" id="inp-end" placeholder={t.placeholder_end} />
-        <button class="clear-btn" id="clear-end" type="button" title={t.clear_btn_title} aria-label={t.clear_btn_title}>✕</button>
-        <button class="geo-btn" id="geo-end" type="button" title={t.geo_btn_title} aria-label={t.geo_btn_title} set:html={targetIcon} />
-      </div>
-    </div>
-    <div class="depart-row">
-      <div class="split-btn">
-        <button id="search-btn" type="button">{t.btn_leave_now}</button>
-        <button id="depart-toggle" type="button" aria-haspopup="true" aria-expanded="false" title={t.depart_toggle_title} aria-label={t.depart_toggle_title} set:html={calendarClockIcon} />
-      </div>
-      <!-- One stack under the button: the date popover, then the demo's note,
-           which moves up on its own when the popover closes. -->
-      <div class="depart-overlays" id="depart-overlays">
-        <div class="depart-popover" id="depart-popover" role="dialog" aria-label={t.depart_later_label}>
-          <div class="depart-popover-fields">
-            <div class="">
-              <label for="inp-date"><span class="input-label">{t.label_date}</span></label>
-              <input type="date" id="inp-date" />
-            </div>
-            <div class="">
-              <label for="inp-time"><span class="input-label">{t.label_time}</span></label>
-              <input type="time" id="inp-time" />
-            </div>
-          </div>
-          <button id="depart-confirm" type="button">{t.btn_search}</button>
-        </div>
-        <div id="onboarding-note">
-          <div class="onboarding-note-arrow" set:html={noteArrowIcon} />
-          <p set:html={t.onboarding_description}></p>
-          <button id="onboarding-note-close" aria-label={t.aria_close}>×</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="map" role="region" aria-label={t.aria_map}>
-    <div id="app-description">
-      <div id="app-description-arrow" set:html={arrowIcon} />
-      <div id="app-description-content">
-        <p set:html={t.app_description}></p>
-      </div>
-      <button id="app-description-close" aria-label={t.aria_close}>×</button>
-    </div>
-    <div id="map-splash"><span>{t.map_loading}</span></div>
-    <a id="onboarding-btn" href={onboardingHref}>{t.onboarding_btn}</a>
-    <button id="map-sun-info" type="button" aria-expanded="false" aria-label={t.aria_sun_info}>
-      <div id="map-sun-info-row">
-        <span id="map-sun-info-human"></span>
-        <span id="map-sun-info-chevron" aria-hidden="true"></span>
-      </div>
-      <div id="map-sun-info-details">
-        <span id="map-sun-info-technical"></span>
-        <span id="map-sun-info-datetime"></span>
-        <span id="map-sun-info-weather"></span>
-      </div>
-    </button>
-  </div>
+  <Header lang={lang} />
+  <SearchPanel lang={lang} />
+  <MapArea lang={lang} />
 </div>
 
 <div id="status" role="status" aria-live="polite"></div>
 
-<div id="about-overlay"></div>
-<div id="about-drawer" role="dialog" aria-modal="true" aria-label={t.aria_about}>
-  <div id="about-header">
-    <div id="about-lang">
-      <a class:list={['lang-btn', { active: lang === 'fr' }]} href="/">FR</a>
-      <a class:list={['lang-btn', { active: lang === 'de' }]} href="/de/">DE</a>
-      <a class:list={['lang-btn', { active: lang === 'it' }]} href="/it/">IT</a>
-      <a class:list={['lang-btn', { active: lang === 'rm' }]} href="/rm/">RM</a>
-      <a class:list={['lang-btn', { active: lang === 'en' }]} href="/en/">EN</a>
-    </div>
-    <button id="about-close" aria-label={t.aria_close}>×</button>
-  </div>
-
-  <div id="about-body">
-    <AboutContent lang={lang} />
-  </div>
-
-  <div id="about-links">
-    <a href="https://github.com/paultursuru/meridian" target="_blank" rel="noopener" class="about-link github-link">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
-      GitHub
-    </a>
-  </div>
-  <div class="footer-links">
-    <a href={lang === 'fr' ? '/about' : `/${lang}/about`} class="footer-link">{t.aria_about}</a>
-    <span class="footer-link">-</span>
-    <a href={lang === 'fr' ? '/privacy' : `/${lang}/privacy`} class="footer-link">{t.about_privacy}</a>
-  </div>
-</div>
-
-<div id="time-scrubber">
-  <span id="scrubber-time"></span>
-  <div id="scrubber-track">
-    <button id="scrubber-mark" type="button"><Fragment set:html={eclipseIcon} /></button>
-    <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} />
-  </div>
-</div>
-
-<div id="results" role="status" aria-live="polite">
-  <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
-    <div id="drawer-bar"></div>
-  </div>
-  <button id="share-btn" title={t.share_btn_title} aria-label={t.share_btn_title}>
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
-  </button>
-  <div id="night-note">
-    <p>{t.night_note}</p>
-    <button id="night-sunrise-btn" type="button"></button>
-  </div>
-  <div id="eclipse-note">{t.eclipse_note}</div>
-  <div id="grazing-sun-note">{t.grazing_sun_note}</div>
-  <div id="single-route-note">{t.single_route_note}</div>
-  <div id="tabs" role="tablist">
-    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady">{t.tab_shady}</button>
-    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny">{t.tab_sunny}</button>
-  </div>
-  <div id="tab-sunny" class="tab-pane active" role="tabpanel" aria-labelledby="tab-btn-sunny">
-    <button class="pane-title" type="button" data-tab="sunny">{t.tab_sunny}</button>
-    <div class="ratio-wrap">
-      <div class="ratio-nums">
-        <span class="ratio-shade-num">{t.label_shade} <strong id="sunny-shade-pct"></strong></span>
-        <span class="ratio-sun-num"><strong id="sunny-sun-pct"></strong> {t.label_sun}</span>
-      </div>
-      <div class="ratio-track">
-        <div class="ratio-seg ratio-seg-shade" id="sunny-shade-fill" style="width:0%"></div>
-        <div class="ratio-seg ratio-seg-sun" id="sunny-sun-fill" style="width:0%"></div>
-      </div>
-    </div>
-    <div class="ratio-delta" id="sunny-delta"></div>
-    <div class="route-details">
-      <div class="detail-stats">
-        <div class="detail-stat">
-          <span class="stat-val" id="sunny-dist"></span>
-          <span class="stat-lbl">{t.label_distance}</span>
-        </div>
-        <div class="detail-stat">
-          <span class="stat-val" id="sunny-dur"></span>
-          <span class="stat-lbl">{t.label_duration}</span>
-        </div>
-        <div class="detail-stat" id="sunny-elev-stat" style="display:none">
-          <span class="stat-val elev-val" id="sunny-elev"></span>
-          <span class="stat-lbl">{t.label_elevation}</span>
-        </div>
-      </div>
-      <div class="detail-split">
-        <div class="detail-split-shade">
-          <span class="split-val" id="sunny-shaded-dist"></span>
-          <span class="split-lbl">{t.label_shade}</span>
-        </div>
-        <div class="detail-split-sun">
-          <span class="split-val" id="sunny-sun-dist"></span>
-          <span class="split-lbl">{t.label_sun}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="tab-shady" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-shady">
-    <button class="pane-title" type="button" data-tab="shady">{t.tab_shady}</button>
-    <div class="ratio-wrap">
-      <div class="ratio-nums">
-        <span class="ratio-shade-num">{t.label_shade} <strong id="shady-shade-pct"></strong></span>
-        <span class="ratio-sun-num"><strong id="shady-sun-pct"></strong> {t.label_sun}</span>
-      </div>
-      <div class="ratio-track">
-        <div class="ratio-seg ratio-seg-shade" id="shady-shade-fill" style="width:0%"></div>
-        <div class="ratio-seg ratio-seg-sun" id="shady-sun-fill" style="width:0%"></div>
-      </div>
-    </div>
-    <div class="ratio-delta" id="shady-delta"></div>
-    <div class="route-details">
-      <div class="detail-stats">
-        <div class="detail-stat">
-          <span class="stat-val" id="shady-dist"></span>
-          <span class="stat-lbl">{t.label_distance}</span>
-        </div>
-        <div class="detail-stat">
-          <span class="stat-val" id="shady-dur"></span>
-          <span class="stat-lbl">{t.label_duration}</span>
-        </div>
-        <div class="detail-stat" id="shady-elev-stat" style="display:none">
-          <span class="stat-val elev-val" id="shady-elev"></span>
-          <span class="stat-lbl">{t.label_elevation}</span>
-        </div>
-      </div>
-      <div class="detail-split">
-        <div class="detail-split-shade">
-          <span class="split-val" id="shady-shaded-dist"></span>
-          <span class="split-lbl">{t.label_shade}</span>
-        </div>
-        <div class="detail-split-sun">
-          <span class="split-val" id="shady-sun-dist"></span>
-          <span class="split-lbl">{t.label_sun}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="weather-note"></div>
-  <div id="quality-note"></div>
-</div>
-
-<!-- Desktop only: folds the side panel away. A sibling of #results, which
-     clips its overflow, so it stays reachable once the panel has slid out. -->
-<button id="panel-toggle" type="button" aria-controls="results" aria-expanded="true" title={t.panel_toggle_title} aria-label={t.panel_toggle_title}>
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12l7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-</button>
+<AboutDrawer lang={lang} />
+<TimeScrubber lang={lang} />
+<ResultsPanel lang={lang} />
 
 <script>
   import { getSun, getSunTimes, compassDir, makeSunSampler, isGrazingSun, isEclipseWindow, ECLIPSE_2026 } from '../lib/sun.js';

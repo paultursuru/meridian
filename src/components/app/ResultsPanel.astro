@@ -1,0 +1,38 @@
+---
+import { translations, type Lang } from '../../lib/i18n';
+import RoutePane from './RoutePane.astro';
+import shareIcon from '../../icons/share.svg?raw';
+import chevronLeftIcon from '../../icons/chevron-left.svg?raw';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+---
+<div id="results" role="status" aria-live="polite">
+  <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
+    <div id="drawer-bar"></div>
+  </div>
+  <button id="share-btn" title={t.share_btn_title} aria-label={t.share_btn_title} set:html={shareIcon} />
+  <div id="night-note">
+    <p>{t.night_note}</p>
+    <button id="night-sunrise-btn" type="button"></button>
+  </div>
+  <div id="eclipse-note">{t.eclipse_note}</div>
+  <div id="grazing-sun-note">{t.grazing_sun_note}</div>
+  <div id="single-route-note">{t.single_route_note}</div>
+  <div id="tabs" role="tablist">
+    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady">{t.tab_shady}</button>
+    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny">{t.tab_sunny}</button>
+  </div>
+  <RoutePane lang={lang} kind="sunny" active />
+  <RoutePane lang={lang} kind="shady" />
+  <div id="weather-note"></div>
+  <div id="quality-note"></div>
+</div>
+
+<!-- Desktop only: folds the side panel away. A sibling of #results, which
+     clips its overflow, so it stays reachable once the panel has slid out. -->
+<button id="panel-toggle" type="button" aria-controls="results" aria-expanded="true" title={t.panel_toggle_title} aria-label={t.panel_toggle_title} set:html={chevronLeftIcon} />
