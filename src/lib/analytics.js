@@ -1,7 +1,7 @@
 // Le tag Umami des layouts porte data-auto-pageview="false", donc le pageview
 // d'arrivee n'est plus envoye tout seul : c'est le role de trackPageview().
 //
-// Pourquoi couper l'automatique : renderAt() (AppLayout.astro) termine par un
+// Pourquoi couper l'automatique : renderAt() (app/searchSession.ts) termine par un
 // history.replaceState() pour que le lien de partage reflete l'instant affiche,
 // et il tourne a chaque tick du time scrubber. Or Umami traite tout changement
 // d'URL comme une nouvelle page vue. Mesure du 2026-08-04 sur la prod : un seul
@@ -34,6 +34,12 @@
 // plutot que de supposer un ordre d'execution.
 const RETRY_MS = 200;
 const MAX_WAIT_MS = 5000;
+
+// Umami's global is absent until its script loads, and for good behind a
+// blocker: every custom event goes through here.
+export function track(...args) {
+  window.umami?.track(...args);
+}
 
 export function trackPageview() {
   let waited = 0;

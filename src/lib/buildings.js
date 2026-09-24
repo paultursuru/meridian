@@ -277,7 +277,7 @@ export async function fetchBuildings(bbox, { switzerland = false } = {}) {
   const q = `[out:json][timeout:25];(way["building"](${s},${w},${n},${e}););out body;>;out skel qt;`;
   try {
     // Unlike vegetation, this fetch still blocks the first render (see
-    // AppLayout.astro's two-pass search) — keep the full 1s+3s+6s retry
+    // src/app/search.ts's two-pass search) — keep the full 1s+3s+6s retry
     // ladder here rather than overpassFetch's default single retry, which is
     // sized for the now-decorative, non-blocking vegetation call instead.
     // The ladder is what makes the budget necessary: unbounded, its four

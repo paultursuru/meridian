@@ -1,6 +1,6 @@
 const ENDPOINT = 'https://overpass-cache.meridianway.workers.dev';
 const RETRYABLE = new Set([429, 503, 504]);
-// Vegetation no longer blocks the first render (AppLayout.astro's two-pass
+// Vegetation no longer blocks the first render (src/app/search.ts's two-pass
 // search), so stalling here just delays the background refinement, not the
 // result — one retry is plenty for a decorative layer instead of the ~10s a
 // 1s+3s+6s ladder cost while it still sat on the critical path. Buildings
