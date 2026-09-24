@@ -165,3 +165,12 @@ export function scoreRoute(rt, buildings, trees = [], sun, deciduousLeafFrac = 1
 
   return { score: totalLen > 0 ? sunLen / totalLen : 0.5, segShade };
 }
+
+// Sorts scored routes in place, sunniest first, and picks the two to show.
+// Night collapses the sunny/shady distinction: only the shortest route.
+export function rankRoutes(routes, night) {
+  routes.sort((a, b) => b.sunScore - a.sunScore);
+  const shady = routes[routes.length - 1];
+  const sunny = night ? routes.reduce((a, b) => (b.distance < a.distance ? b : a)) : routes[0];
+  return { sunny, shady, delta: Math.round((sunny.sunScore - shady.sunScore) * 100) };
+}

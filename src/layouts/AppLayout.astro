@@ -35,13 +35,15 @@ const { lang } = Astro.props;
 <ResultsPanel lang={lang} />
 
 <script>
-  import { getSun, getSunTimes, compassDir, makeSunSampler, isGrazingSun, isEclipseWindow, ECLIPSE_2026 } from '../lib/sun.js';
+  import { getSun, getSunTimes, nextSunriseAfter, compassDir, makeSunSampler, isGrazingSun, isEclipseWindow, ECLIPSE_2026 } from '../lib/sun.js';
   import { geocode, reverseGeocode }     from '../lib/geocode.js';
   import { buildRoutes }                 from '../lib/routing.js';
-  import { routesBbox, fetchBuildings, heightStats, resolveHeightNoteState } from '../lib/buildings.js';
+  import { routesBbox, fetchBuildings, heightNote } from '../lib/buildings.js';
   import { fetchTileBuildings }          from '../lib/tileBuildings.js';
   import { fetchVegetation }             from '../lib/trees.js';
-  import { scoreRoute }                  from '../lib/shadow.js';
+  import { scoreRoute, rankRoutes }      from '../lib/shadow.js';
+  import { searchErrorToast, geoError }  from '../lib/errors.js';
+  import { getPosition }                 from '../lib/geolocation.js';
   import { deciduousLeafFrac }           from '../lib/season.js';
   import { resolveTimeZone, zonedTimeToUtc, formatTimeInZone, dateValueInZone, minutesInZone } from '../lib/timezone.js';
   import { fetchWeather, weatherAt }     from '../lib/weather.js';
@@ -278,20 +280,8 @@ const { lang } = Astro.props;
 
       const sunTimes = getSunTimes(tDate, midLat, midLng);
 
-      // SunCalc anchors to the nearest solar transit: a 23:00 search gets that
-      // morning's sunrise back, so roll to the next day.
       if (night) {
-        let nextSunrise = sunTimes.sunrise > tDate
-          ? sunTimes.sunrise
-          : getSunTimes(new Date(tDate.getTime() + 86_400_000), midLat, midLng).sunrise;
-        // SunCalc's sunrise is the upper limb at -0.833°, still night by our
-        // altitude check: step a minute at a time (capped for polar cases).
-        for (let i = 0; i < 60 && getSun(nextSunrise, midLat, midLng).altDeg <= 0; i++) {
-          nextSunrise = new Date(nextSunrise.getTime() + 60_000);
-        }
-        // The time input holds whole minutes and formatTimeInZone floors:
-        // round up, later is still daylight.
-        nextSunrise = new Date(Math.ceil(nextSunrise.getTime() / 60_000) * 60_000);
+        const nextSunrise = nextSunriseAfter(tDate, midLat, midLng);
         const sunriseDateV = dateValueInZone(nextSunrise, destTz);
         const sunriseTimeV = formatTimeInZone(nextSunrise, destTz);
         button('night-sunrise-btn').textContent = tr('night_sunrise_btn', { time: sunriseTimeV });
@@ -356,7 +346,7 @@ const { lang } = Astro.props;
       const single = night || routes.length === 1;
 
       // renderAt dims the ratio bar on 'failed'; vegetation refines it.
-      let heightState: ReturnType<typeof resolveHeightNoteState> = 'ok';
+      let heightState: ReturnType<typeof heightNote>['state'] = 'ok';
       // Sunny minus shady score, set by renderAt.
       let delta = 0;
 
@@ -364,29 +354,9 @@ const { lang } = Astro.props;
       // 'partial' can be wrong: the vegetation continuation re-runs this.
       function updateHeightNote() {
         if (night) { showQualityNote(null); return; }
-        heightState = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
-        if (heightState === 'failed') {
-          showQualityNote(tr('height_data_failed') + ' ' + tr('height_data_retry'), 'warn');
-          return;
-        }
-        if (heightState === 'empty') {
-          showQualityNote(tr('height_data_none'));
-          return;
-        }
-        // 'partial' appends the vegetation line: the buildings note may
-        // already be on screen, and replacing it would erase what was read.
-        const stats = heightStats(buildings)!;
-        const heightNoteKey = buildingsSource === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm';
-        const pct = Math.round(stats.pct * 100);
-        const avgPart = stats.avgHeight == null ? '' : tr('height_data_avg_suffix', { avg: String(Math.round(stats.avgHeight)) });
-        const lines = [
-          tr(heightNoteKey),
-          tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
-        ];
-        // Rounded pct, so "100% measured" never sits above "rest estimated".
-        if (pct < 100) lines.push(tr('height_data_line_estimated'));
-        if (heightState === 'partial') lines.push(tr('vegetation_failed'));
-        showQualityNote(lines.join('\n'));
+        const note = heightNote({ buildingsStatus, buildings, vegStatus, source: buildingsSource });
+        heightState = note.state;
+        showQualityNote(note.text, note.level);
       }
       updateHeightNote();
 
@@ -434,16 +404,11 @@ const { lang } = Astro.props;
           rt.sunScore = score;
           rt.segShade = segShade;
         });
-        routes.sort((a, b) => b.sunScore - a.sunScore);
+        const ranked = rankRoutes(routes, night);
+        delta = ranked.delta;
 
-        let sunnyRt = routes[0];
-        const shadyRt = routes[routes.length - 1];
-        // Night collapses the sunny/shady distinction: show only the shortest route.
-        if (night) sunnyRt = routes.reduce((a, b) => (b.distance < a.distance ? b : a));
-        delta = Math.round((sunnyRt.sunScore - shadyRt.sunScore) * 100);
-
-        displayRoutes(startC, endC, sunnyRt, single ? null : shadyRt);
-        showResults(sunnyRt, shadyRt, single, night, heightState === 'failed');
+        displayRoutes(startC, endC, ranked.sunny, single ? null : ranked.shady);
+        showResults(ranked.sunny, ranked.shady, single, night, heightState === 'failed');
 
         // The URL always holds the instant on screen, scrubbed or not.
         history.replaceState(null, '', shareUrl(atDate));
@@ -565,26 +530,8 @@ const { lang } = Astro.props;
       // Undone or superseded: its failure is nobody's news.
       if (stale()) return;
       setStatus(null);
-      // The user gets a sentence; the technical detail stays on the error for
-      // the console and Sentry.
       const { code, role } = (err ?? {}) as CodedError;
-      // Codes whose error carries only technical detail: translated here.
-      const TECHNICAL = {
-        RATE_LIMIT: 'error_rate_limit',
-        TOO_FAR: 'error_too_far',
-        ROUTE_FAILED: 'error_route_failed',
-        ROUTING_UNAVAILABLE: 'error_routing_unavailable',
-      } as const;
-      // Codes whose message is already the sentence: shown as-is.
-      const READY = new Set(['ADDRESS_NOT_FOUND', 'POSITION_UNKNOWN', 'NO_ROUTE']);
-      const technicalKey = code ? TECHNICAL[code as keyof typeof TECHNICAL] : undefined;
-      if (technicalKey) {
-        showToast(tr(technicalKey));
-      } else if (code && READY.has(code) && err instanceof Error) {
-        showToast(err.message);
-      } else {
-        showToast(tr('error_prefix') + (err instanceof Error ? err.message : String(err)));
-      }
+      showToast(searchErrorToast(err));
       console.error(err);
       // Never send err.message: it can embed the address the user typed.
       window.umami?.track('search', {
@@ -599,22 +546,11 @@ const { lang } = Astro.props;
     }
   }
 
-  // Geolocation error codes are numeric, ours (reverseGeocode) are strings.
-  const GEO_CODES: Record<number, string> = { 1: 'GEO_DENIED', 2: 'GEO_UNAVAILABLE', 3: 'GEO_TIMEOUT' };
   function handleGeoError(err: unknown, source: 'field' | 'locate') {
-    const code = (err as { code?: number | string })?.code;
-    if (code === 1) {
-      showToast(tr('error_geo_denied'));
-    } else if (code === 'POSITION_UNKNOWN' && err instanceof Error) {
-      showToast(err.message);
-    } else {
-      showToast(tr('error_geo_timeout'));
-    }
+    const { toast, code } = geoError(err);
+    showToast(toast);
     console.error(err);
-    window.umami?.track('geo_error', {
-      code: typeof code === 'number' ? (GEO_CODES[code] ?? 'unknown') : (code ?? 'unknown'),
-      source,
-    });
+    window.umami?.track('geo_error', { code, source });
   }
 
   async function fillFromGeo(ac: ReturnType<typeof initAutocomplete>, role: 'start' | 'end', btnId: string) {
@@ -623,9 +559,7 @@ const { lang } = Astro.props;
     btn.classList.add('loading');
     setStatus(tr('geo_loading'));
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-      });
+      const pos = await getPosition(10000);
       const { short: label, countryCode } = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       ac.setPlace({ lat, lng, label, countryCode });
@@ -834,9 +768,7 @@ const { lang } = Astro.props;
   // nothing was asked for this session.
   async function prefillFromRelaunch(): Promise<boolean> {
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 });
-      });
+      const pos = await getPosition(8000);
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
       const { short: label, countryCode } = await reverseGeocode(lat, lng);
       startAC.setPlace({ lat, lng, label, countryCode });
@@ -867,9 +799,7 @@ const { lang } = Astro.props;
     try {
       const status = await navigator.permissions?.query({ name: 'geolocation' as PermissionName });
       if (status?.state === 'granted') {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-        });
+        const pos = await getPosition(5000);
         centerMap(pos.coords.latitude, pos.coords.longitude, 14);
         return;
       }
@@ -885,9 +815,7 @@ const { lang } = Astro.props;
   window.addEventListener('locate-me', async () => {
     setStatus(tr('geo_loading'));
     try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-      });
+      const pos = await getPosition(10000);
       showMyLocation(pos.coords.latitude, pos.coords.longitude, tr('my_location_title'));
       saveLastPosition(pos.coords.latitude, pos.coords.longitude);
       setStatus(null);
