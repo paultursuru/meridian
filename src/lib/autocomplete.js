@@ -176,6 +176,7 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
     // countryCode is optional — absent for shared-link restores, which don't
     // re-geocode; treated as "not confirmed Switzerland" downstream (see
     // AppLayout.astro's `switzerland` check).
+    /** @param {{ lat: number, lng: number, label: string, countryCode?: string }} place */
     setPlace: ({ lat, lng, label, countryCode = undefined }) => {
       selectedPlace = { lat, lng, label, line1: label, line2: '', short: label, countryCode };
       inputEl.value = label;

@@ -391,13 +391,20 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #depart-toggle:hover   { background: #e4e698; }
 #depart-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.depart-popover {
-  display: none;
+/* Stacked under the depart button, over the top of the map: the date popover,
+   then the demo's note. Positioned as one so the note follows the popover. */
+.depart-overlays {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
   z-index: 1001;
-  min-width: 240px;
+  width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.depart-popover {
+  display: none;
   padding: 14px;
   background: #161b12;
   border: 1.5px solid rgba(240,242,160,0.2);
@@ -414,6 +421,39 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .depart-popover-fields { display: flex; gap: 8px; margin-bottom: 10px; }
 .depart-popover-fields input[type="date"],
 .depart-popover-fields input[type="time"] { flex: 1; min-width: 0; }
+/* The demo's note (AppLayout.astro): same card as the popover above it. */
+#onboarding-note {
+  display: none;
+  position: relative;
+  gap: 8px;
+  padding: 10px 34px 10px 12px;
+  background: #161b12;
+  border: 1.5px solid rgba(240,242,160,0.2);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  font-size: 0.85rem;
+  line-height: 1.3;
+  color: #d8dbc8;
+}
+#onboarding-note.on { display: flex; }
+#onboarding-note p { margin: 0; white-space: pre-line; }
+.onboarding-note-arrow { flex-shrink: 0; width: 24px; }
+.onboarding-note-arrow svg { display: block; width: 100%; height: 100%; }
+#onboarding-note-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: rgba(216,219,200,0.6);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+#onboarding-note-close:hover { color: #d8dbc8; background: rgba(240,242,160,0.08); }
 #depart-confirm {
   width: 100%;
   padding: 8px;
@@ -497,6 +537,27 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #map .route-label-pill.sunny { background: rgb(247,245,109); }
 #map .route-label-pill.shady { background: rgb(231,135,255); }
 #map .route-label-pill.active { opacity: 1; border-color: #fff; font-weight: 700; }
+
+/* "What do I do?" link to the demo (map.js OnboardingControl), bottom right,
+   within thumb reach. Shown on the empty app only. */
+#map #onboarding-btn {
+  margin: 0 16px 8px 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #f0f2a0;
+  color: #0e120a;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+#map #onboarding-btn:hover { background: #e4e698; }
+#map #onboarding-btn.off { display: none; }
 
 .locate-control {
   display: flex;
@@ -1220,7 +1281,7 @@ p.opensource-badge {
   .depart-row { width: 100%; }
   .split-btn { width: 100%; }
   #search-btn { flex: 1; }
-  .depart-popover { left: 0; right: 0; }
+  .depart-overlays { left: 0; right: 0; width: auto; }
   #about-drawer { width: 100vw; }
 }
 

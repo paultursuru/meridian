@@ -1,6 +1,7 @@
 // Shareable-URL helpers: serialize a search (start/end coords + labels + the
 // wall-clock datetime at destination) into query params, and parse them back.
 // Params: from=lat,lng · to=lat,lng · fromq/toq=display labels · dt=YYYY-MM-DDTHH:MM
+// · onboarding=1 when the search is the demo the "what do I do?" button opens
 
 const fmt = (n) => n.toFixed(5); // ~1 m precision
 
@@ -16,19 +17,20 @@ function parseCoord(s) {
 
 const coordLabel = ({ lat, lng }) => `${fmt(lat)}, ${fmt(lng)}`;
 
-export function buildShareQuery({ start, end, date, time }) {
+export function buildShareQuery({ start, end, date, time, onboarding = false }) {
   const p = new URLSearchParams();
   p.set('from', `${fmt(start.lat)},${fmt(start.lng)}`);
   if (start.label) p.set('fromq', start.label);
   p.set('to', `${fmt(end.lat)},${fmt(end.lng)}`);
   if (end.label) p.set('toq', end.label);
   if (date) p.set('dt', time ? `${date}T${time}` : date);
+  if (onboarding) p.set('onboarding', '1');
   return p.toString();
 }
 
-// Returns { start, end, date, time } — start/end are {lat, lng, label} or null
-// when absent/invalid; a missing label falls back to "lat, lng" so the input
-// still shows something meaningful.
+// Returns { start, end, date, time, onboarding } — start/end are {lat, lng, label}
+// or null when absent/invalid; a missing label falls back to "lat, lng" so the
+// input still shows something meaningful.
 export function parseShareQuery(search) {
   const p = new URLSearchParams(search);
   const from = parseCoord(p.get('from'));
@@ -36,5 +38,5 @@ export function parseShareQuery(search) {
   const start = from ? { ...from, label: p.get('fromq') || coordLabel(from) } : null;
   const end   = to   ? { ...to,   label: p.get('toq')   || coordLabel(to) }   : null;
   const m = (p.get('dt') || '').match(/^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?$/);
-  return { start, end, date: m ? m[1] : null, time: m?.[2] ?? null };
+  return { start, end, date: m ? m[1] : null, time: m?.[2] ?? null, onboarding: p.get('onboarding') === '1' };
 }

@@ -2,7 +2,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-leaflet';
-import { collapseDrawer, bottomOverlayPx, leftOverlayPx } from './ui.js';
+import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
@@ -21,6 +21,9 @@ let hereMarker = null;
 // redraw renderAt does on every scrubber tick.
 let drawn = null;
 let activeType = 'sunny';
+
+// Breathing room between the route and an overlay covering the top of the map.
+const FIT_TOP_GAP = 16;
 
 // The unselected route. Neutral on purpose: it only has to say "the other
 // way", its sun and shade are in its own tab.
@@ -205,6 +208,19 @@ const LocateControl = L.Control.extend({
   },
 });
 
+// The "what do I do?" link to the demo. Rendered in the page rather than here,
+// so it carries its language and works as a plain link before any script; a
+// control only moves it into the bottom-right corner, stacked above the
+// attribution. AppLayout.astro handles the click.
+const OnboardingControl = L.Control.extend({
+  options: { position: 'bottomright' },
+  onAdd() {
+    const link = document.getElementById('onboarding-btn');
+    L.DomEvent.disableClickPropagation(link);
+    return link;
+  },
+});
+
 export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
   // OSM Bright GL vector style (openmaptiles/alidade-smooth-gl-style), hosted by Stadia Maps.
@@ -220,6 +236,7 @@ export function initMap() {
   });
 
   new LocateControl().addTo(_map);
+  new OnboardingControl().addTo(_map);
 
   _map.on('click', () => collapseDrawer());
   _map.on('click', openPickPopup);
@@ -386,7 +403,12 @@ export function displayRoutes(startC, endC, sunny, shady) {
 // LatLng object: (NaN, NaN)" at the next resize. See mapFit.js.
 function fitWithChrome(bounds, options = {}) {
   const padding = {
-    topLeft: [FIT_PADDING.topLeft[0] + leftOverlayPx(), FIT_PADDING.topLeft[1]],
+    topLeft: [
+      FIT_PADDING.topLeft[0] + leftOverlayPx(),
+      // The demo keeps its bubble over the results: fit below it when it
+      // reaches lower than the sun badge the default already clears.
+      Math.max(FIT_PADDING.topLeft[1], topOverlayPx() + FIT_TOP_GAP),
+    ],
     bottomRight: [FIT_PADDING.bottomRight[0], bottomOverlayPx()],
   };
   _map.fitBounds(bounds, {

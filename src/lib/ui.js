@@ -321,6 +321,18 @@ export function bottomOverlayPx() {
   return (drawer ? drawerPeekPx(drawer) : 168) + SCRUBBER_GAP + SCRUBBER_HEIGHT;
 }
 
+// How far down into the map the stack under the depart button reaches: the
+// date popover and the demo's note, both open over the demo's results. Every
+// other search closes the popover first, so this is 0 for their fits.
+export function topOverlayPx() {
+  const stack = document.getElementById('depart-overlays');
+  const map = document.getElementById('map');
+  if (!stack || !map) return 0;
+  const box = stack.getBoundingClientRect();
+  if (!box.height) return 0;
+  return Math.max(0, box.bottom - map.getBoundingClientRect().top);
+}
+
 // Map pixels covered on the left, i.e. the side panel's width or nothing.
 // Read from the CSS variable rather than measured: displayRoutes fits the
 // route before showResults slides the panel in, so at that moment the element

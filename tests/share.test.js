@@ -53,7 +53,7 @@ describe('parseShareQuery', () => {
   });
 
   it('returns nulls for missing or malformed params', () => {
-    expect(parseShareQuery('')).toEqual({ start: null, end: null, date: null, time: null });
+    expect(parseShareQuery('')).toEqual({ start: null, end: null, date: null, time: null, onboarding: false });
     expect(parseShareQuery('?from=abc,def&to=1,2,3').start).toBeNull();
     expect(parseShareQuery('?from=46.5&to=47,7').start).toBeNull();
     expect(parseShareQuery('?from=46.5,6.6&dt=oops').date).toBeNull();
@@ -69,5 +69,17 @@ describe('parseShareQuery', () => {
     const r = parseShareQuery('?dt=2026-07-05');
     expect(r.date).toBe('2026-07-05');
     expect(r.time).toBeNull();
+  });
+
+  it('round-trips the onboarding flag, and leaves it off by default', () => {
+    const search = { start: { lat: 46.5, lng: 6.6 }, end: { lat: 46.6, lng: 6.7 }, date: '2026-07-15', time: '15:00' };
+    expect(new URLSearchParams(buildShareQuery(search)).has('onboarding')).toBe(false);
+    expect(parseShareQuery('?' + buildShareQuery(search)).onboarding).toBe(false);
+    expect(parseShareQuery('?' + buildShareQuery({ ...search, onboarding: true })).onboarding).toBe(true);
+  });
+
+  it('only takes onboarding=1 as the flag', () => {
+    expect(parseShareQuery('?onboarding=0').onboarding).toBe(false);
+    expect(parseShareQuery('?onboarding').onboarding).toBe(false);
   });
 });
