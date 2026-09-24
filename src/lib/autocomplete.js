@@ -146,7 +146,7 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
       case 'Enter':
         if (activeIndex >= 0) {
           // A suggestion is highlighted — Enter picks it. stopImmediatePropagation
-          // keeps the search-on-Enter handler in AppLayout.astro (bound on the
+          // keeps the search-on-Enter handler in src/app/fields.ts (bound on the
           // same input) from also firing and searching the raw typed string.
           e.preventDefault();
           e.stopImmediatePropagation();
@@ -175,7 +175,7 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
     // Inject a pre-resolved place (e.g. from geolocation) without re-geocoding.
     // countryCode is optional — absent for shared-link restores, which don't
     // re-geocode; treated as "not confirmed Switzerland" downstream (see
-    // AppLayout.astro's `switzerland` check).
+    // src/app/search.ts's `switzerland` check).
     /** @param {{ lat: number, lng: number, label: string, countryCode?: string }} place */
     setPlace: ({ lat, lng, label, countryCode = undefined }) => {
       selectedPlace = { lat, lng, label, line1: label, line2: '', short: label, countryCode };

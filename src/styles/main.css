@@ -421,7 +421,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .depart-popover-fields { display: flex; gap: 8px; margin-bottom: 10px; }
 .depart-popover-fields input[type="date"],
 .depart-popover-fields input[type="time"] { flex: 1; min-width: 0; }
-/* The demo's note (AppLayout.astro): same card as the popover above it. */
+/* The demo's note (SearchPanel.astro): same card as the popover above it. */
 #onboarding-note {
   display: none;
   position: relative;

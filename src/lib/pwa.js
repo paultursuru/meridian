@@ -1,4 +1,5 @@
 import { tr } from './i18n.js';
+import { track } from './analytics.js';
 
 const DISMISS_KEY = 'mw_install_dismissed';
 
@@ -51,7 +52,7 @@ function offerBanner(mode) {
 function flushBanner() {
   if (!pendingMode) return;
   showBanner(pendingMode);
-  window.umami?.track('install', { stage: 'prompted', platform: pendingMode });
+  track('install', { stage: 'prompted', platform: pendingMode });
   pendingMode = null;
 }
 
@@ -89,7 +90,7 @@ export function initInstallPrompt() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    window.umami?.track('install', { stage: 'resolved', platform: 'android', outcome });
+    track('install', { stage: 'resolved', platform: 'android', outcome });
     deferredPrompt = null;
     dismissBanner();
   });

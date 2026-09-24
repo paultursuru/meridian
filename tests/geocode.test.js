@@ -57,7 +57,7 @@ describe('geocode', () => {
 
   it('still keeps the user-facing message on the error, quoting the query', async () => {
     mockJson([]);
-    // AppLayout shows this message as-is, so it has to stay translated.
+    // searchErrorToast shows this message as-is, so it has to stay translated.
     await expect(geocode('ouchy')).rejects.toThrow('ouchy');
   });
 

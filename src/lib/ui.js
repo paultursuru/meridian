@@ -226,7 +226,7 @@ function initDrawer() {
 // The drawer's full-height state as one open and one close, shared by every
 // path that flips it (handle tap and drag, keyboard, the map-click collapse in
 // map.js). Deliberately not a history entry: the sheet already has its own
-// vertical gesture, and Back undoes the search instead (see AppLayout).
+// vertical gesture, and Back undoes the search instead (see src/app/navigation.ts).
 export function expandDrawer() {
   const drawer = document.getElementById('results');
   if (!drawer || drawer.classList.contains('expanded')) return;
@@ -288,7 +288,7 @@ export function hideResults() {
 // ── Time scrubber ──
 // A floating bar docked just above the results drawer (never inside it, so
 // it stays put even though the drawer's own content scrolls when expanded).
-// It has no notion of routes/sun/shade itself — AppLayout.astro supplies the
+// It has no notion of routes/sun/shade itself — src/app/searchSession.ts supplies the
 // bounds and re-scoring callback; this module only owns its DOM/positioning.
 const SCRUBBER_GAP = 8; // px between the drawer's visible top edge and the scrubber
 

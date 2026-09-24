@@ -192,7 +192,7 @@ function drawRoutes() {
 // "Center on my location" control, Leaflet-native (stacks under the default
 // zoom control, top-left) — deliberately separate from the start/end
 // "ma position" input buttons: clicking it doesn't touch any address field,
-// it only asks AppLayout.astro (via the 'locate-me' event, same pattern as
+// it only asks src/app/geo.ts (via the 'locate-me' event, same pattern as
 // 'route-select' below) to fetch precise geolocation and show it.
 const LocateControl = L.Control.extend({
   options: { position: 'topleft' },
@@ -211,7 +211,7 @@ const LocateControl = L.Control.extend({
 // The "what do I do?" link to the demo. Rendered in the page rather than here,
 // so it carries its language and works as a plain link before any script; a
 // control only moves it into the bottom-right corner, stacked above the
-// attribution. AppLayout.astro handles the click.
+// attribution. src/app/intro.ts handles the click.
 const OnboardingControl = L.Control.extend({
   options: { position: 'bottomright' },
   onAdd() {
