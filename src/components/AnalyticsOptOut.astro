@@ -1,0 +1,69 @@
+---
+import { translations, type Lang } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+---
+<!-- Wired by initAnalyticsOptOut() (lib/analyticsOptOut.js). -->
+<label class="optout">
+  <span class="optout-text">
+    <span class="optout-label">{t.optout_label}</span>
+    <span class="optout-hint">{t.optout_hint}</span>
+  </span>
+  <input type="checkbox" role="switch" class="optout-switch" checked />
+</label>
+
+<style>
+  .optout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    cursor: pointer;
+  }
+  .optout-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .optout-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #d8dbc8;
+  }
+  .optout-hint {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: rgba(216,219,200,0.6);
+  }
+  .optout-switch {
+    appearance: none;
+    flex: 0 0 auto;
+    position: relative;
+    width: 38px;
+    height: 22px;
+    margin: 0;
+    border-radius: 11px;
+    background: rgba(216,219,200,0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .optout-switch::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #d8dbc8;
+    transition: transform 0.2s;
+  }
+  .optout-switch:checked { background: #f0f2a0; }
+  .optout-switch:checked::after { transform: translateX(16px); background: #0e120a; }
+  .optout-switch:focus-visible { outline: 2px solid #f0f2a0; outline-offset: 2px; }
+</style>

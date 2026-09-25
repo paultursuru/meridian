@@ -1,5 +1,6 @@
 ---
 import type { Lang } from '../lib/i18n';
+import AnalyticsOptOut from './AnalyticsOptOut.astro';
 
 interface Props {
   lang: Lang;
@@ -11,33 +12,48 @@ const { lang } = Astro.props;
 {lang === 'fr' && (
   <div class="privacy-pane">
     <h1>Politique de confidentialité</h1>
-    <p class="privacy-date"><em>Dernière mise à jour : juin 2026</em></p>
+    <p class="privacy-date"><em>Dernière mise à jour : septembre 2026</em></p>
 
     <h2>Ce que MeridianWay fait (et ne fait pas)</h2>
-    <p>MeridianWay est une application entièrement statique : elle ne possède pas de serveur propre, ne crée pas de compte utilisateur et ne stocke aucune donnée personnelle en base de données. Tout le calcul (position du soleil, score d'ombre) s'effectue directement dans votre navigateur.</p>
+    <p>MeridianWay ne crée pas de compte utilisateur, ne vous demande aucune information personnelle et ne tient aucun fichier de ses utilisateurs. Tout le calcul (position du soleil, score d'ombre) s'effectue directement dans votre navigateur. Le site est hébergé par Fly.io, et trois relais (Cloudflare Workers) opérés par MeridianWay transmettent une partie des requêtes et en gardent les réponses en cache.</p>
 
     <h2>Données transmises à des services tiers</h2>
-    <p>Pour fonctionner, l'application envoie certaines données à des services externes. Ces services reçoivent votre adresse IP ainsi que les données listées ci-dessous.</p>
+    <p>Pour fonctionner, l'application envoie certaines données à des services externes. Chaque service que votre navigateur contacte directement reçoit aussi votre adresse IP. OpenRouteService et Overpass sont interrogés par un relais MeridianWay et ne la reçoivent pas.</p>
 
     <table>
       <thead>
         <tr><th>Service</th><th>Données transmises</th><th>Finalité</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Texte saisi dans les champs adresse</td><td>Suggestions d'autocomplétion</td></tr>
-        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Adresse saisie ; coordonnées GPS si géolocalisation activée</td><td>Géocodage et géocodage inverse</td></tr>
-        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Coordonnées de départ et d'arrivée</td><td>Calcul des itinéraires</td></tr>
-        <tr><td><strong>Overpass API</strong> (serveurs OSM)</td><td>Zone géographique de l'itinéraire</td><td>Données bâtiments et arbres</td></tr>
-        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Zone de la carte affichée</td><td>Tuiles cartographiques</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Page visitée, type d'appareil, langue du navigateur — sans cookies, IP anonymisée</td><td>Statistiques d'utilisation agrégées</td></tr>
-        <tr><td><strong>Sentry</strong> (serveurs EU, Allemagne)</td><td>Erreurs techniques, URL de la page, type de navigateur — sans données d'identité</td><td>Détection et correction de bugs</td></tr>
+        <tr><td><strong>Fly.io</strong><br /><span class="svc">hébergement</span></td><td>Pages demandées</td><td>Mise à disposition du site</td></tr>
+        <tr><td><strong>Stadia Maps</strong></td><td>Zone de la carte affichée</td><td>Fond de carte</td></tr>
+        <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Texte saisi dans les champs adresse ; lieu déjà choisi dans l'autre champ</td><td>Suggestions d'autocomplétion</td></tr>
+        <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Adresse saisie ; coordonnées GPS si vous utilisez la géolocalisation</td><td>Géocodage et géocodage inverse</td></tr>
+        <tr><td><strong>Open-Meteo</strong></td><td>Point central de l'itinéraire</td><td>Météo : nébulosité et température</td></tr>
+        <tr><td><strong>Relais MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordonnées de départ et d'arrivée ; zone de l'itinéraire</td><td>Relais vers OpenRouteService et Overpass, hauteurs des bâtiments suisses ; réponses gardées en cache 7 à 30 jours, sans lien avec qui les a demandées</td></tr>
+        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, via le relais</span></td><td>Coordonnées de départ et d'arrivée</td><td>Calcul des itinéraires</td></tr>
+        <tr><td><strong>Overpass API</strong><br /><span class="svc">serveurs OSM, via le relais</span></td><td>Zone géographique de l'itinéraire</td><td>Données bâtiments et arbres</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Adresse de la page, site de provenance, localisation approximative (pays, région) déduite de l'adresse IP, qui n'est pas conservée ; navigateur, système, taille d'écran, langue ; actions dans l'app (recherche lancée, partage…). Sans cookie</td><td>Statistiques d'utilisation agrégées, dont les zones où des itinéraires sont recherchés ; désactivables (voir plus bas)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">serveurs EU, Allemagne</span></td><td>Erreurs techniques, adresse de la page sans ses paramètres, type de navigateur ; sans données d'identité</td><td>Détection et correction de bugs</td></tr>
       </tbody>
     </table>
 
-    <p>La géolocalisation est <strong>optionnelle</strong> et uniquement déclenchée si vous cliquez sur le bouton de localisation.</p>
+    <p>Après une recherche, l'adresse de la page contient les points de départ et d'arrivée, ainsi que le texte saisi pour les désigner : c'est ce qui rend un itinéraire partageable. Umami la reçoit avec des points arrondis à 100 m environ et sans le texte saisi : de quoi voir dans quelles zones des itinéraires sont recherchés, pas de retrouver une adresse précise. Sentry la reçoit sans aucune de ces informations.</p>
+
+    <p>La géolocalisation est <strong>optionnelle</strong> : l'app n'y a accès qu'avec votre autorisation, demandée par le navigateur. Elle sert quand vous appuyez sur un bouton de localisation et, dans l'app installée sur l'écran d'accueil, à proposer votre position comme départ à l'ouverture. Si vous avez déjà donné l'autorisation, l'app s'en sert aussi pour centrer la carte au démarrage.</p>
 
     <h2>Cookies et stockage local</h2>
-    <p>MeridianWay n'utilise <strong>aucun cookie</strong>. Aucune donnée n'est enregistrée dans le stockage local de votre navigateur.</p>
+    <p>MeridianWay n'utilise <strong>aucun cookie</strong>. L'app enregistre en revanche jusqu'à trois informations dans le stockage local de votre navigateur :</p>
+    <ul>
+      <li><strong>Votre dernière position</strong>, si vous avez utilisé la géolocalisation : dans l'app installée, elle sert de départ de secours quand la localisation échoue.</li>
+      <li><strong>La fermeture de la bannière d'installation</strong>, pour ne plus l'afficher.</li>
+      <li><strong>Votre refus des statistiques de visite</strong>, si vous l'avez exprimé (voir ci-dessous).</li>
+    </ul>
+    <p>Ces informations restent sur votre appareil. La position n'en sort que lorsqu'elle est reprise comme point de départ, et suit alors le même chemin que tout point de départ. Pour tout effacer, supprimez les données du site dans les réglages de votre navigateur.</p>
+
+    <h2>Statistiques de visite</h2>
+    <p>MeridianWay mesure son audience avec Umami, sans cookie et sans enregistrer d'identifiant sur votre appareil. Si vous préférez que vos visites ne soient pas comptées, désactivez l'interrupteur ci-dessous, ou celui du panneau À propos de l'app : plus rien n'est envoyé à Umami depuis ce navigateur, sans rechargement. Le réglage vaut pour ce navigateur sur cet appareil. Sur iPhone, l'app installée sur l'écran d'accueil a son propre stockage et se règle séparément. Il ne coupe pas les rapports d'erreurs envoyés à Sentry.</p>
+    <div class="privacy-optout"><AnalyticsOptOut lang={lang} /></div>
 
     <h2>Vos droits</h2>
     <p>Conformément à la loi fédérale suisse sur la protection des données (nLPD) et au RGPD pour les utilisateurs de l'Union européenne, vous pouvez à tout moment demander quelles données vous concernant ont été traitées. Les données transmises aux services tiers sont régies par leurs propres politiques de confidentialité.</p>
@@ -50,33 +66,48 @@ const { lang } = Astro.props;
 {lang === 'de' && (
   <div class="privacy-pane">
     <h1>Datenschutzerklärung</h1>
-    <p class="privacy-date"><em>Zuletzt aktualisiert: Juni 2026</em></p>
+    <p class="privacy-date"><em>Zuletzt aktualisiert: September 2026</em></p>
 
     <h2>Was MeridianWay tut (und nicht tut)</h2>
-    <p>MeridianWay ist eine vollständig statische Anwendung: Sie verfügt über keinen eigenen Server, erstellt keine Benutzerkonten und speichert keine personenbezogenen Daten in einer Datenbank. Alle Berechnungen (Sonnenposition, Schattenbewertung) erfolgen direkt in Ihrem Browser.</p>
+    <p>MeridianWay erstellt keine Benutzerkonten, fragt keine persönlichen Angaben ab und führt keine Kartei über seine Nutzerinnen und Nutzer. Alle Berechnungen (Sonnenposition, Schattenbewertung) erfolgen direkt in Ihrem Browser. Die Website wird bei Fly.io gehostet; drei von MeridianWay betriebene Relais (Cloudflare Workers) leiten einen Teil der Anfragen weiter und speichern die Antworten zwischen.</p>
 
     <h2>An Drittanbieter übermittelte Daten</h2>
-    <p>Für den Betrieb sendet die Anwendung bestimmte Daten an externe Dienste. Diese Dienste erhalten Ihre IP-Adresse sowie die nachstehend aufgeführten Daten.</p>
+    <p>Für den Betrieb sendet die Anwendung bestimmte Daten an externe Dienste. Jeder Dienst, den Ihr Browser direkt kontaktiert, erhält auch Ihre IP-Adresse. OpenRouteService und Overpass werden über ein MeridianWay-Relais abgefragt und erhalten sie nicht.</p>
 
     <table>
       <thead>
         <tr><th>Dienst</th><th>Übermittelte Daten</th><th>Zweck</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>In den Adressfeldern eingegebener Text</td><td>Autocomplete-Vorschläge</td></tr>
-        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Eingegebene Adresse; GPS-Koordinaten bei aktivierter Standortbestimmung</td><td>Geo- und Reverse-Geocoding</td></tr>
-        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Start- und Zielkoordinaten</td><td>Routenberechnung</td></tr>
-        <tr><td><strong>Overpass API</strong> (OSM-Server)</td><td>Geografischer Bereich der Route</td><td>Gebäude- und Baumdaten</td></tr>
-        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Angezeigter Kartenausschnitt</td><td>Kartenkacheln</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Besuchte Seite, Gerätetyp, Browsersprache — ohne Cookies, anonymisierte IP</td><td>Aggregierte Nutzungsstatistiken</td></tr>
-        <tr><td><strong>Sentry</strong> (EU-Server, Deutschland)</td><td>Technische Fehler, Seiten-URL, Browsertyp — ohne Identitätsdaten</td><td>Fehlererkennung und -behebung</td></tr>
+        <tr><td><strong>Fly.io</strong><br /><span class="svc">Hosting</span></td><td>Aufgerufene Seiten</td><td>Bereitstellung der Website</td></tr>
+        <tr><td><strong>Stadia Maps</strong></td><td>Angezeigter Kartenausschnitt</td><td>Hintergrundkarte</td></tr>
+        <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>In den Adressfeldern eingegebener Text; im anderen Feld bereits gewählter Ort</td><td>Autocomplete-Vorschläge</td></tr>
+        <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Eingegebene Adresse; GPS-Koordinaten, wenn Sie die Standortbestimmung nutzen</td><td>Geo- und Reverse-Geocoding</td></tr>
+        <tr><td><strong>Open-Meteo</strong></td><td>Mittelpunkt der Route</td><td>Wetter: Bewölkung und Temperatur</td></tr>
+        <tr><td><strong>MeridianWay-Relais</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Start- und Zielkoordinaten; Bereich der Route</td><td>Weiterleitung an OpenRouteService und Overpass, Schweizer Gebäudehöhen; Antworten werden 7 bis 30 Tage zwischengespeichert, ohne Bezug zur anfragenden Person</td></tr>
+        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, über das Relais</span></td><td>Start- und Zielkoordinaten</td><td>Routenberechnung</td></tr>
+        <tr><td><strong>Overpass API</strong><br /><span class="svc">OSM-Server, über das Relais</span></td><td>Geografischer Bereich der Route</td><td>Gebäude- und Baumdaten</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Seitenadresse, verweisende Website, ungefährer Standort (Land, Region) aus der IP-Adresse, die nicht gespeichert wird; Browser, System, Bildschirmgrösse, Sprache; Aktionen in der App (Suche gestartet, Teilen …). Ohne Cookies</td><td>Aggregierte Nutzungsstatistiken, auch zu den Gebieten, in denen Routen gesucht werden; abschaltbar (siehe unten)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">EU-Server, Deutschland</span></td><td>Technische Fehler, Seitenadresse ohne Parameter, Browsertyp; ohne Identitätsdaten</td><td>Fehlererkennung und -behebung</td></tr>
       </tbody>
     </table>
 
-    <p>Die Standortbestimmung ist <strong>optional</strong> und wird nur aktiviert, wenn Sie auf die Standortschaltfläche klicken.</p>
+    <p>Nach einer Suche enthält die Seitenadresse Start- und Zielpunkt sowie den dafür eingegebenen Text: So lässt sich eine Route teilen. Umami erhält sie mit auf rund 100 m gerundeten Punkten und ohne den eingegebenen Text: genug, um zu sehen, in welchen Gebieten Routen gesucht werden, aber nicht, um eine genaue Adresse zu finden. Sentry erhält sie ohne jede dieser Angaben.</p>
+
+    <p>Die Standortbestimmung ist <strong>optional</strong>: Die App erhält nur mit Ihrer Erlaubnis Zugriff darauf, die Ihr Browser abfragt. Sie wird genutzt, wenn Sie auf eine Standortschaltfläche tippen, und in der auf dem Startbildschirm installierten App, um beim Öffnen Ihren Standort als Start vorzuschlagen. Haben Sie die Erlaubnis bereits erteilt, zentriert die App damit auch die Karte beim Start.</p>
 
     <h2>Cookies und lokaler Speicher</h2>
-    <p>MeridianWay verwendet <strong>keine Cookies</strong>. Es werden keine Daten im lokalen Speicher Ihres Browsers gespeichert.</p>
+    <p>MeridianWay verwendet <strong>keine Cookies</strong>. Die App speichert jedoch bis zu drei Angaben im lokalen Speicher Ihres Browsers:</p>
+    <ul>
+      <li><strong>Ihren letzten Standort</strong>, falls Sie die Standortbestimmung genutzt haben: In der installierten App dient er als Ersatzstart, wenn die Ortung fehlschlägt.</li>
+      <li><strong>Dass Sie das Installationsbanner geschlossen haben</strong>, damit es nicht mehr erscheint.</li>
+      <li><strong>Dass Sie die Besuchsstatistik ausgeschaltet haben</strong>, falls zutreffend (siehe unten).</li>
+    </ul>
+    <p>Diese Angaben bleiben auf Ihrem Gerät. Der Standort verlässt es nur, wenn er als Startpunkt übernommen wird, und nimmt dann denselben Weg wie jeder Startpunkt. Um alles zu löschen, entfernen Sie die Websitedaten in den Einstellungen Ihres Browsers.</p>
+
+    <h2>Besuchsstatistik</h2>
+    <p>MeridianWay misst seine Besuche mit Umami, ohne Cookies und ohne eine Kennung auf Ihrem Gerät zu speichern. Möchten Sie nicht gezählt werden, schalten Sie den Schalter unten aus oder den im Bereich «Über die App»: Von diesem Browser wird dann nichts mehr an Umami gesendet, ohne Neuladen. Die Einstellung gilt für diesen Browser auf diesem Gerät. Auf dem iPhone hat die auf dem Startbildschirm installierte App einen eigenen Speicher und wird separat eingestellt. Fehlerberichte an Sentry werden dadurch nicht abgeschaltet.</p>
+    <div class="privacy-optout"><AnalyticsOptOut lang={lang} /></div>
 
     <h2>Ihre Rechte</h2>
     <p>Gemäss dem Schweizer Bundesgesetz über den Datenschutz (DSG) und der DSGVO für Nutzer der Europäischen Union können Sie jederzeit anfragen, welche Daten über Sie verarbeitet wurden. Die an Drittanbieter übermittelten Daten unterliegen deren eigenen Datenschutzrichtlinien.</p>
@@ -89,33 +120,48 @@ const { lang } = Astro.props;
 {lang === 'it' && (
   <div class="privacy-pane">
     <h1>Informativa sulla privacy</h1>
-    <p class="privacy-date"><em>Ultimo aggiornamento: giugno 2026</em></p>
+    <p class="privacy-date"><em>Ultimo aggiornamento: settembre 2026</em></p>
 
     <h2>Cosa fa (e non fa) MeridianWay</h2>
-    <p>MeridianWay è un'applicazione completamente statica: non dispone di un proprio server, non crea account utente e non memorizza dati personali in alcun database. Tutti i calcoli (posizione del sole, punteggio ombra) vengono eseguiti direttamente nel tuo browser.</p>
+    <p>MeridianWay non crea account utente, non chiede informazioni personali e non tiene alcun archivio dei suoi utenti. Tutti i calcoli (posizione del sole, punteggio ombra) vengono eseguiti direttamente nel tuo browser. Il sito è ospitato da Fly.io, e tre relay (Cloudflare Workers) gestiti da MeridianWay inoltrano parte delle richieste e ne conservano le risposte in cache.</p>
 
     <h2>Dati trasmessi a servizi di terze parti</h2>
-    <p>Per funzionare, l'applicazione invia alcuni dati a servizi esterni. Questi servizi ricevono il tuo indirizzo IP e i dati elencati di seguito.</p>
+    <p>Per funzionare, l'applicazione invia alcuni dati a servizi esterni. Ogni servizio che il tuo browser contatta direttamente riceve anche il tuo indirizzo IP. OpenRouteService e Overpass vengono interrogati da un relay di MeridianWay e non lo ricevono.</p>
 
     <table>
       <thead>
         <tr><th>Servizio</th><th>Dati trasmessi</th><th>Finalità</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Testo inserito nei campi indirizzo</td><td>Suggerimenti di completamento automatico</td></tr>
-        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Indirizzo inserito; coordinate GPS se la geolocalizzazione è attivata</td><td>Geocodifica e geocodifica inversa</td></tr>
-        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Coordinate di partenza e arrivo</td><td>Calcolo degli itinerari</td></tr>
-        <tr><td><strong>Overpass API</strong> (server OSM)</td><td>Area geografica dell'itinerario</td><td>Dati edifici e alberi</td></tr>
-        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Area della mappa visualizzata</td><td>Tile cartografiche</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Pagina visitata, tipo di dispositivo, lingua del browser — senza cookie, IP anonimizzato</td><td>Statistiche d'uso aggregate</td></tr>
-        <tr><td><strong>Sentry</strong> (server EU, Germania)</td><td>Errori tecnici, URL della pagina, tipo di browser — senza dati di identità</td><td>Rilevamento e correzione dei bug</td></tr>
+        <tr><td><strong>Fly.io</strong><br /><span class="svc">hosting</span></td><td>Pagine richieste</td><td>Messa a disposizione del sito</td></tr>
+        <tr><td><strong>Stadia Maps</strong></td><td>Area della mappa visualizzata</td><td>Mappa di base</td></tr>
+        <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Testo inserito nei campi indirizzo; luogo già scelto nell'altro campo</td><td>Suggerimenti di completamento automatico</td></tr>
+        <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Indirizzo inserito; coordinate GPS se usi la geolocalizzazione</td><td>Geocodifica e geocodifica inversa</td></tr>
+        <tr><td><strong>Open-Meteo</strong></td><td>Punto centrale dell'itinerario</td><td>Meteo: nuvolosità e temperatura</td></tr>
+        <tr><td><strong>Relay MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordinate di partenza e arrivo; area dell'itinerario</td><td>Inoltro a OpenRouteService e Overpass, altezze degli edifici svizzeri; risposte conservate in cache da 7 a 30 giorni, senza legame con chi le ha richieste</td></tr>
+        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, tramite il relay</span></td><td>Coordinate di partenza e arrivo</td><td>Calcolo degli itinerari</td></tr>
+        <tr><td><strong>Overpass API</strong><br /><span class="svc">server OSM, tramite il relay</span></td><td>Area geografica dell'itinerario</td><td>Dati edifici e alberi</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Indirizzo della pagina, sito di provenienza, posizione approssimativa (paese, regione) ricavata dall'indirizzo IP, che non viene conservato; browser, sistema, dimensioni dello schermo, lingua; azioni nell'app (ricerca avviata, condivisione…). Senza cookie</td><td>Statistiche d'uso aggregate, comprese le zone in cui si cercano itinerari; disattivabili (vedi sotto)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">server EU, Germania</span></td><td>Errori tecnici, indirizzo della pagina senza parametri, tipo di browser; senza dati di identità</td><td>Rilevamento e correzione dei bug</td></tr>
       </tbody>
     </table>
 
-    <p>La geolocalizzazione è <strong>opzionale</strong> e viene attivata solo se fai clic sul pulsante di localizzazione.</p>
+    <p>Dopo una ricerca, l'indirizzo della pagina contiene i punti di partenza e di arrivo e il testo inserito per indicarli: è ciò che rende condivisibile un itinerario. Umami lo riceve con i punti arrotondati a circa 100 m e senza il testo inserito: abbastanza per vedere in quali zone si cercano itinerari, non per risalire a un indirizzo preciso. Sentry lo riceve senza nessuna di queste informazioni.</p>
+
+    <p>La geolocalizzazione è <strong>opzionale</strong>: l'app vi accede solo con il tuo permesso, richiesto dal browser. Viene usata quando tocchi un pulsante di localizzazione e, nell'app installata sulla schermata Home, per proporre la tua posizione come partenza all'apertura. Se hai già dato il permesso, l'app la usa anche per centrare la mappa all'avvio.</p>
 
     <h2>Cookie e archiviazione locale</h2>
-    <p>MeridianWay non utilizza <strong>alcun cookie</strong>. Nessun dato viene salvato nell'archiviazione locale del tuo browser.</p>
+    <p>MeridianWay non utilizza <strong>alcun cookie</strong>. L'app salva però fino a tre informazioni nell'archiviazione locale del tuo browser:</p>
+    <ul>
+      <li><strong>La tua ultima posizione</strong>, se hai usato la geolocalizzazione: nell'app installata serve da partenza di riserva quando la localizzazione non riesce.</li>
+      <li><strong>La chiusura del banner di installazione</strong>, per non mostrarlo più.</li>
+      <li><strong>La disattivazione delle statistiche di visita</strong>, se l'hai scelta (vedi sotto).</li>
+    </ul>
+    <p>Queste informazioni restano sul tuo dispositivo. La posizione ne esce solo quando viene ripresa come punto di partenza, e segue allora lo stesso percorso di qualsiasi punto di partenza. Per cancellare tutto, elimina i dati del sito nelle impostazioni del browser.</p>
+
+    <h2>Statistiche di visita</h2>
+    <p>MeridianWay misura le visite con Umami, senza cookie e senza salvare alcun identificativo sul tuo dispositivo. Se preferisci che le tue visite non vengano contate, disattiva l'interruttore qui sotto o quello nel pannello Informazioni dell'app: da questo browser non viene più inviato nulla a Umami, senza ricaricare la pagina. L'impostazione vale per questo browser su questo dispositivo. Su iPhone, l'app installata sulla schermata Home ha una propria memoria e si imposta a parte. Non disattiva le segnalazioni di errore inviate a Sentry.</p>
+    <div class="privacy-optout"><AnalyticsOptOut lang={lang} /></div>
 
     <h2>I tuoi diritti</h2>
     <p>In conformità con la legge federale svizzera sulla protezione dei dati (LPD) e il RGPD per gli utenti dell'Unione europea, puoi richiedere in qualsiasi momento quali dati che ti riguardano sono stati trattati. I dati trasmessi a servizi di terze parti sono disciplinati dalle rispettive informative sulla privacy.</p>
@@ -128,33 +174,48 @@ const { lang } = Astro.props;
 {lang === 'en' && (
   <div class="privacy-pane">
     <h1>Privacy Policy</h1>
-    <p class="privacy-date"><em>Last updated: June 2026</em></p>
+    <p class="privacy-date"><em>Last updated: September 2026</em></p>
 
     <h2>What MeridianWay does (and doesn't do)</h2>
-    <p>MeridianWay is a fully static application: it has no server of its own, creates no user accounts, and stores no personal data in any database. All calculations (sun position, shadow scoring) run directly in your browser.</p>
+    <p>MeridianWay creates no user accounts, asks for no personal information and keeps no records of its users. All calculations (sun position, shadow scoring) run directly in your browser. The site is hosted by Fly.io, and three relays (Cloudflare Workers) run by MeridianWay forward some of the requests and cache the responses.</p>
 
     <h2>Data sent to third-party services</h2>
-    <p>To function, the application sends certain data to external services. These services receive your IP address along with the data listed below.</p>
+    <p>To function, the application sends certain data to external services. Every service your browser contacts directly also receives your IP address. OpenRouteService and Overpass are queried by a MeridianWay relay and do not receive it.</p>
 
     <table>
       <thead>
         <tr><th>Service</th><th>Data sent</th><th>Purpose</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Text typed in address fields</td><td>Autocomplete suggestions</td></tr>
-        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Address entered; GPS coordinates if geolocation is enabled</td><td>Geocoding and reverse geocoding</td></tr>
-        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Start and end coordinates</td><td>Route calculation</td></tr>
-        <tr><td><strong>Overpass API</strong> (OSM servers)</td><td>Geographic area of the route</td><td>Building and tree data</td></tr>
-        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Displayed map area</td><td>Map tiles</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Page visited, device type, browser language — no cookies, anonymised IP</td><td>Aggregated usage statistics</td></tr>
-        <tr><td><strong>Sentry</strong> (EU servers, Germany)</td><td>Technical errors, page URL, browser type — no identity data</td><td>Bug detection and fixing</td></tr>
+        <tr><td><strong>Fly.io</strong><br /><span class="svc">hosting</span></td><td>Pages requested</td><td>Serving the site</td></tr>
+        <tr><td><strong>Stadia Maps</strong></td><td>Displayed map area</td><td>Base map</td></tr>
+        <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Text typed in address fields; place already chosen in the other field</td><td>Autocomplete suggestions</td></tr>
+        <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Address entered; GPS coordinates if you use geolocation</td><td>Geocoding and reverse geocoding</td></tr>
+        <tr><td><strong>Open-Meteo</strong></td><td>Midpoint of the route</td><td>Weather: cloud cover and temperature</td></tr>
+        <tr><td><strong>MeridianWay relays</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Start and end coordinates; area of the route</td><td>Relay to OpenRouteService and Overpass, Swiss building heights; responses cached for 7 to 30 days, with no link to who requested them</td></tr>
+        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, via the relay</span></td><td>Start and end coordinates</td><td>Route calculation</td></tr>
+        <tr><td><strong>Overpass API</strong><br /><span class="svc">OSM servers, via the relay</span></td><td>Geographic area of the route</td><td>Building and tree data</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Page address, referring site, approximate location (country, region) derived from the IP address, which is not stored; browser, system, screen size, language; actions in the app (search started, share…). No cookies</td><td>Aggregated usage statistics, including the areas where routes are searched; you can turn them off (see below)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">EU servers, Germany</span></td><td>Technical errors, page address without its parameters, browser type; no identity data</td><td>Bug detection and fixing</td></tr>
       </tbody>
     </table>
 
-    <p>Geolocation is <strong>optional</strong> and only triggered if you click the location button.</p>
+    <p>After a search, the page address contains the start and end points and the text typed to name them: that is what makes a route shareable. Umami receives it with the points rounded to about 100 m and without the typed text: enough to see the areas where routes are searched, not to find a precise address. Sentry receives it without any of this information.</p>
+
+    <p>Geolocation is <strong>optional</strong>: the app only gets access with your permission, which your browser asks for. It is used when you tap a location button and, in the app installed on your home screen, to suggest your position as the start when it opens. If you have already granted permission, the app also uses it to centre the map at start-up.</p>
 
     <h2>Cookies and local storage</h2>
-    <p>MeridianWay uses <strong>no cookies</strong>. No data is saved in your browser's local storage.</p>
+    <p>MeridianWay uses <strong>no cookies</strong>. The app does save up to three items in your browser's local storage:</p>
+    <ul>
+      <li><strong>Your last position</strong>, if you have used geolocation: in the installed app, it is the fallback start when locating you fails.</li>
+      <li><strong>That you closed the install banner</strong>, so it is not shown again.</li>
+      <li><strong>That you turned off visit statistics</strong>, if you did (see below).</li>
+    </ul>
+    <p>These items stay on your device. The position only leaves it when it is used as a starting point, and then follows the same path as any starting point. To erase them all, clear this site's data in your browser settings.</p>
+
+    <h2>Visit statistics</h2>
+    <p>MeridianWay measures its audience with Umami, without cookies and without saving any identifier on your device. If you would rather your visits were not counted, turn off the switch below, or the one in the app's About panel: nothing more is sent to Umami from this browser, with no reload needed. The setting applies to this browser on this device. On iPhone, the app installed on your home screen has its own storage and is set separately. It does not turn off the error reports sent to Sentry.</p>
+    <div class="privacy-optout"><AnalyticsOptOut lang={lang} /></div>
 
     <h2>Your rights</h2>
     <p>Under the Swiss Federal Act on Data Protection (FADP) and the GDPR for users in the European Union, you may at any time request details of what data concerning you has been processed. Data transmitted to third-party services is governed by their own privacy policies.</p>
@@ -167,33 +228,48 @@ const { lang } = Astro.props;
 {lang === 'rm' && (
   <div class="privacy-pane">
     <h1>Disposiziuns davart la protecziun da datas</h1>
-    <p class="privacy-date"><em>Ultima actualisaziun: zercladur 2026</em></p>
+    <p class="privacy-date"><em>Ultima actualisaziun: settember 2026</em></p>
 
     <h2>Tge che MeridianWay fa (e na fa)</h2>
-    <p>MeridianWay è ina app cumplettamain statica: ella n’ha nagin agen server, na fa nagins contos d’utilisader e n’arcunescha naginas datas persunalas en ina banca da datas. Tut las calculaziuns (posiziun dal sulegl, evaluaziun da la sumbriva) vegnan fatgas directamain en Voss navigatur.</p>
+    <p>MeridianWay na fa nagins contos d’utilisader, na dumonda naginas indicaziuns persunalas e na maina nagina cartoteca da ses utilisaders. Tut las calculaziuns (posiziun dal sulegl, evaluaziun da la sumbriva) vegnan fatgas directamain en Voss navigatur. La website vegn ospitada da Fly.io, e trais relais (Cloudflare Workers) manads da MeridianWay transmettan ina part da las dumondas ed arcuneschan las respostas en il cache.</p>
 
     <h2>Datas surdadas a servetschs da terzas persunas</h2>
-    <p>Per funcziunar tramet l’app tschertas datas a servetschs externs. Quests servetschs survegnan Vossa adressa IP sco er las datas menziunadas qua sutvart.</p>
+    <p>Per funcziunar tramet l’app tschertas datas a servetschs externs. Mintga servetsch che Voss navigatur contactescha directamain survegn er Vossa adressa IP. OpenRouteService ed Overpass vegnan dumandads tras in relais da MeridianWay e na la survegnan betg.</p>
 
     <table>
       <thead>
         <tr><th>Servetsch</th><th>Datas transmessas</th><th>Finamira</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>Photon</strong> (komoot GmbH, DE)</td><td>Text endatà en ils champs d’adressas</td><td>Propostas da cumplettaziun automatica</td></tr>
-        <tr><td><strong>Nominatim</strong> (OSM Foundation, UK)</td><td>Adressa endatada; coordinatas GPS sche la geolocaziun è activada</td><td>Geocodaziun e geocodaziun inversa</td></tr>
-        <tr><td><strong>OpenRouteService</strong> (HeiGIT, DE)</td><td>Coordinatas da partenza e d’arriv</td><td>Calculaziun da la ruta</td></tr>
-        <tr><td><strong>Overpass API</strong> (servers OSM)</td><td>Zona geografica da la ruta</td><td>Datas d’edifizis e da plantas</td></tr>
-        <tr><td><strong>CartoCDN</strong> (Carto Inc., USA)</td><td>Zona da la charta mussada</td><td>Plattinas da charta</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Pagina visitada, tip da l’apparat, lingua dal navigatur — senza cookies, adressa IP anonimisada</td><td>Statisticas d’utilisaziun agregadas</td></tr>
-        <tr><td><strong>Sentry</strong> (servers UE, Germania)</td><td>Sbagls tecnics, URL da la pagina, tip dal navigatur — senza datas d’identitad</td><td>Chattar e reparar sbagls</td></tr>
+        <tr><td><strong>Fly.io</strong><br /><span class="svc">hosting</span></td><td>Paginas dumandadas</td><td>Metter a disposiziun la website</td></tr>
+        <tr><td><strong>Stadia Maps</strong></td><td>Zona da la charta mussada</td><td>Charta da basa</td></tr>
+        <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Text endatà en ils champs d’adressas; lieu gia tschernì en l’auter champ</td><td>Propostas da cumplettaziun automatica</td></tr>
+        <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Adressa endatada; coordinatas GPS sche Vus utilisais la geolocaziun</td><td>Geocodaziun e geocodaziun inversa</td></tr>
+        <tr><td><strong>Open-Meteo</strong></td><td>Punct central da la ruta</td><td>Aura: nivels e temperatura</td></tr>
+        <tr><td><strong>Relais MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordinatas da partenza e d’arriv; zona da la ruta</td><td>Transmissiun a OpenRouteService ed Overpass, autezzas dals edifizis svizzers; respostas arcunadas 7 fin 30 dis en il cache, senza colliaziun cun la persuna che las ha dumandadas</td></tr>
+        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, tras il relais</span></td><td>Coordinatas da partenza e d’arriv</td><td>Calculaziun da la ruta</td></tr>
+        <tr><td><strong>Overpass API</strong><br /><span class="svc">servers OSM, tras il relais</span></td><td>Zona geografica da la ruta</td><td>Datas d’edifizis e da plantas</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Adressa da la pagina, website da derivanza, lieu approximativ (pajais, regiun) deducì da l’adressa IP, che na vegn betg arcunada; navigatur, sistem, grondezza dal visur, lingua; acziuns en l’app (tschertga cumenzada, parter…). Senza cookies</td><td>Statisticas d’utilisaziun agregadas, er davart las zonas nua che rutas vegnan tschertgadas; Vus las pudais deactivar (guardai sutvart)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">servers UE, Germania</span></td><td>Sbagls tecnics, adressa da la pagina senza parameters, tip dal navigatur; senza datas d’identitad</td><td>Chattar e reparar sbagls</td></tr>
       </tbody>
     </table>
 
-    <p>La geolocaziun è <strong>opziunala</strong> e vegn mo activada sche Vus cliccais sin il buttun da localisaziun.</p>
+    <p>Suenter ina tschertga cuntegna l’adressa da la pagina il punct da partenza e quel d’arriv sco er il text endatà per als numnar: uschia sa lascha ina ruta parter. Umami la survegn cun ils puncts arrundads a var 100 m e senza il text endatà: avunda per vesair en tge zonas che rutas vegnan tschertgadas, ma betg per chattar ina adressa precisa. Sentry la survegn senza naginas da questas indicaziuns.</p>
+
+    <p>La geolocaziun è <strong>opziunala</strong>: l’app ha mo access cun Voss permiss, che Voss navigatur dumonda. Ella vegn utilisada cura che Vus tutgais in buttun da localisaziun e, en l’app installada sin il visur da partenza, per proponer Vossa posiziun sco partenza cura che l’app vegn averta. Sche Vus avais gia dà il permiss, centrescha l’app cun quai er la charta tar la partenza.</p>
 
     <h2>Cookies e memorisaziun locala</h2>
-    <p>MeridianWay n’utilisescha <strong>nagins cookies</strong>. Naginas datas na vegnan arcunadas en la memorisaziun locala da Voss navigatur.</p>
+    <p>MeridianWay n’utilisescha <strong>nagins cookies</strong>. L’app arcunescha dentant fin trais indicaziuns en la memorisaziun locala da Voss navigatur:</p>
+    <ul>
+      <li><strong>Vossa ultima posiziun</strong>, sche Vus avais utilisà la geolocaziun: en l’app installada serva ella sco partenza da reserva, sche la localisaziun na reussescha betg.</li>
+      <li><strong>Che Vus avais serrà il bandier d’installaziun</strong>, per ch’el na cumparia betg pli.</li>
+      <li><strong>Che Vus avais deactivà las statisticas da visitas</strong>, sche quai è il cas (guardai sutvart).</li>
+    </ul>
+    <p>Questas indicaziuns restan sin Voss apparat. La posiziun al banduna mo sch’ella vegn utilisada sco punct da partenza, e fa lura il medem viadi sco mintga punct da partenza. Per stizzar tut, stizzai las datas da questa website en ils parameters da Voss navigatur.</p>
+
+    <h2>Statisticas da visitas</h2>
+    <p>MeridianWay mesira sias visitas cun Umami, senza cookies e senza arcunar in identificatur sin Voss apparat. Sche Vus na vulais betg che Vossas visitas vegnian dumbradas, deactivai il cumutatur qua sutvart u quel en il panel «Pertutgant» da l’app: da quest navigatur na vegn lura nagut pli tramess ad Umami, senza chargiar danovamain. Il parameter vala per quest navigatur sin quest apparat. Sin l’iPhone ha l’app installada sin il visur da partenza sia atgna memoria e sto vegnir parametrada separadamain. El na deactivescha betg ils rapports da sbagls tramess a Sentry.</p>
+    <div class="privacy-optout"><AnalyticsOptOut lang={lang} /></div>
 
     <h2>Voss dretgs</h2>
     <p>Tenor la Lescha federala davart la protecziun da datas (nLPD) e tenor il DSGVO per las utilisadras ed ils utilisaders da l’Uniun europeica pudais Vus dumandar da tut temp tge datas che concernan Vus èn vegnidas elavuradas. Las datas transmessas a servetschs da terzas persunas èn suttamessas a lur atgnas disposiziuns davart la protecziun da datas.</p>
@@ -225,8 +301,23 @@ const { lang } = Astro.props;
     color: #d8dbc8;
     margin-bottom: 0.75rem;
   }
+  .privacy-pane ul {
+    margin: 0 0 0.75rem 1.25rem;
+    padding: 0;
+  }
+  .privacy-pane li {
+    line-height: 1.6;
+    color: #d8dbc8;
+    margin-bottom: 0.35rem;
+  }
   .privacy-pane a {
     color: #f0f2a0;
+  }
+  .privacy-optout {
+    margin: 1rem 0 1.25rem;
+    padding: 14px 16px;
+    border: 1px solid rgba(240,242,160,0.2);
+    border-radius: 8px;
   }
   table {
     width: 100%;
@@ -246,6 +337,13 @@ const { lang } = Astro.props;
     border-bottom: 1px solid rgba(240,242,160,0.07);
     vertical-align: top;
     color: #d8dbc8;
+    /* German compounds otherwise push the table past a phone's width. */
+    hyphens: auto;
+    overflow-wrap: anywhere;
   }
-  td:first-child { white-space: nowrap; }
+  td:first-child { overflow-wrap: normal; }
+  .svc {
+    color: rgba(216,219,200,0.6);
+    font-size: 0.75rem;
+  }
 </style>

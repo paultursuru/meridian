@@ -1,6 +1,7 @@
 ---
 import { translations, LANGS, langPath, type Lang } from '../../lib/i18n';
 import AboutContent from '../AboutContent.astro';
+import AnalyticsOptOut from '../AnalyticsOptOut.astro';
 import githubIcon from '../../icons/github.svg?raw';
 
 interface Props {
@@ -30,6 +31,9 @@ const t = translations[lang];
       <Fragment set:html={githubIcon} />
       GitHub
     </a>
+  </div>
+  <div id="about-optout">
+    <AnalyticsOptOut lang={lang} />
   </div>
   <div class="footer-links">
     <a href={langPath(lang, 'about')} class="footer-link">{t.aria_about}</a>

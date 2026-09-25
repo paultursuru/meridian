@@ -9,7 +9,7 @@ const TECHNICAL = {
 };
 
 // Codes whose message is already the sentence: shown as-is.
-const READY = new Set(['ADDRESS_NOT_FOUND', 'POSITION_UNKNOWN', 'NO_ROUTE']);
+export const READY = new Set(['ADDRESS_NOT_FOUND', 'POSITION_UNKNOWN', 'NO_ROUTE']);
 
 // The toast for a failed search. The technical detail stays on the error for
 // the console and Sentry.

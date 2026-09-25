@@ -1,4 +1,5 @@
 import { el } from './dom';
+import { initAnalyticsOptOut } from '../lib/analyticsOptOut.js';
 
 const drawer = () => el('about-drawer');
 
@@ -50,4 +51,5 @@ export function initAboutDrawer() {
   el('about-overlay').addEventListener('click', dismissAbout);
   document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') dismissAbout(); });
   document.addEventListener('keydown', trapAboutFocus);
+  initAnalyticsOptOut();
 }
