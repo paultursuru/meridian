@@ -131,6 +131,8 @@ const backLabels: Record<Lang, string> = {
 <!-- Bundle par Astro (pas is:inline) : la CSP interdit les scripts inline. -->
 <script>
   import { trackPageview } from '../lib/analytics.js';
+  import { initAnalyticsOptOut } from '../lib/analyticsOptOut.js';
+  initAnalyticsOptOut();
   trackPageview();
 </script>
 
