@@ -483,6 +483,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Map ── */
 #map { flex: 1; min-height: 160px; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
+#map .leaflet-bottom { margin-bottom: var(--safe-bottom); }
 #map .route-casing { filter: blur(2px); }
 
 /* Start and end pins (map.js pinIcon). The marker element is the pin itself;
