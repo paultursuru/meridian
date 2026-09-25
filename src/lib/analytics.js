@@ -35,6 +35,39 @@
 const RETRY_MS = 200;
 const MAX_WAIT_MS = 5000;
 
+// Umami keeps where routes are searched, not who searched them: route points
+// rounded to ~100 m (3 decimals), and the typed labels, which can be a home
+// address, dropped. Applied to the page URL and the referrer of every send.
+const DROPPED = ['fromq', 'toq'];
+const POINTS = ['from', 'to'];
+const LAT_LNG = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
+
+export function coarsenUrl(url) {
+  if (typeof url !== 'string') return url;
+  const q = url.indexOf('?');
+  if (q < 0) return url;
+  const h = url.indexOf('#', q);
+  const hash = h < 0 ? '' : url.slice(h);
+  const params = new URLSearchParams(url.slice(q + 1, h < 0 ? undefined : h));
+  if (![...DROPPED, ...POINTS].some((k) => params.has(k))) return url;
+  for (const k of DROPPED) params.delete(k);
+  for (const k of POINTS) {
+    const v = params.get(k);
+    if (v && LAT_LNG.test(v)) params.set(k, v.split(',').map((n) => Number(n).toFixed(3)).join(','));
+  }
+  const query = params.toString();
+  return url.slice(0, q) + (query ? `?${query}` : '') + hash;
+}
+
+export function umamiBeforeSend(type, payload) {
+  if (!payload) return payload;
+  return { ...payload, url: coarsenUrl(payload.url), referrer: coarsenUrl(payload.referrer) };
+}
+
+// Named by data-before-send on the Umami tags; read at each send. Every page
+// sends its first payload through trackPageview(), after this has run.
+if (typeof window !== 'undefined') window.umamiBeforeSend = umamiBeforeSend;
+
 // Umami's global is absent until its script loads, and for good behind a
 // blocker: every custom event goes through here.
 export function track(...args) {

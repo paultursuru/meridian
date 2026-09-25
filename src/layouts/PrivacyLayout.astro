@@ -43,7 +43,7 @@ const backLabels: Record<Lang, string> = {
   <link rel="canonical" href={pageUrl(lang)} />
   {LANGS.map(l => <link rel="alternate" hreflang={l} href={pageUrl(l)} />)}
   <link rel="alternate" hreflang="x-default" href={pageUrl('fr')} />
-  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false"></script>
+  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false" data-before-send="umamiBeforeSend"></script>
 </head>
 <body class="privacy-page">
 

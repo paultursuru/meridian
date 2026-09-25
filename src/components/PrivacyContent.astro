@@ -33,12 +33,12 @@ const { lang } = Astro.props;
         <tr><td><strong>Relais MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordonnées de départ et d'arrivée ; zone de l'itinéraire</td><td>Relais vers OpenRouteService et Overpass, hauteurs des bâtiments suisses ; réponses gardées en cache 7 à 30 jours, sans lien avec qui les a demandées</td></tr>
         <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, via le relais</span></td><td>Coordonnées de départ et d'arrivée</td><td>Calcul des itinéraires</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">serveurs OSM, via le relais</span></td><td>Zone géographique de l'itinéraire</td><td>Données bâtiments et arbres</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Adresse de la page, site de provenance, localisation approximative (pays, région) déduite de l'adresse IP, qui n'est pas conservée ; navigateur, système, taille d'écran, langue ; actions dans l'app (recherche lancée, partage…). Sans cookie</td><td>Statistiques d'utilisation agrégées, désactivables (voir plus bas)</td></tr>
-        <tr><td><strong>Sentry</strong><br /><span class="svc">serveurs EU, Allemagne</span></td><td>Erreurs techniques, adresse de la page, type de navigateur ; sans données d'identité</td><td>Détection et correction de bugs</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Adresse de la page, site de provenance, localisation approximative (pays, région) déduite de l'adresse IP, qui n'est pas conservée ; navigateur, système, taille d'écran, langue ; actions dans l'app (recherche lancée, partage…). Sans cookie</td><td>Statistiques d'utilisation agrégées, dont les zones où des itinéraires sont recherchés ; désactivables (voir plus bas)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">serveurs EU, Allemagne</span></td><td>Erreurs techniques, adresse de la page sans ses paramètres, type de navigateur ; sans données d'identité</td><td>Détection et correction de bugs</td></tr>
       </tbody>
     </table>
 
-    <p>Après une recherche, l'adresse de la page contient les points de départ et d'arrivée, ainsi que le texte saisi pour les désigner : c'est ce qui rend un itinéraire partageable. Umami et Sentry reçoivent donc ces informations avec l'adresse de la page.</p>
+    <p>Après une recherche, l'adresse de la page contient les points de départ et d'arrivée, ainsi que le texte saisi pour les désigner : c'est ce qui rend un itinéraire partageable. Umami la reçoit avec des points arrondis à 100 m environ et sans le texte saisi : de quoi voir dans quelles zones des itinéraires sont recherchés, pas de retrouver une adresse précise. Sentry la reçoit sans aucune de ces informations.</p>
 
     <p>La géolocalisation est <strong>optionnelle</strong> : l'app n'y a accès qu'avec votre autorisation, demandée par le navigateur. Elle sert quand vous appuyez sur un bouton de localisation et, dans l'app installée sur l'écran d'accueil, à proposer votre position comme départ à l'ouverture. Si vous avez déjà donné l'autorisation, l'app s'en sert aussi pour centrer la carte au démarrage.</p>
 
@@ -87,12 +87,12 @@ const { lang } = Astro.props;
         <tr><td><strong>MeridianWay-Relais</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Start- und Zielkoordinaten; Bereich der Route</td><td>Weiterleitung an OpenRouteService und Overpass, Schweizer Gebäudehöhen; Antworten werden 7 bis 30 Tage zwischengespeichert, ohne Bezug zur anfragenden Person</td></tr>
         <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, über das Relais</span></td><td>Start- und Zielkoordinaten</td><td>Routenberechnung</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">OSM-Server, über das Relais</span></td><td>Geografischer Bereich der Route</td><td>Gebäude- und Baumdaten</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Seitenadresse, verweisende Website, ungefährer Standort (Land, Region) aus der IP-Adresse, die nicht gespeichert wird; Browser, System, Bildschirmgrösse, Sprache; Aktionen in der App (Suche gestartet, Teilen …). Ohne Cookies</td><td>Aggregierte Nutzungsstatistiken, abschaltbar (siehe unten)</td></tr>
-        <tr><td><strong>Sentry</strong><br /><span class="svc">EU-Server, Deutschland</span></td><td>Technische Fehler, Seitenadresse, Browsertyp; ohne Identitätsdaten</td><td>Fehlererkennung und -behebung</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Seitenadresse, verweisende Website, ungefährer Standort (Land, Region) aus der IP-Adresse, die nicht gespeichert wird; Browser, System, Bildschirmgrösse, Sprache; Aktionen in der App (Suche gestartet, Teilen …). Ohne Cookies</td><td>Aggregierte Nutzungsstatistiken, auch zu den Gebieten, in denen Routen gesucht werden; abschaltbar (siehe unten)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">EU-Server, Deutschland</span></td><td>Technische Fehler, Seitenadresse ohne Parameter, Browsertyp; ohne Identitätsdaten</td><td>Fehlererkennung und -behebung</td></tr>
       </tbody>
     </table>
 
-    <p>Nach einer Suche enthält die Seitenadresse Start- und Zielpunkt sowie den dafür eingegebenen Text: So lässt sich eine Route teilen. Umami und Sentry erhalten diese Angaben daher mit der Seitenadresse.</p>
+    <p>Nach einer Suche enthält die Seitenadresse Start- und Zielpunkt sowie den dafür eingegebenen Text: So lässt sich eine Route teilen. Umami erhält sie mit auf rund 100 m gerundeten Punkten und ohne den eingegebenen Text: genug, um zu sehen, in welchen Gebieten Routen gesucht werden, aber nicht, um eine genaue Adresse zu finden. Sentry erhält sie ohne jede dieser Angaben.</p>
 
     <p>Die Standortbestimmung ist <strong>optional</strong>: Die App erhält nur mit Ihrer Erlaubnis Zugriff darauf, die Ihr Browser abfragt. Sie wird genutzt, wenn Sie auf eine Standortschaltfläche tippen, und in der auf dem Startbildschirm installierten App, um beim Öffnen Ihren Standort als Start vorzuschlagen. Haben Sie die Erlaubnis bereits erteilt, zentriert die App damit auch die Karte beim Start.</p>
 
@@ -141,12 +141,12 @@ const { lang } = Astro.props;
         <tr><td><strong>Relay MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordinate di partenza e arrivo; area dell'itinerario</td><td>Inoltro a OpenRouteService e Overpass, altezze degli edifici svizzeri; risposte conservate in cache da 7 a 30 giorni, senza legame con chi le ha richieste</td></tr>
         <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, tramite il relay</span></td><td>Coordinate di partenza e arrivo</td><td>Calcolo degli itinerari</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">server OSM, tramite il relay</span></td><td>Area geografica dell'itinerario</td><td>Dati edifici e alberi</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Indirizzo della pagina, sito di provenienza, posizione approssimativa (paese, regione) ricavata dall'indirizzo IP, che non viene conservato; browser, sistema, dimensioni dello schermo, lingua; azioni nell'app (ricerca avviata, condivisione…). Senza cookie</td><td>Statistiche d'uso aggregate, disattivabili (vedi sotto)</td></tr>
-        <tr><td><strong>Sentry</strong><br /><span class="svc">server EU, Germania</span></td><td>Errori tecnici, indirizzo della pagina, tipo di browser; senza dati di identità</td><td>Rilevamento e correzione dei bug</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Indirizzo della pagina, sito di provenienza, posizione approssimativa (paese, regione) ricavata dall'indirizzo IP, che non viene conservato; browser, sistema, dimensioni dello schermo, lingua; azioni nell'app (ricerca avviata, condivisione…). Senza cookie</td><td>Statistiche d'uso aggregate, comprese le zone in cui si cercano itinerari; disattivabili (vedi sotto)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">server EU, Germania</span></td><td>Errori tecnici, indirizzo della pagina senza parametri, tipo di browser; senza dati di identità</td><td>Rilevamento e correzione dei bug</td></tr>
       </tbody>
     </table>
 
-    <p>Dopo una ricerca, l'indirizzo della pagina contiene i punti di partenza e di arrivo e il testo inserito per indicarli: è ciò che rende condivisibile un itinerario. Umami e Sentry ricevono quindi queste informazioni insieme all'indirizzo della pagina.</p>
+    <p>Dopo una ricerca, l'indirizzo della pagina contiene i punti di partenza e di arrivo e il testo inserito per indicarli: è ciò che rende condivisibile un itinerario. Umami lo riceve con i punti arrotondati a circa 100 m e senza il testo inserito: abbastanza per vedere in quali zone si cercano itinerari, non per risalire a un indirizzo preciso. Sentry lo riceve senza nessuna di queste informazioni.</p>
 
     <p>La geolocalizzazione è <strong>opzionale</strong>: l'app vi accede solo con il tuo permesso, richiesto dal browser. Viene usata quando tocchi un pulsante di localizzazione e, nell'app installata sulla schermata Home, per proporre la tua posizione come partenza all'apertura. Se hai già dato il permesso, l'app la usa anche per centrare la mappa all'avvio.</p>
 
@@ -195,12 +195,12 @@ const { lang } = Astro.props;
         <tr><td><strong>MeridianWay relays</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Start and end coordinates; area of the route</td><td>Relay to OpenRouteService and Overpass, Swiss building heights; responses cached for 7 to 30 days, with no link to who requested them</td></tr>
         <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, via the relay</span></td><td>Start and end coordinates</td><td>Route calculation</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">OSM servers, via the relay</span></td><td>Geographic area of the route</td><td>Building and tree data</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Page address, referring site, approximate location (country, region) derived from the IP address, which is not stored; browser, system, screen size, language; actions in the app (search started, share…). No cookies</td><td>Aggregated usage statistics, which you can turn off (see below)</td></tr>
-        <tr><td><strong>Sentry</strong><br /><span class="svc">EU servers, Germany</span></td><td>Technical errors, page address, browser type; no identity data</td><td>Bug detection and fixing</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Page address, referring site, approximate location (country, region) derived from the IP address, which is not stored; browser, system, screen size, language; actions in the app (search started, share…). No cookies</td><td>Aggregated usage statistics, including the areas where routes are searched; you can turn them off (see below)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">EU servers, Germany</span></td><td>Technical errors, page address without its parameters, browser type; no identity data</td><td>Bug detection and fixing</td></tr>
       </tbody>
     </table>
 
-    <p>After a search, the page address contains the start and end points and the text typed to name them: that is what makes a route shareable. Umami and Sentry therefore receive this information with the page address.</p>
+    <p>After a search, the page address contains the start and end points and the text typed to name them: that is what makes a route shareable. Umami receives it with the points rounded to about 100 m and without the typed text: enough to see the areas where routes are searched, not to find a precise address. Sentry receives it without any of this information.</p>
 
     <p>Geolocation is <strong>optional</strong>: the app only gets access with your permission, which your browser asks for. It is used when you tap a location button and, in the app installed on your home screen, to suggest your position as the start when it opens. If you have already granted permission, the app also uses it to centre the map at start-up.</p>
 
@@ -249,12 +249,12 @@ const { lang } = Astro.props;
         <tr><td><strong>Relais MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordinatas da partenza e d’arriv; zona da la ruta</td><td>Transmissiun a OpenRouteService ed Overpass, autezzas dals edifizis svizzers; respostas arcunadas 7 fin 30 dis en il cache, senza colliaziun cun la persuna che las ha dumandadas</td></tr>
         <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, tras il relais</span></td><td>Coordinatas da partenza e d’arriv</td><td>Calculaziun da la ruta</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">servers OSM, tras il relais</span></td><td>Zona geografica da la ruta</td><td>Datas d’edifizis e da plantas</td></tr>
-        <tr><td><strong>Umami</strong></td><td>Adressa da la pagina, website da derivanza, lieu approximativ (pajais, regiun) deducì da l’adressa IP, che na vegn betg arcunada; navigatur, sistem, grondezza dal visur, lingua; acziuns en l’app (tschertga cumenzada, parter…). Senza cookies</td><td>Statisticas d’utilisaziun agregadas, che Vus pudais deactivar (guardai sutvart)</td></tr>
-        <tr><td><strong>Sentry</strong><br /><span class="svc">servers UE, Germania</span></td><td>Sbagls tecnics, adressa da la pagina, tip dal navigatur; senza datas d’identitad</td><td>Chattar e reparar sbagls</td></tr>
+        <tr><td><strong>Umami</strong></td><td>Adressa da la pagina, website da derivanza, lieu approximativ (pajais, regiun) deducì da l’adressa IP, che na vegn betg arcunada; navigatur, sistem, grondezza dal visur, lingua; acziuns en l’app (tschertga cumenzada, parter…). Senza cookies</td><td>Statisticas d’utilisaziun agregadas, er davart las zonas nua che rutas vegnan tschertgadas; Vus las pudais deactivar (guardai sutvart)</td></tr>
+        <tr><td><strong>Sentry</strong><br /><span class="svc">servers UE, Germania</span></td><td>Sbagls tecnics, adressa da la pagina senza parameters, tip dal navigatur; senza datas d’identitad</td><td>Chattar e reparar sbagls</td></tr>
       </tbody>
     </table>
 
-    <p>Suenter ina tschertga cuntegna l’adressa da la pagina il punct da partenza e quel d’arriv sco er il text endatà per als numnar: uschia sa lascha ina ruta parter. Umami e Sentry survegnan perquai questas indicaziuns cun l’adressa da la pagina.</p>
+    <p>Suenter ina tschertga cuntegna l’adressa da la pagina il punct da partenza e quel d’arriv sco er il text endatà per als numnar: uschia sa lascha ina ruta parter. Umami la survegn cun ils puncts arrundads a var 100 m e senza il text endatà: avunda per vesair en tge zonas che rutas vegnan tschertgadas, ma betg per chattar ina adressa precisa. Sentry la survegn senza naginas da questas indicaziuns.</p>
 
     <p>La geolocaziun è <strong>opziunala</strong>: l’app ha mo access cun Voss permiss, che Voss navigatur dumonda. Ella vegn utilisada cura che Vus tutgais in buttun da localisaziun e, en l’app installada sin il visur da partenza, per proponer Vossa posiziun sco partenza cura che l’app vegn averta. Sche Vus avais gia dà il permiss, centrescha l’app cun quai er la charta tar la partenza.</p>
 
