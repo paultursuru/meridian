@@ -27,7 +27,7 @@ initLayout();
 // called by code): where to measure whether the preselect sticks.
 initTabs((type: string) => {
   track('tab_switch', { to: type });
-  map.setActiveRoute(type);
+  selectRoute(type);
 });
 registerServiceWorker();
 initInstallPrompt();

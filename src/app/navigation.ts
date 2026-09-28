@@ -34,7 +34,7 @@ export async function restoreFromUrl(): Promise<boolean> {
   field('start').setPlace({ ...shared.start, countryCode: startCC });
   field('end').setPlace({ ...shared.end, countryCode: endCC });
   if (shared.onboarding) track('onboarding', { via: 'link' });
-  handleSearch({ onboarding: shared.onboarding });
+  handleSearch({ onboarding: shared.onboarding, route: shared.route });
   return true;
 }
 

@@ -13,7 +13,7 @@ import { notifySearchSucceeded } from '../lib/pwa.js';
 import { fmtHm } from '../lib/helpers.js';
 import { tr } from '../lib/i18n.js';
 import { track } from '../lib/analytics.js';
-import { map, selectRoute, reselectActiveRoute } from './mapApi';
+import { map, selectRoute, reselectActiveRoute, activeRoute } from './mapApi';
 import { el } from './dom';
 import { state, urlHasSearch } from './state';
 import { updateSunInfo, updateMapWeather } from './sunInfo';
@@ -45,13 +45,15 @@ export type SearchContext = {
   routes: Awaited<ReturnType<typeof buildRoutes>>;
   // Null at night, which fetches no buildings.
   shade: ShadeData | null;
+  // The route a shared link opens on. Null lets the weather pick.
+  route: 'sunny' | 'shady' | null;
 };
 
 // A search on screen, from its first render to its last refinement.
 // Buildings are fixed for the search; weather and vegetation land later, and
 // the scrubber moves the instant.
 export function createSearchSession(ctx: SearchContext) {
-  const { startC, endC, startQ, endQ, demo, searchStart, midLat, midLng, destTz, tDate, sun, night, switzerland, routes, shade } = ctx;
+  const { startC, endC, startQ, endQ, demo, searchStart, midLat, midLng, destTz, tDate, sun, night, switzerland, routes, shade, route } = ctx;
 
   const sunTimes = getSunTimes(tDate, midLat, midLng);
   // Fixed per search (the scrubber stays in the day). Gates the marker and
@@ -103,6 +105,7 @@ export function createSearchSession(ctx: SearchContext) {
     end:   { ...endC,   label: endQ },
     date: dateValueInZone(atDate, destTz),
     time: formatTimeInZone(atDate, destTz),
+    route: activeRoute(),
     // Kept through scrubs, so a reload or a shared demo opens as the demo.
     onboarding: demo,
   });
@@ -151,6 +154,8 @@ export function createSearchSession(ctx: SearchContext) {
     // The demo button is for the empty app only.
     hideOnboardingButton(true);
     renderAt(tDate);
+    // From the first frame, not once the weather lands.
+    if (route && !single) selectRoute(route);
     notifySearchSucceeded();
     // Here, not where the sunrise jump is built: buildRoutes can still throw
     // before the note is ever seen.
@@ -163,7 +168,7 @@ export function createSearchSession(ctx: SearchContext) {
     hourlyWeather = hourly;
     // No renderAt: weather changes neither scores nor the map.
     updateWeatherInfo(currentInstant);
-    selectRoute(single ? 'sunny' : preselectTab({
+    selectRoute(single ? 'sunny' : route ?? preselectTab({
       altDeg: sun.altDeg,
       // The searched instant, not a scrubbed one.
       temperature: weatherAt(hourlyWeather, tDate)?.temperature ?? null,
