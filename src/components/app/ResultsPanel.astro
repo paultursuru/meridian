@@ -15,7 +15,10 @@ const t = translations[lang];
   <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
     <div id="drawer-bar"></div>
   </div>
-  <button id="share-btn" title={t.share_btn_title} aria-label={t.share_btn_title} set:html={shareIcon} />
+  <button id="share-btn" type="button" title={t.share_btn_title} aria-label={t.share_btn_title}>
+    <Fragment set:html={shareIcon} />
+    <span>{t.share_btn_label}</span>
+  </button>
   <div id="night-note">
     <p>{t.night_note}</p>
     <button id="night-sunrise-btn" type="button"></button>

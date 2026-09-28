@@ -848,17 +848,24 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #share-btn {
   position: absolute;
   top: 7px; right: 12px;
-  width: 32px; height: 32px;
+  height: 24px;
+  padding: 0 9px 0 8px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 5px;
   background: #161b12;
   border: 1px solid rgba(240,242,160,0.2);
-  border-radius: 50%;
+  border-radius: 12px;
   color: #d8dbc8;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
+#share-btn svg { width: 11px; height: 11px; }
+/* The pill is smaller than a finger: keep a 32 px tap target around it. */
+#share-btn::before { content: ''; position: absolute; inset: -4px; }
 #share-btn:hover { border-color: rgba(240,242,160,0.45); color: #f0f2a0; }
 
 #panel-toggle { display: none; }
@@ -1017,6 +1024,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 @media (max-height: 700px) {
   #results { --drawer-peek: 142px; }
   #drawer-handle { padding: 6px 0 7px; }
+  /* No room for the label above the tabs here: icon only. */
+  #share-btn { top: 4px; padding: 0 6px; }
+  #share-btn span { display: none; }
   .tab-btn { padding: 7px 0; }
   .tab-pane { padding: 10px 16px; }
   .ratio-nums { margin-bottom: 7px; }
