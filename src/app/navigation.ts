@@ -25,10 +25,12 @@ export async function restoreFromUrl(): Promise<boolean> {
   if (shared.end)   applyPlace('end', shared.end);
   if (!shared.start || !shared.end) return false;
   // Links carry no country: resolve it so a Swiss link uses swisstopo.
+  state.restoring = true;
   const [startCC, endCC] = await Promise.all([
     reverseGeocode(shared.start.lat, shared.start.lng).then(r => r.countryCode).catch(() => undefined),
     reverseGeocode(shared.end.lat, shared.end.lng).then(r => r.countryCode).catch(() => undefined),
   ]);
+  state.restoring = false;
   // Back again meanwhile: running it now would push an unwanted entry.
   if (location.search !== search) return true;
   field('start').setPlace({ ...shared.start, countryCode: startCC });
@@ -111,7 +113,7 @@ export function initNavigation() {
       const loading = button('search-btn').disabled && !el('results').classList.contains('on');
       track('back_reset', { loading });
       resetSearch();
-    } else if (inUrl && !state.searchShown) {
+    } else if (inUrl && !state.searchShown && !state.restoring) {
       restoreFromUrl();
     }
   });

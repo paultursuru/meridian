@@ -13,6 +13,8 @@ export const state = {
   searchEntryPushed: false,
   // A history.back() of ours, whose popstate must not be taken for the user's.
   skipNextPop: false,
+  // A link is being restored: a popstate meanwhile must not start another.
+  restoring: false,
 };
 
 // A complete search in the URL marks a search's history entry.

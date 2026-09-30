@@ -3,7 +3,7 @@ import { registerServiceWorker, initInstallPrompt, isStandalone } from '../lib/p
 import { trackPageview, track } from '../lib/analytics.js';
 import { setMap, map, selectRoute } from './mapApi';
 import { urlHasSearch } from './state';
-import { initIntro, hideOnboardingButton } from './intro';
+import { initIntro, hideOnboardingButton, hideAppDescription } from './intro';
 import { initSunInfo } from './sunInfo';
 import { initFields } from './fields';
 import { initDeparture, setDepartureNow } from './departure';
@@ -44,9 +44,16 @@ initFields({ onSubmit: () => handleSearch(), onFocus: leaveOnboarding });
 initGeoButtons();
 initDeparture({ onSearch: () => handleSearch() });
 initShareButton();
+// Before the restore: a shared link waits on two reverse geocodes, and these
+// must answer meanwhile.
+initLocateMe();
+initAboutDrawer();
+initNavigation();
 
-// A link with a search is about to show results: no demo button over them.
+// A link with a search is about to show results: no demo button over them,
+// and no intro bubble over the map controls while the link restores.
 hideOnboardingButton(urlHasSearch());
+if (urlHasSearch()) hideAppDescription();
 
 if (!(await restoreFromUrl())) {
   if (isStandalone()) {
@@ -57,7 +64,3 @@ if (!(await restoreFromUrl())) {
     initInitialMapCenter();
   }
 }
-
-initLocateMe();
-initAboutDrawer();
-initNavigation();
