@@ -82,7 +82,9 @@ async function loadBuildings(
   return fetchBuildings(bbox, { switzerland });
 }
 
-export async function handleSearch({ onboarding: demo = false }: { onboarding?: boolean } = {}) {
+export async function handleSearch(
+  { onboarding: demo = false, route = null }: { onboarding?: boolean; route?: 'sunny' | 'shady' | null } = {},
+) {
   const searchStart = performance.now();
   const startQ = input('inp-start').value.trim();
   const endQ   = input('inp-end').value.trim();
@@ -164,7 +166,7 @@ export async function handleSearch({ onboarding: demo = false }: { onboarding?: 
     const session = createSearchSession({
       startC, endC, startQ, endQ, demo, searchStart,
       midLat, midLng, destTz, tDate, sun, night, switzerland,
-      routes, shade,
+      routes, shade, route,
     });
     session.showFirst();
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildShareQuery, parseShareQuery } from '../src/lib/share.js';
+import { buildShareQuery, parseShareQuery, withRoute } from '../src/lib/share.js';
 
 describe('buildShareQuery', () => {
   it('encodes coords, labels and datetime', () => {
@@ -53,7 +53,7 @@ describe('parseShareQuery', () => {
   });
 
   it('returns nulls for missing or malformed params', () => {
-    expect(parseShareQuery('')).toEqual({ start: null, end: null, date: null, time: null, onboarding: false });
+    expect(parseShareQuery('')).toEqual({ start: null, end: null, date: null, time: null, route: null, onboarding: false });
     expect(parseShareQuery('?from=abc,def&to=1,2,3').start).toBeNull();
     expect(parseShareQuery('?from=46.5&to=47,7').start).toBeNull();
     expect(parseShareQuery('?from=46.5,6.6&dt=oops').date).toBeNull();
@@ -81,5 +81,36 @@ describe('parseShareQuery', () => {
   it('only takes onboarding=1 as the flag', () => {
     expect(parseShareQuery('?onboarding=0').onboarding).toBe(false);
     expect(parseShareQuery('?onboarding').onboarding).toBe(false);
+  });
+
+  it('round-trips the route on screen, and leaves it out when unknown', () => {
+    const search = { start: { lat: 46.5, lng: 6.6 }, end: { lat: 46.6, lng: 6.7 }, date: '2026-07-15', time: '15:00' };
+    expect(parseShareQuery('?' + buildShareQuery({ ...search, route: 'shady' })).route).toBe('shady');
+    expect(parseShareQuery('?' + buildShareQuery({ ...search, route: 'sunny' })).route).toBe('sunny');
+    expect(new URLSearchParams(buildShareQuery(search)).has('r')).toBe(false);
+    expect(new URLSearchParams(buildShareQuery({ ...search, route: 'both' })).has('r')).toBe(false);
+  });
+
+  it('ignores an r that names no route', () => {
+    expect(parseShareQuery('?r=cloudy').route).toBeNull();
+    expect(parseShareQuery('?r=').route).toBeNull();
+  });
+});
+
+describe('withRoute', () => {
+  it('swaps the route and keeps everything else', () => {
+    const q = withRoute('?from=46.5,6.6&to=46.6,6.7&dt=2026-07-15T15:00&r=sunny', 'shady');
+    const p = new URLSearchParams(q);
+    expect(p.get('r')).toBe('shady');
+    expect(p.get('from')).toBe('46.5,6.6');
+    expect(p.get('dt')).toBe('2026-07-15T15:00');
+  });
+
+  it('adds the route to a link that had none', () => {
+    expect(new URLSearchParams(withRoute('?from=46.5,6.6&to=46.6,6.7', 'sunny')).get('r')).toBe('sunny');
+  });
+
+  it('leaves the query alone for an unknown route', () => {
+    expect(withRoute('?from=46.5,6.6&r=sunny', 'both')).toBe('from=46.5%2C6.6&r=sunny');
   });
 });
