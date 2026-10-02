@@ -35,6 +35,12 @@ jobs:
     needs: test # deploy only runs if the test job passes
     # Only deploy on a push to main — never on pull requests.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # One deploy at a time: merges in a burst otherwise race on the same
+    # machines and the slowest one wins, not the latest. No cancel-in-progress,
+    # it would stop a rolling update halfway.
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
