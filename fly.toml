@@ -11,7 +11,9 @@ primary_region = 'lhr'
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 0
+  # One machine stays up: at a couple of visits a day, a stopped machine meant
+  # nearly every visitor waited for it to boot.
+  min_machines_running = 1
   processes = ['app']
 
 [[vm]]
