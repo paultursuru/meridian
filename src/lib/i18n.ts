@@ -17,6 +17,7 @@ export const translations = {
   fr: {
     title: 'MeridianWay : Navigation solaire',
     meta_description: 'Choisissez votre itinéraire selon l\'ensoleillement : deux chemins proposés, l\'un au soleil, l\'autre à l\'ombre.',
+    og_image_alt: 'Le logo MeridianWay et un téléphone qui affiche l\'app : deux itinéraires à pied de la gare de Lausanne au Musée Olympique, l\'un au soleil, l\'autre à l\'ombre.',
     app_description: 'Choisissez votre itinéraire selon l\'ensoleillement :\ndeux chemins proposés, l\'un au <span class="meri bold">soleil</span>, l\'autre à l\'<span class="way bold">ombre</span>.',
     onboarding_btn: 'Je dois faire quoi ?',
     onboarding_description: 'Deux itinéraires à pied : l\'un au <span class="meri bold">soleil</span>, l\'autre à l\'<span class="way bold">ombre</span>. Voici un exemple le 15/07 à 15h.\nAlors, on va où aujourd\'hui ?',
@@ -125,6 +126,7 @@ export const translations = {
   de: {
     title: 'MeridianWay : Sonnennavigation',
     meta_description: 'Wählen Sie Ihre Route je nach Sonneneinstrahlung: Es stehen zwei Wege zur Auswahl, einer in der Sonne, der andere im Schatten.',
+    og_image_alt: 'Das MeridianWay-Logo und ein Smartphone mit der App: zwei Fusswege vom Bahnhof Lausanne zum Olympischen Museum, einer in der Sonne, der andere im Schatten.',
     app_description: 'Wählen Sie Ihre Route je nach Sonneneinstrahlung:\nEs stehen zwei Wege zur Auswahl, einer in der <span class="meri bold">Sonne</span>, der andere im <span class="way bold">Schatten</span>.',
     onboarding_btn: 'Was muss ich tun?',
     onboarding_description: 'Zwei Fusswege: einer in der <span class="meri bold">Sonne</span>, der andere im <span class="way bold">Schatten</span>. Hier ein Beispiel am 15.07. um 15 Uhr.\nAlso, wohin geht es heute?',
@@ -233,6 +235,7 @@ export const translations = {
   it: {
     title: 'MeridianWay : Navigazione solare',
     meta_description: 'Scegliete il vostro percorso in base all\'esposizione al sole: sono disponibili due sentieri, uno al sole e l\'altro all\'ombra.',
+    og_image_alt: 'Il logo MeridianWay e uno smartphone con l\'app: due percorsi a piedi dalla stazione di Losanna al Museo Olimpico, uno al sole e l\'altro all\'ombra.',
     app_description: 'Scegliete il vostro percorso in base all\'esposizione al sole:\nsono disponibili due sentieri, uno al <span class="meri bold">sole</span> e l\'altro all\'<span class="way bold">ombra</span>.',
     onboarding_btn: 'Cosa devo fare?',
     onboarding_description: 'Due percorsi a piedi: uno al <span class="meri bold">sole</span>, l\'altro all\'<span class="way bold">ombra</span>. Ecco un esempio il 15/07 alle 15.\nAllora, dove andiamo oggi?',
@@ -341,6 +344,7 @@ export const translations = {
   en: {
     title: 'MeridianWay : Solar navigation',
     meta_description: 'Choose your route based on the amount of sunlight: there are two paths to choose from, one in the sun and the other in the shade.',
+    og_image_alt: 'The MeridianWay logo and a phone showing the app: two walking routes from Lausanne train station to the Olympic Museum, one in the sun, the other in the shade.',
     app_description: 'Choose your route based on the amount of sunlight:\nthere are two paths to choose from, one in the <span class="meri bold">sun</span> and the other in the <span class="way bold">shade</span>.',
     onboarding_btn: 'What do I do?',
     onboarding_description: 'Two walking routes: one in the <span class="meri bold">sun</span>, the other in the <span class="way bold">shade</span>. Here is an example on 15/07 at 3 pm.\nSo, where are we going today?',
@@ -449,6 +453,7 @@ export const translations = {
   rm: {
     title: 'MeridianWay: navigaziun solara',
     meta_description: 'Tscherni tia ruta tut tenor la glisch dal sulegl: duas vias proponidas, ina en il sulegl e l’autra en la sumbriva.',
+    og_image_alt: 'Il logo da MeridianWay ed in telefonin che mussa l’app: duas vias a pe da la staziun da Losanna al Museum olimpic, ina en il sulegl e l’autra en la sumbriva.',
     app_description: 'Tscherni tia ruta tut tenor la glisch dal sulegl:\nduas vias proponidas, ina en il <span class="meri bold">sulegl</span> e l\'autra en la <span class="way bold">sumbriva</span>.',
     onboarding_btn: 'Tge stoss jau far?',
     onboarding_description: 'Duas vias da viandar: ina en il <span class="meri bold">sulegl</span>, l\'autra en la <span class="way bold">sumbriva</span>. Qua in exempel ils 15-07 a las 15.\nDamai, nua giain nus oz?',
