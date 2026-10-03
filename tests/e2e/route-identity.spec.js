@@ -76,17 +76,39 @@ test('tapping the other label selects that route, without the pick menu', async 
   await expect(page.locator('.pick-menu')).toHaveCount(0);
 });
 
+// A point on the grey line's stroke that a tap really reaches. The middle of
+// the path's bounding box is off the line as soon as the route bends, the
+// middle of the line can sit under a label (which selects the same route, so
+// the test would pass without touching the line), and the fit that frames the
+// routes is animated: a point read mid-zoom has moved by the time the click
+// lands. So: the first sample the line itself answers to, read until it holds.
+async function pointOnGreyLine(page) {
+  const read = () => page.locator('path.route-alt').evaluate((path) => {
+    const m = path.getScreenCTM();
+    const len = path.getTotalLength();
+    for (let i = 1; i < 20; i++) {
+      const p = path.getPointAtLength((len * i) / 20);
+      const x = m.a * p.x + m.c * p.y + m.e;
+      const y = m.b * p.x + m.d * p.y + m.f;
+      if (document.elementFromPoint(x, y) === path) return { x, y };
+    }
+    return null;
+  });
+  let last = null;
+  await expect.poll(async () => {
+    const at = await read();
+    const held = at !== null && last !== null && at.x === last.x && at.y === last.y;
+    last = at;
+    return held;
+  }, { message: 'an uncovered point on the grey line, held still', intervals: [150] }).toBe(true);
+  return last;
+}
+
 test('tapping the grey line selects that route too', async ({ page }) => {
   await search(page);
   const target = other(await activeTab(page));
 
-  // A point on the stroke itself: the middle of the path's bounding box is off
-  // the line as soon as the route bends.
-  const at = await page.locator('path.route-alt').evaluate((path) => {
-    const p = path.getPointAtLength(path.getTotalLength() / 2);
-    const m = path.getScreenCTM();
-    return { x: m.a * p.x + m.c * p.y + m.e, y: m.b * p.x + m.d * p.y + m.f };
-  });
+  const at = await pointOnGreyLine(page);
   await page.mouse.click(at.x, at.y);
 
   await expectSelected(page, target);

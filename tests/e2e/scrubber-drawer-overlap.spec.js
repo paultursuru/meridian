@@ -60,6 +60,25 @@ async function gap(page) {
   });
 }
 
+const drawerHeight = (page) =>
+  page.evaluate(() => document.getElementById('results').getBoundingClientRect().height);
+
+// The gap once nothing moves. The drawer and the scrubber both get there
+// through CSS transitions (0.32s in main.css), which a loaded runner can
+// stretch past any fixed wait: a read mid-way says nothing, and polling for
+// "gap >= 0" would pass on the first read, before the drawer has grown. So
+// read until two reads in a row agree, and judge that one.
+async function settledGap(page) {
+  let last = null;
+  await expect.poll(async () => {
+    const now = await gap(page);
+    const held = now === last;
+    last = now;
+    return held;
+  }, { message: 'drawer and scrubber at rest', intervals: [150] }).toBe(true);
+  return last;
+}
+
 // Both bottom-sheet viewports on purpose: from 900px up the drawer docks as a
 // side panel with the scrubber inside it (main.css), where there is no top
 // edge to be pushed under and no handle to expand. That layout has its own
@@ -78,9 +97,9 @@ for (const viewport of [
 
     await page.click('#drawer-handle');
     await expect(page.locator('#results')).toHaveClass(/expanded/);
-    await page.waitForTimeout(500); // let the 0.32s expand transition settle
 
-    expect(await gap(page)).toBeGreaterThanOrEqual(0);
+    expect(await settledGap(page)).toBeGreaterThanOrEqual(0);
+    const withoutNote = await drawerHeight(page);
 
     // Scrub into the grazing window: this is what grows the drawer.
     await page.locator('#scrubber-range').evaluate(el => {
@@ -89,9 +108,12 @@ for (const viewport of [
     });
 
     await expect(page.locator('#grazing-sun-note')).toHaveClass(/on/);
-    await page.waitForTimeout(300);
+
+    // Otherwise there is nothing for the scrubber to follow, and the check
+    // below passes whatever the code does.
+    await expect.poll(() => drawerHeight(page)).toBeGreaterThan(withoutNote);
 
     // The regression: the drawer grew and the scrubber did not follow.
-    expect(await gap(page)).toBeGreaterThanOrEqual(0);
+    expect(await settledGap(page)).toBeGreaterThanOrEqual(0);
   });
 }
