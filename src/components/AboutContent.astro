@@ -15,8 +15,8 @@ const show = (l: Lang) => allLangs || l === lang;
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Navigation piétonne selon votre ensoleillement.</p>
     <p>MeridianWay calcule deux itinéraires <strong>à pied</strong> entre un point de départ et une destination. L'objectif n'est pas le chemin le plus rapide, mais celui qui maximise ou minimise <strong>votre exposition au soleil</strong>.</p>
-    <p>L'application analyse la position du soleil à l'heure choisie et les ombres portées par les bâtiments environnants, à partir des données ouvertes d'<strong>OpenStreetMap</strong>.</p>
-    <p>Les résultats sont des <strong>orientations</strong>, pas des certitudes au mètre près. Les hauteurs de bâtiments dans OpenStreetMap sont partielles mais régulièrement mises à jour par la communauté : certaines zones ombragées peuvent ne pas apparaître, et certains trajets sont en réalité plus à l'ombre qu'indiqué.</p>
+    <p>L'application analyse la position du soleil à l'heure choisie et les ombres portées par les bâtiments environnants. Pour les trajets en Suisse, les bâtiments viennent de <strong>swisstopo</strong>, avec une hauteur mesurée pour chacun. Ailleurs, ils viennent des données ouvertes d'<strong>OpenStreetMap</strong>.</p>
+    <p>Les résultats sont des <strong>orientations</strong>, pas des certitudes au mètre près. Hors de Suisse, les hauteurs de bâtiments dans OpenStreetMap sont partielles mais régulièrement complétées par la communauté : certaines zones ombragées peuvent ne pas apparaître, et certains trajets sont en réalité plus à l'ombre qu'indiqué.</p>
     <p>En hiver, profiter de la chaleur du soleil. En été, trouver la fraîcheur de l'ombre.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Source ouverte</p>
@@ -30,8 +30,8 @@ const show = (l: Lang) => allLangs || l === lang;
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Fussgänger-Navigation nach Sonneneinstrahlung.</p>
     <p>MeridianWay berechnet zwei <strong>Fussgängerrouten</strong> zwischen Start und Ziel. Nicht die schnellste Strecke zählt, sondern jene, die <strong>Ihre Sonneneinstrahlung</strong> maximiert oder minimiert.</p>
-    <p>Die App analysiert den genauen Sonnenstand zur gewählten Uhrzeit und die Schatten der umliegenden Gebäude, basierend auf den offenen Daten von <strong>OpenStreetMap</strong>.</p>
-    <p>Die Ergebnisse sind <strong>Orientierungshilfen</strong>, keine metergenauen Anweisungen. Die Gebäudehöhen in OpenStreetMap sind teilweise vorhanden, werden aber regelmässig von der Gemeinschaft aktualisiert : manche Schattenbereiche können dabei fehlen, und einige Routen sind in der Realität schattiger als angezeigt.</p>
+    <p>Die App analysiert den genauen Sonnenstand zur gewählten Uhrzeit und die Schatten der umliegenden Gebäude. Für Routen in der Schweiz stammen die Gebäude von <strong>swisstopo</strong>, mit einer gemessenen Höhe für jedes einzelne. Anderswo stammen sie aus den offenen Daten von <strong>OpenStreetMap</strong>.</p>
+    <p>Die Ergebnisse sind <strong>Orientierungshilfen</strong>, keine metergenauen Anweisungen. Ausserhalb der Schweiz sind die Gebäudehöhen in OpenStreetMap lückenhaft, werden aber regelmässig von der Gemeinschaft ergänzt: Manche Schattenbereiche können fehlen, und einige Routen sind in Wirklichkeit schattiger als angezeigt.</p>
     <p>Im Winter die Sonnenwärme geniessen. Im Sommer im kühlen Schatten bleiben.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Open Source</p>
@@ -45,8 +45,8 @@ const show = (l: Lang) => allLangs || l === lang;
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Navigazione pedonale secondo l'esposizione solare.</p>
     <p>MeridianWay calcola due <strong>percorsi pedonali</strong> tra un punto di partenza e una destinazione. L'obiettivo non è il tragitto più veloce, ma quello che massimizza o minimizza <strong>la tua esposizione al sole</strong>.</p>
-    <p>L'applicazione analizza la posizione del sole all'ora scelta e le ombre proiettate dagli edifici circostanti, sulla base dei dati aperti di <strong>OpenStreetMap</strong>.</p>
-    <p>I risultati sono <strong>indicazioni</strong>, non istruzioni precise al metro. Le altezze degli edifici in OpenStreetMap sono parziali ma regolarmente aggiornate dalla comunità : alcune zone d'ombra possono non apparire, e certi percorsi sono in realtà più ombreggiati di quanto indicato.</p>
+    <p>L'applicazione analizza la posizione del sole all'ora scelta e le ombre proiettate dagli edifici circostanti. Per i percorsi in Svizzera, gli edifici provengono da <strong>swisstopo</strong>, con un'altezza misurata per ognuno. Altrove, provengono dai dati aperti di <strong>OpenStreetMap</strong>.</p>
+    <p>I risultati sono <strong>indicazioni</strong>, non istruzioni precise al metro. Fuori dalla Svizzera, le altezze degli edifici in OpenStreetMap sono parziali ma regolarmente aggiornate dalla comunità: alcune zone d'ombra possono non apparire, e certi percorsi sono in realtà più ombreggiati di quanto indicato.</p>
     <p>D'inverno, godere del calore del sole. D'estate, restare al fresco all'ombra.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Codice aperto</p>
@@ -60,8 +60,8 @@ const show = (l: Lang) => allLangs || l === lang;
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Pedestrian navigation for your sun exposure.</p>
     <p>MeridianWay calculates two <strong>walking routes</strong> between a starting point and a destination. The goal isn't the fastest path, it's the one that maximises or minimises <strong>your exposure to the sun</strong>.</p>
-    <p>The app analyses the sun's exact position at the chosen time and the shadows cast by surrounding buildings, using open data from <strong>OpenStreetMap</strong>.</p>
-    <p>The results are <strong>suggestions</strong>, not precise instructions. Building heights in OpenStreetMap are partial but regularly updated by the community: some shaded areas may go undetected, and certain routes are actually shadier than shown.</p>
+    <p>The app analyses the sun's exact position at the chosen time and the shadows cast by surrounding buildings. For routes within Switzerland, buildings come from <strong>swisstopo</strong>, with a measured height for every one of them. Elsewhere, they come from the open data of <strong>OpenStreetMap</strong>.</p>
+    <p>The results are <strong>suggestions</strong>, not precise instructions. Outside Switzerland, building heights in OpenStreetMap are partial but regularly updated by the community: some shaded areas may go undetected, and certain routes are actually shadier than shown.</p>
     <p>In winter, soak up the warmth of the sun. In summer, stay cool in the shade.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Open source</p>
@@ -75,8 +75,8 @@ const show = (l: Lang) => allLangs || l === lang;
     <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
     <p class="about-tagline">Giai a pe, tut tenor la glisch dal sulegl.</p>
     <p>MeridianWay calculescha duas rutas da peduns tranter ina partenza ed ina destinaziun. La finamira n’è betg la via la pli svelta, mabain quella che maximescha u minimescha la radiaziun dal sulegl.</p>
-    <p>L’app analisescha la posiziun dal sulegl durant l’ura tschernida e las sumbrivas ch’ils edifizis en vischinanza bittan, a maun da las datas avertas da OpenStreetMap.</p>
-    <p>Ils resultats èn valurs directivas, naginas indicaziuns exactas. Las autezzas dals edifizis en OpenStreetMap n’èn betg cumplettas, ma vegnan actualisadas regularmain da la communitad: en tscherts territoris na vegnan sumbrivas betg mussadas, e tschertas rutas èn effectivamain pli sumbrivantas che inditgà.</p>
+    <p>L’app analisescha la posiziun dal sulegl durant l’ura tschernida e las sumbrivas ch’ils edifizis en vischinanza bittan. Per las rutas en Svizra derivan ils edifizis da swisstopo, cun in’autezza mesirada per mintgin. Ordaifer la Svizra derivan els da las datas avertas da OpenStreetMap.</p>
+    <p>Ils resultats èn valurs directivas, naginas indicaziuns exactas. Ordaifer la Svizra n’èn las autezzas dals edifizis en OpenStreetMap betg cumplettas, ma vegnan actualisadas regularmain da la communitad: en tscherts territoris na vegnan sumbrivas betg mussadas, e tschertas rutas èn effectivamain pli sumbrivantas che inditgà.</p>
     <p>L’enviern giudair il chaud dal sulegl. La stad tschertgar il fraid da la sumbriva.</p>
     <div class="about-opensource">
       <p class="opensource-badge">Funtauna averta</p>
