@@ -28,7 +28,12 @@ const t = translations[lang];
 <meta property="og:url" content={langUrl(lang)} />
 <meta property="og:title" content={t.title} />
 <meta property="og:description" content={t.meta_description} />
-<meta property="og:image" content={`${SITE_URL}/meridian-way-og.png`} />
+<meta property="og:image" content={`${SITE_URL}/meridian-way-og-img.jpg`} />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={t.og_image_alt} />
+<meta name="twitter:card" content="summary_large_image" />
 <script is:inline type="application/ld+json" set:html={JSON.stringify({
   "@context": "https://schema.org",
   "@type": "WebApplication",
