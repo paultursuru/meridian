@@ -2,8 +2,9 @@ import { haversine } from './helpers.js';
 import { tr } from './i18n.js';
 
 // ORS is proxied through a Cloudflare Worker (ors-proxy/) so the API key
-// never ships in the client bundle. Same pattern as overpass.js.
-const ORS_PROXY = 'https://ors-proxy.meridianway.workers.dev';
+// never ships in the client bundle. Same pattern as overpass.js. Reached
+// through the site's own domain: nginx.conf relays it, Vite does in dev.
+const ORS_PROXY = '/api/route';
 // Only used when a feature comes back without a duration. ORS's foot-walking
 // profile is a flat 5 km/h over the network distance: six Lausanne
 // alternatives all measured exactly 5.00 km/h, and the same 2.2 km route took

@@ -63,7 +63,7 @@ async function mockUpstreams(page, { orsStatus = 200 } = {}) {
     await held.weather;
     return route.fulfill({ json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } } });
   });
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', async route => {
+  await page.route('**/api/route**', async route => {
     await held.ors;
     if (orsStatus !== 200) {
       return route.fulfill({ status: orsStatus, json: { error: { code: 2099, message: 'refused' } } });
@@ -79,11 +79,11 @@ async function mockUpstreams(page, { orsStatus = 200 } = {}) {
       },
     ] } });
   });
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', async route => {
+  await page.route('**/api/overpass**', async route => {
     await held.overpass;
     return route.fulfill({ json: { elements: [] } });
   });
-  await page.route('https://swissbuildings-lookup.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/buildings**', route => route.fulfill({
     json: { buildings: [] },
   }));
   // Buildings are mocked above, so the tiles must be blocked too or the real
@@ -457,7 +457,7 @@ test.describe('a search still in flight', () => {
     const length = await historyLength(page);
 
     const release = hold(held, 'ors');
-    const asked = page.waitForRequest(/ors-proxy/);
+    const asked = page.waitForRequest(/\/api\/route/);
     await page.click('#depart-toggle');
     await page.fill('#inp-time', '16:00');
     await page.click('#depart-confirm');
@@ -468,7 +468,7 @@ test.describe('a search still in flight', () => {
     // Back as a way out of a search still loading, told apart in the data.
     expect(await backResets(page)).toEqual([{ loading: true }]);
 
-    const answered = page.waitForResponse(/ors-proxy/);
+    const answered = page.waitForResponse(/\/api\/route/);
     release();
     await answered;
     // A stale search that still drew would do it within a frame of its answer.
@@ -517,7 +517,7 @@ test.describe('a search still in flight', () => {
     await page.goBack();
     await expectEmptyApp(page);
 
-    const answered = page.waitForResponse(/overpass-cache/);
+    const answered = page.waitForResponse(/\/api\/overpass/);
     release();
     await answered;
     await page.waitForTimeout(500);

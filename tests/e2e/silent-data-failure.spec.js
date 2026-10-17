@@ -24,13 +24,13 @@ async function mockUpstreams(page, { buildingsStatus = 200 } = {}) {
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/route**', route => route.fulfill({
     json: { features: [{
       geometry: { type: 'LineString', coordinates: [[2.2950, 48.8738, 0], [2.32, 48.865, 0], [2.3376, 48.8606, 0]] },
       properties: { summary: { distance: 2200, duration: 1800 } },
     }] },
   }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route => {
+  await page.route('**/api/overpass**', route => {
     const isBuildingsQuery = decodeURIComponent(route.request().postData() || '').includes('"building"');
     if (isBuildingsQuery && buildingsStatus !== 200) {
       return route.fulfill({ status: buildingsStatus, body: 'upstream error' });

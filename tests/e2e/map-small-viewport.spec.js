@@ -36,7 +36,7 @@ async function mockUpstreams(page, { coordinates, distance = 2200 } = {}) {
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/route**', route => route.fulfill({
     json: { features: [{
       geometry: {
         type: 'LineString',
@@ -45,7 +45,7 @@ async function mockUpstreams(page, { coordinates, distance = 2200 } = {}) {
       properties: { summary: { distance, duration: 1800 } },
     }] },
   }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route =>
+  await page.route('**/api/overpass**', route =>
     route.fulfill({ json: { elements: [] } }));
   // The vector basemap is irrelevant to the projection maths and would other-
   // wise pull tiles over the network on every run.

@@ -141,7 +141,7 @@ test('clicking a drawn route selects it instead of offering to pick a point', as
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/route**', route => route.fulfill({
     json: { features: [
       { geometry: { type: 'LineString', coordinates: [[6.6323, 46.5197, 400], [6.6360, 46.5220, 400], [6.6400, 46.5250, 400]] },
         properties: { summary: { distance: 900, duration: 700 } } },
@@ -149,9 +149,9 @@ test('clicking a drawn route selects it instead of offering to pick a point', as
         properties: { summary: { distance: 1000, duration: 780 } } },
     ] },
   }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route =>
+  await page.route('**/api/overpass**', route =>
     route.fulfill({ json: { elements: [] } }));
-  await page.route('https://swissbuildings-lookup.meridianway.workers.dev/**', route =>
+  await page.route('**/api/buildings**', route =>
     route.fulfill({ json: { buildings: [] } }));
 
   await page.goto('/?from=46.5197,6.6323&to=46.5250,6.6400&dt=2026-07-28T14:00');

@@ -1,7 +1,8 @@
 import { overpassFetch } from './overpass.js';
 import { tr } from './i18n.js';
 
-const SWISSBUILDINGS_ENDPOINT = 'https://swissbuildings-lookup.meridianway.workers.dev';
+// The swissbuildings-lookup Worker, relayed by nginx.conf (Vite in dev).
+const SWISSBUILDINGS_ENDPOINT = '/api/buildings';
 
 export function routesBbox(routes) {
   let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity;

@@ -10,7 +10,7 @@ import { fetchBuildings } from '../src/lib/buildings.js';
 // exact per-request tile counts, not just "it doesn't crash".
 
 function tileCountFromUrl(urlStr) {
-  const u = new URL(urlStr);
+  const u = new URL(urlStr, 'https://meridian-way.ch');
   const [w, s, e, n] = u.searchParams.get('bbox').split(',').map(Number);
   const latCells = Math.floor(n * 100) - Math.floor(s * 100) + 1;
   const lngCells = Math.floor(e * 100) - Math.floor(w * 100) + 1;

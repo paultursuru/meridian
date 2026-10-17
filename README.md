@@ -124,6 +124,8 @@ npm test           # run the Vitest suite
 
 The Cloudflare Workers in `ors-proxy/`, `overpass-cache/` and `swissbuildings-lookup/` are separate deployables (each with its own `wrangler.toml`; the first two bind a KV namespace, `swissbuildings-lookup/` binds the `swissbuildings-tiles` R2 bucket instead); they are not part of the Astro build and only need redeploying when their own code changes.
 
+The browser never calls `*.workers.dev` directly: `nginx.conf` relays `/api/route`, `/api/overpass` and `/api/buildings/` to the three Workers (Vite's dev proxy does the same locally), because some corporate web filters block `workers.dev` hosts while the site's own domain gets through. Since `swissbuildings-lookup` rate-limits per IP and every relayed request comes from the Fly machine, nginx forwards the visitor's IP with a shared secret.
+
 ---
 
 

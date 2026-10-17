@@ -23,7 +23,7 @@ async function mockUpstreams(page) {
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/route**', route => route.fulfill({
     // Two distinct-enough geometries so dedupeRoutes' 0.9 overlap filter
     // keeps both and the scrubber isn't gated on a single-route search.
     json: { features: [
@@ -37,7 +37,7 @@ async function mockUpstreams(page) {
       },
     ] },
   }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/overpass**', route => route.fulfill({
     json: { elements: [] },
   }));
 }

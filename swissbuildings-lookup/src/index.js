@@ -5,6 +5,8 @@
 // (voir plus bas pourquoi). buildings.js fait le filtre bbox exact + la dédup
 // côté client, où le CPU n'est pas limité.
 
+import { clientIp } from './clientIp.js';
+
 const ALLOWED_ORIGINS = new Set([
   'https://meridian-way.ch',
   'http://localhost:4321', // dev Astro
@@ -84,7 +86,7 @@ export default {
       return withCors(new Response(null, { status: 204 }), origin);
     }
 
-    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const ip = clientIp(request, env.EDGE_SECRET);
     if (isRateLimited(ip)) {
       return withCors(json({ error: 'rate limited' }, 429), origin);
     }
