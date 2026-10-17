@@ -1,3 +1,5 @@
+import { fetchOrNetworkError } from './errors.js';
+
 // The overpass-cache Worker, relayed by nginx.conf (Vite in dev).
 const ENDPOINT = '/api/overpass';
 const RETRYABLE = new Set([429, 503, 504]);
@@ -56,7 +58,7 @@ export async function overpassFetch(query, { backoffMs = BACKOFF_MS, deadlineMs 
     const remaining = deadline - Date.now();
     if (remaining <= 0) break;
     try {
-      const r = await fetch(ENDPOINT, {
+      const r = await fetchOrNetworkError(ENDPOINT, {
         method: 'POST',
         body: `data=${encodeURIComponent(query)}`,
         // What is left of the budget, so a hung request cannot outlive it.
@@ -64,6 +66,7 @@ export async function overpassFetch(query, { backoffMs = BACKOFF_MS, deadlineMs 
       });
       if (RETRYABLE.has(r.status)) {
         lastErr = new Error(`Overpass HTTP ${r.status}`);
+        lastErr.status = r.status;
         lastErr.upstream = upstreamOf(r);
         continue;
       }

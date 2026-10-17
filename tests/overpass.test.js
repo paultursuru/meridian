@@ -102,3 +102,23 @@ describe('overpassFetch upstream reporting', () => {
     await assertion;
   });
 });
+
+describe('overpassFetch failure codes', () => {
+  it('codes a request that never got an answer as NETWORK', async () => {
+    vi.useFakeTimers();
+    globalThis.fetch = async () => { throw new TypeError('Failed to fetch'); };
+    const p = overpassFetch('q');
+    const assertion = expect(p).rejects.toMatchObject({ code: 'NETWORK' });
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+
+  it('keeps the HTTP status of the last retried answer', async () => {
+    vi.useFakeTimers();
+    globalThis.fetch = async () => response('', {}, 504);
+    const p = overpassFetch('q');
+    const assertion = expect(p).rejects.toMatchObject({ status: 504 });
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+});

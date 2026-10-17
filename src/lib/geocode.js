@@ -1,5 +1,6 @@
 import { tr, getLang } from './i18n.js';
 import { haversine } from './helpers.js';
+import { fetchOrNetworkError } from './errors.js';
 
 const NOM_BASE = 'https://nominatim.openstreetmap.org';
 const PHOTON_BASE = 'https://photon.komoot.io/api';
@@ -158,7 +159,7 @@ export async function geocode(q, { role, near } = {}) {
   const limit = near ? NEAR_LIMIT : 1;
   let url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=${limit}&addressdetails=1&accept-language=${getLang()}`;
   if (near) url += `&viewbox=${viewboxAround(near, NEAR_BOX_KM)}`;
-  const r = await fetch(url);
+  const r = await fetchOrNetworkError(url);
   const d = await r.json();
   if (!d.length) throw addressNotFoundError(q, role);
   const best = near

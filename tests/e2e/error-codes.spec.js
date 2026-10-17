@@ -134,6 +134,55 @@ test('a routing service that is down says the addresses are fine', async ({ page
   expect(ev.data.code).toBe('ROUTING_UNAVAILABLE');
 });
 
+// A network that refuses a host, as a corporate filter does: the request gets
+// no response at all, and fetch rejects instead of returning a status.
+test.describe('a request that never gets an answer', () => {
+  test('a refused route reports NETWORK at the route step', async ({ page }) => {
+    await captureEvents(page);
+    await mockUpstreams(page);
+    // Registered last, so it wins over the route mock above.
+    await page.route('**/api/route**', route => route.abort('connectionrefused'));
+    await page.goto('/en/');
+    await waitForApp(page);
+
+    await search(page, 'lausanne gare', 'renens');
+
+    const toast = page.locator('#toast');
+    await expect(toast).toHaveClass(/\bon\b/);
+    await expect(toast).toHaveText(/can't be reached from this network/i);
+    await expect(toast).not.toHaveText(/Failed to fetch/i);
+    const [ev] = await eventsOfType(page, 'search');
+    expect(ev.data).toMatchObject({ status: 'error', code: 'NETWORK', step: 'route' });
+  });
+
+  test('a refused geocoder reports NETWORK at the geocode step', async ({ page }) => {
+    await captureEvents(page);
+    await mockUpstreams(page);
+    await page.route('https://nominatim.openstreetmap.org/search**', route => route.abort('connectionrefused'));
+    await page.goto('/en/');
+    await waitForApp(page);
+
+    await search(page, 'lausanne gare', 'renens');
+
+    await expect(page.locator('#toast')).toHaveClass(/\bon\b/);
+    const [ev] = await eventsOfType(page, 'search');
+    expect(ev.data).toMatchObject({ status: 'error', code: 'NETWORK', step: 'geocode' });
+  });
+
+  test('refused buildings name the network as the cause of the failed search', async ({ page }) => {
+    await captureEvents(page);
+    await mockUpstreams(page);
+    await page.route('**/api/buildings**', route => route.abort('connectionrefused'));
+    // A shared link at midday: a Swiss daytime search whatever the clock says.
+    await page.goto(`/en/?from=${LAUSANNE.lat},${LAUSANNE.lng}&to=${RENENS.lat},${RENENS.lng}&dt=2026-07-15T13:00`);
+
+    await expect(page.locator('#results')).toHaveClass(/\bon\b/);
+    await expect.poll(() => eventsOfType(page, 'search')).toHaveLength(1);
+    const [ev] = await eventsOfType(page, 'search');
+    expect(ev.data).toMatchObject({ status: 'failed', source: 'swisstopo', cause: 'network' });
+  });
+});
+
 test.describe('geolocation', () => {
   // Playwright expects latitude/longitude, not the lat/lng shape used elsewhere.
   test.use({ geolocation: { latitude: LAUSANNE.lat, longitude: LAUSANNE.lng }, permissions: ['geolocation'] });

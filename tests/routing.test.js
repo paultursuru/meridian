@@ -104,6 +104,21 @@ describe('buildRoutes error codes', () => {
     await assertion;
   });
 
+  it('retries a 502 from the nginx relay, then codes it ROUTING_UNAVAILABLE', async () => {
+    vi.useFakeTimers();
+    mockOrs(502);
+    const p = buildRoutes(LAUSANNE, RENENS, () => {});
+    const assertion = expect(p).rejects.toMatchObject({ code: 'ROUTING_UNAVAILABLE' });
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+
+  it('codes a request that never got an answer as NETWORK', async () => {
+    globalThis.fetch = async () => { throw new TypeError('Failed to fetch'); };
+    await expect(buildRoutes(LAUSANNE, RENENS, () => {}))
+      .rejects.toMatchObject({ code: 'NETWORK' });
+  });
+
   it('keeps 429 on its own RATE_LIMIT code', async () => {
     vi.useFakeTimers();
     mockOrs(429);
