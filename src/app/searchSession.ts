@@ -26,7 +26,8 @@ type BuildingsResult = Awaited<ReturnType<typeof fetchBuildings>>;
 type VegetationResult = Awaited<ReturnType<typeof fetchVegetation>>;
 type HourlyWeather = Awaited<ReturnType<typeof fetchWeather>>;
 
-export type ShadeData = Pick<BuildingsResult, 'buildings' | 'status' | 'source'>;
+// cause: why a 'failed' fetch came back empty (see failReason).
+export type ShadeData = Pick<BuildingsResult, 'buildings' | 'status' | 'source'> & { cause?: string };
 
 export type SearchContext = {
   startC: { lat: number; lng: number; countryCode?: string };
@@ -63,6 +64,7 @@ export function createSearchSession(ctx: SearchContext) {
   const buildings = shade?.buildings ?? [];
   const buildingsStatus = shade?.status ?? 'ok';
   const buildingsSource = shade?.source ?? (switzerland ? 'swisstopo' : 'osm');
+  const buildingsCause = shade?.cause;
   const leafFrac = night ? 1 : deciduousLeafFrac(tDate, midLat);
   let trees: VegetationResult['trees'] = [];
   let forests: VegetationResult['forests'] = [];
@@ -239,6 +241,8 @@ export function createSearchSession(ctx: SearchContext) {
       delta,
       eclipse: eclipseDay,
       ...(vegUpstream ? { upstream: vegUpstream } : {}),
+      // A blocked network, an HTTP status or our deadline: only on failure.
+      ...(buildingsCause ? { cause: buildingsCause } : {}),
       // The demo is the same search for everyone: kept apart from real ones.
       ...(demo ? { onboarding: true } : {}),
     });

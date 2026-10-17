@@ -1,5 +1,6 @@
 import { haversine } from './helpers.js';
 import { tr } from './i18n.js';
+import { fetchOrNetworkError } from './errors.js';
 
 // ORS is proxied through a Cloudflare Worker (ors-proxy/) so the API key
 // never ships in the client bundle. Same pattern as overpass.js. Reached
@@ -12,7 +13,8 @@ const ORS_PROXY = '/api/route';
 // carries no slope or surface term, but it is ORS's to improve rather than a
 // constant we maintain, which is why it is preferred over this fallback.
 const WALK_MS   = 5 / 3.6;
-const RETRYABLE  = new Set([429, 503, 504]);
+// 502 is nginx failing to reach the Worker it relays to.
+const RETRYABLE  = new Set([429, 502, 503, 504]);
 const BACKOFF_MS = [1000, 3000];
 
 // Thrown when ORS keeps returning 429 after retries — lets the UI show a
@@ -99,7 +101,7 @@ async function orsPost(body) {
   let lastStatus;
   for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
     if (attempt > 0) await new Promise(res => setTimeout(res, BACKOFF_MS[attempt - 1]));
-    const r = await fetch(ORS_PROXY, {
+    const r = await fetchOrNetworkError(ORS_PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

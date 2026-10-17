@@ -1,5 +1,6 @@
 import { overpassFetch } from './overpass.js';
 import { tr } from './i18n.js';
+import { fetchOrNetworkError, failReason } from './errors.js';
 
 // The swissbuildings-lookup Worker, relayed by nginx.conf (Vite in dev).
 const SWISSBUILDINGS_ENDPOINT = '/api/buildings';
@@ -247,8 +248,12 @@ function splitBbox(bbox) {
 
 async function fetchSwissBuildingsTile(bbox) {
   const [s, w, n, e] = bbox;
-  const r = await fetch(`${SWISSBUILDINGS_ENDPOINT}/?bbox=${w},${s},${e},${n}`);
-  if (!r.ok) throw new Error(`swissbuildings-lookup HTTP ${r.status}`);
+  const r = await fetchOrNetworkError(`${SWISSBUILDINGS_ENDPOINT}/?bbox=${w},${s},${e},${n}`);
+  if (!r.ok) {
+    const err = new Error(`swissbuildings-lookup HTTP ${r.status}`);
+    err.status = r.status;
+    throw err;
+  }
   return r.json();
 }
 
@@ -270,7 +275,7 @@ export async function fetchBuildings(bbox, { switzerland = false } = {}) {
       return { buildings, status: 'ok', source: 'swisstopo' };
     } catch (err) {
       console.warn('swissbuildings-lookup failed, shadows disabled for this query', err);
-      return { buildings: [], status: 'failed', source: 'swisstopo' };
+      return { buildings: [], status: 'failed', source: 'swisstopo', cause: failReason(err) };
     }
   }
 
@@ -289,6 +294,6 @@ export async function fetchBuildings(bbox, { switzerland = false } = {}) {
     return { buildings: parseBuildings(data.elements || []), status: 'ok', source: 'osm' };
   } catch (err) {
     console.warn('Overpass buildings failed, shadows disabled for this query', err);
-    return { buildings: [], status: 'failed', source: 'osm' };
+    return { buildings: [], status: 'failed', source: 'osm', cause: failReason(err) };
   }
 }

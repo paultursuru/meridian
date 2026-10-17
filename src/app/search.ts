@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/astro';
 import { getSun, nextSunriseAfter } from '../lib/sun.js';
 import { geocode } from '../lib/geocode.js';
 import { buildRoutes } from '../lib/routing.js';
@@ -119,6 +120,8 @@ export async function handleSearch(
   el('results').classList.remove('on');
   hideScrubber();
 
+  // Where a failure happened, for the `search` event: the code says what.
+  let step: 'geocode' | 'time' | 'route' | 'shade' | 'render' = 'geocode';
   try {
     searchStatus(tr('status_geocoding'));
     // Same anchor as the autocomplete: typed + Enter resolves where the
@@ -134,6 +137,7 @@ export async function handleSearch(
     const switzerland = startC.countryCode === 'ch' && endC.countryCode === 'ch';
 
     // The date/time fields are wall-clock time at the route, not the browser.
+    step = 'time';
     const destTz = await resolveTimeZone(midLat, midLng);
     const tDate = dateV ? zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz) : new Date();
 
@@ -145,10 +149,12 @@ export async function handleSearch(
     const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
     if (night) prepareSunriseJump(tDate, midLat, midLng, destTz);
 
+    step = 'route';
     const routes = await buildRoutes(startC, endC, searchStatus);
     if (stale()) return;
     if (!routes.length) throw noRouteError();
 
+    step = 'shade';
     const bbox = routesBbox(routes);
     let shade: ShadeData | null = null;
     let vegP: ReturnType<typeof fetchVegetation> | null = null;
@@ -163,6 +169,7 @@ export async function handleSearch(
       vegP = fetchVegetation(bbox);
     }
 
+    step = 'render';
     const session = createSearchSession({
       startC, endC, startQ, endQ, demo, searchStart,
       midLat, midLng, destTz, tDate, sun, night, switzerland,
@@ -197,9 +204,15 @@ export async function handleSearch(
     track('search', {
       status: 'error',
       code: code ?? 'unknown',
+      step,
       ...(role ? { field: role } : {}),
       ms: Math.round(performance.now() - searchStart),
     });
+    // Neither the user's input nor an upstream's known answer: worth a
+    // report. Production only, since the e2e specs raise these on purpose.
+    if (import.meta.env.PROD && (!code || code === 'NETWORK')) {
+      Sentry.captureException(err, { tags: { step, code: code ?? 'unknown' } });
+    }
   } finally {
     // A stale search leaves the buttons to whoever made it stale.
     if (!stale()) setSearchBusy(false);

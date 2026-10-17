@@ -78,3 +78,19 @@ describe('fetchBuildings (switzerland) — client-side bbox splitting', () => {
     expect(buildings).toEqual([]);
   });
 });
+
+describe('fetchBuildings (switzerland): why a fetch failed', () => {
+  const bbox = [46.51, 6.62, 46.52, 6.64];
+
+  it('reports a request that got no answer as a network failure', async () => {
+    global.fetch = vi.fn(async () => { throw new TypeError('Failed to fetch'); });
+    const res = await fetchBuildings(bbox, { switzerland: true });
+    expect(res).toMatchObject({ status: 'failed', cause: 'network' });
+  });
+
+  it('reports the HTTP status the Worker answered with', async () => {
+    mockFetch(() => jsonResponse({ error: 'bbox too large' }, false, 400));
+    const res = await fetchBuildings(bbox, { switzerland: true });
+    expect(res).toMatchObject({ status: 'failed', cause: 'http_400' });
+  });
+});

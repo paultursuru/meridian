@@ -6,7 +6,32 @@ const TECHNICAL = {
   TOO_FAR: 'error_too_far',
   ROUTE_FAILED: 'error_route_failed',
   ROUTING_UNAVAILABLE: 'error_routing_unavailable',
+  NETWORK: 'error_network',
 };
+
+// fetch() rejects with a bare TypeError only when no response came back at
+// all: offline, DNS, or a network filter refusing the host. An HTTP error
+// still resolves. Coded so a blocked network reads apart from a bug, without
+// the URL in the message: a geocoder URL carries the typed address.
+export async function fetchOrNetworkError(url, init) {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    // Our own deadlines, not the network's doing.
+    if (err?.name === 'AbortError' || err?.name === 'TimeoutError') throw err;
+    const coded = new Error('Network request failed', { cause: err });
+    coded.code = 'NETWORK';
+    throw coded;
+  }
+}
+
+// Why a data fetch came back empty, for the search event.
+export function failReason(err) {
+  if (err?.code === 'NETWORK') return 'network';
+  if (err?.name === 'AbortError' || err?.name === 'TimeoutError') return 'timeout';
+  if (typeof err?.status === 'number') return `http_${err.status}`;
+  return 'error';
+}
 
 // Codes whose message is already the sentence: shown as-is.
 export const READY = new Set(['ADDRESS_NOT_FOUND', 'POSITION_UNKNOWN', 'NO_ROUTE']);
