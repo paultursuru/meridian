@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
 
   deploy:
     name: Deploy to Fly.io
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: test # deploy only runs if the test job passes
     # Only deploy on a push to main — never on pull requests.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
