@@ -31,7 +31,7 @@ async function mockUpstreams(page) {
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => route.fulfill({ json: { features: [
+  await page.route('**/api/route**', route => route.fulfill({ json: { features: [
     {
       geometry: { type: 'LineString', coordinates: [[6.6291, 46.5167, 400], [6.6300, 46.5120, 400], [6.6339, 46.5086, 400]] },
       properties: { summary: { distance: 1500, duration: 1140 } },
@@ -41,8 +41,8 @@ async function mockUpstreams(page) {
       properties: { summary: { distance: 1500, duration: 1140 } },
     },
   ] } }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route => route.fulfill({ json: { elements: [] } }));
-  await page.route('https://swissbuildings-lookup.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/overpass**', route => route.fulfill({ json: { elements: [] } }));
+  await page.route('**/api/buildings**', route => route.fulfill({
     json: { buildings: [] },
   }));
   await page.route('https://tiles.stadiamaps.com/**', route => route.fulfill({

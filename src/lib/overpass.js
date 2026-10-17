@@ -1,4 +1,5 @@
-const ENDPOINT = 'https://overpass-cache.meridianway.workers.dev';
+// The overpass-cache Worker, relayed by nginx.conf (Vite in dev).
+const ENDPOINT = '/api/overpass';
 const RETRYABLE = new Set([429, 503, 504]);
 // Vegetation no longer blocks the first render (src/app/search.ts's two-pass
 // search), so stalling here just delays the background refinement, not the

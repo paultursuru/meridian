@@ -8,6 +8,29 @@ import sentry from '@sentry/astro';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://meridian-way.ch',
+  vite: {
+    server: {
+      // The same relays nginx.conf runs in production. `astro preview`
+      // inherits them too.
+      proxy: {
+        '/api/route': {
+          target: 'https://ors-proxy.meridianway.workers.dev',
+          changeOrigin: true,
+          rewrite: () => '/',
+        },
+        '/api/overpass': {
+          target: 'https://overpass-cache.meridianway.workers.dev',
+          changeOrigin: true,
+          rewrite: () => '/',
+        },
+        '/api/buildings': {
+          target: 'https://swissbuildings-lookup.meridianway.workers.dev',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/buildings/, ''),
+        },
+      },
+    },
+  },
   integrations: [
     sitemap({
       i18n: {

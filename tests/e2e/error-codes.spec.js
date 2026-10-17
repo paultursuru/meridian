@@ -39,15 +39,15 @@ async function mockUpstreams(page, { orsStatus = 200, orsFeatures, unknownQuery 
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => {
+  await page.route('**/api/route**', route => {
     if (orsStatus !== 200) return route.fulfill({ status: orsStatus, json: { error: { message: 'upstream' } } });
     return route.fulfill({ json: { features: orsFeatures ?? [{
       geometry: { type: 'LineString', coordinates: [[LAUSANNE.lng, LAUSANNE.lat, 0], [RENENS.lng, RENENS.lat, 0]] },
       properties: { summary: { distance: 2400, duration: 1900 } },
     }] } });
   });
-  await page.route('https://swissbuildings-lookup.meridianway.workers.dev/**', route => route.fulfill({ json: { buildings: [] } }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route => route.fulfill({ json: { elements: [] } }));
+  await page.route('**/api/buildings**', route => route.fulfill({ json: { buildings: [] } }));
+  await page.route('**/api/overpass**', route => route.fulfill({ json: { elements: [] } }));
 }
 
 async function waitForApp(page) {

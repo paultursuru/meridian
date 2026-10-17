@@ -31,7 +31,7 @@ async function mockCommon(page) {
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/route**', route => route.fulfill({
     json: { features: [{
       geometry: { type: 'LineString', coordinates: [[2.2950, 48.8738, 0], [2.32, 48.865, 0], [2.3376, 48.8606, 0]] },
       properties: { summary: { distance: 2200, duration: 1800 } },
@@ -49,7 +49,7 @@ test('drawer renders from buildings before slow vegetation resolves', async ({ p
   page.on('pageerror', e => pageErrors.push(e.message));
 
   await mockCommon(page);
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', async route => {
+  await page.route('**/api/overpass**', async route => {
     const isBuildingsQuery = decodeURIComponent(route.request().postData() || '').includes('"building"');
     if (isBuildingsQuery) return route.fulfill({ json: { elements: BUILDINGS_ELEMENTS } });
     // Vegetation: deliberately slow — exactly what step 3 must no longer
@@ -83,7 +83,7 @@ test('drawer renders from buildings before slow vegetation resolves', async ({ p
 
 test('note upgrades from the optimistic first pass once vegetation actually fails', async ({ page }) => {
   await mockCommon(page);
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route => {
+  await page.route('**/api/overpass**', route => {
     const isBuildingsQuery = decodeURIComponent(route.request().postData() || '').includes('"building"');
     if (isBuildingsQuery) return route.fulfill({ json: { elements: BUILDINGS_ELEMENTS } });
     return route.fulfill({ status: 504, body: 'upstream error' });

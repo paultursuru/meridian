@@ -23,14 +23,14 @@ async function mockUpstreams(page) {
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => route.fulfill({
+  await page.route('**/api/route**', route => route.fulfill({
     json: { features: [{
       geometry: { type: 'LineString', coordinates: [[START.lng, START.lat, 400], [6.575, 46.528, 400], [END.lng, END.lat, 400]] },
       properties: { summary: { distance: 2400, duration: 1900 } },
     }] },
   }));
-  await page.route('https://swissbuildings-lookup.meridianway.workers.dev/**', route => route.fulfill({ json: { buildings: [] } }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route => route.fulfill({ json: { elements: [] } }));
+  await page.route('**/api/buildings**', route => route.fulfill({ json: { buildings: [] } }));
+  await page.route('**/api/overpass**', route => route.fulfill({ json: { elements: [] } }));
 }
 
 // Umami never loads here, so stand one up before the app's module runs.

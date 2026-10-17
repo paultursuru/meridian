@@ -30,7 +30,7 @@ async function mockUpstreams(page, { orsStatus = 200, endPoint = RENENS } = {}) 
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
-  await page.route('https://ors-proxy.meridianway.workers.dev/**', route => {
+  await page.route('**/api/route**', route => {
     if (orsStatus !== 200) {
       return route.fulfill({
         status: orsStatus,
@@ -42,8 +42,8 @@ async function mockUpstreams(page, { orsStatus = 200, endPoint = RENENS } = {}) 
       properties: { summary: { distance: 2400, duration: 1900 } },
     }] } });
   });
-  await page.route('https://swissbuildings-lookup.meridianway.workers.dev/**', route => route.fulfill({ json: { buildings: [] } }));
-  await page.route('https://overpass-cache.meridianway.workers.dev/**', route => route.fulfill({ json: { elements: [] } }));
+  await page.route('**/api/buildings**', route => route.fulfill({ json: { buildings: [] } }));
+  await page.route('**/api/overpass**', route => route.fulfill({ json: { elements: [] } }));
 }
 
 async function waitForApp(page) {
@@ -75,7 +75,7 @@ test('une adresse géocodée à l\'autre bout du monde donne un message explicit
 test('le garde-fou de distance évite complètement l\'appel à ORS', async ({ page }) => {
   await mockUpstreams(page, { endPoint: QUEENSLAND });
   let orsCalls = 0;
-  page.on('request', req => { if (req.url().includes('ors-proxy')) orsCalls++; });
+  page.on('request', req => { if (req.url().includes('/api/route')) orsCalls++; });
 
   await page.goto('/en/');
   await waitForApp(page);
