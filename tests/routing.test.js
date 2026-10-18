@@ -84,10 +84,21 @@ beforeAll(() => {
 afterEach(() => {
   delete globalThis.fetch;
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 const LAUSANNE = { lat: 46.5171, lng: 6.6331 };
 const RENENS   = { lat: 46.5373, lng: 6.5853 };
+
+// AbortSignal.timeout runs on Node's own timers, out of the fake clock's
+// reach: rebuilt on setTimeout so vi.advanceTimersByTimeAsync can fire it.
+function fakeTimeoutSignals() {
+  vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new DOMException('signal timed out', 'TimeoutError')), ms);
+    return controller.signal;
+  });
+}
 
 function mockOrs(status) {
   globalThis.fetch = async () => ({ ok: status === 200, status, json: async () => ({ features: [] }) });
@@ -117,6 +128,23 @@ describe('buildRoutes error codes', () => {
     globalThis.fetch = async () => { throw new TypeError('Failed to fetch'); };
     await expect(buildRoutes(LAUSANNE, RENENS, () => {}))
       .rejects.toMatchObject({ code: 'NETWORK' });
+  });
+
+  it('gives up on an ORS that never answers, once, as ROUTING_TIMEOUT', async () => {
+    vi.useFakeTimers();
+    fakeTimeoutSignals();
+    let calls = 0;
+    globalThis.fetch = (_url, init) => {
+      calls++;
+      return new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason)));
+    };
+    const p = buildRoutes(LAUSANNE, RENENS, () => {});
+    const assertion = expect(p).rejects.toMatchObject({ code: 'ROUTING_TIMEOUT' });
+    await vi.advanceTimersByTimeAsync(15000);
+    await assertion;
+    // A retry would only triple the wait.
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(calls).toBe(1);
   });
 
   it('keeps 429 on its own RATE_LIMIT code', async () => {

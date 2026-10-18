@@ -88,6 +88,22 @@ describe('fetchBuildings (switzerland): why a fetch failed', () => {
     expect(res).toMatchObject({ status: 'failed', cause: 'network' });
   });
 
+  it('gives up on a lookup that never answers, as a timeout', async () => {
+    vi.useFakeTimers();
+    // AbortSignal.timeout runs on Node's own timers, out of the fake clock's reach.
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException('signal timed out', 'TimeoutError')), ms);
+      return controller.signal;
+    });
+    global.fetch = vi.fn((_url, init) => new Promise((_, reject) =>
+      init.signal.addEventListener('abort', () => reject(init.signal.reason))));
+    const p = fetchBuildings(bbox, { switzerland: true });
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(await p).toMatchObject({ status: 'failed', cause: 'timeout' });
+    vi.useRealTimers();
+  });
+
   it('reports the HTTP status the Worker answered with', async () => {
     mockFetch(() => jsonResponse({ error: 'bbox too large' }, false, 400));
     const res = await fetchBuildings(bbox, { switzerland: true });

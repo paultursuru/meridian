@@ -15,6 +15,7 @@ describe('searchErrorToast', () => {
     ['TOO_FAR', 'error_too_far'],
     ['ROUTE_FAILED', 'error_route_failed'],
     ['ROUTING_UNAVAILABLE', 'error_routing_unavailable'],
+    ['ROUTING_TIMEOUT', 'error_routing_unavailable'],
     ['NETWORK', 'error_network'],
   ])('translates %s instead of showing its technical message', (code, key) => {
     expect(searchErrorToast(coded(code, 'ORS 400'))).toBe(tr(key));

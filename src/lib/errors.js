@@ -6,6 +6,8 @@ const TECHNICAL = {
   TOO_FAR: 'error_too_far',
   ROUTE_FAILED: 'error_route_failed',
   ROUTING_UNAVAILABLE: 'error_routing_unavailable',
+  // Not answering at all reads the same to the user: the addresses were fine.
+  ROUTING_TIMEOUT: 'error_routing_unavailable',
   NETWORK: 'error_network',
 };
 
