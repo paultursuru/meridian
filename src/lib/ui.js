@@ -1,5 +1,6 @@
 import { fmtDist, fmtDur, fmtHm } from './helpers.js';
 import { tr } from './i18n.js';
+import { track } from './analytics.js';
 
 export function setStatus(msg) {
   const el = document.getElementById('status');
@@ -202,8 +203,8 @@ function initDrawer() {
     if (!isDragging) return;
     isDragging = false;
     const dy = startY - y;
-    if (!moved) toggleDrawer();
-    else if (dy > 40) expandDrawer();
+    if (!moved) toggleDrawer('tap');
+    else if (dy > 40) expandDrawer('drag');
     else if (dy < -40) collapseDrawer();
     else updateScrubberPosition();
   }
@@ -218,7 +219,7 @@ function initDrawer() {
   handle.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      toggleDrawer();
+      toggleDrawer('key');
     }
   });
 }
@@ -227,11 +228,15 @@ function initDrawer() {
 // path that flips it (handle tap and drag, keyboard, the map-click collapse in
 // map.js). Deliberately not a history entry: the sheet already has its own
 // vertical gesture, and Back undoes the search instead (see src/app/navigation.ts).
-export function expandDrawer() {
+// via: 'tap' | 'drag' | 'key', reported as drawer_open. The collapsed drawer
+// already shows the ratio, so someone who never manages to open it looks
+// satisfied in every other number.
+export function expandDrawer(via) {
   const drawer = document.getElementById('results');
   if (!drawer || drawer.classList.contains('expanded')) return;
   drawer.classList.add('expanded');
   updateScrubberPosition();
+  if (via) track('drawer_open', { via });
 }
 
 export function collapseDrawer() {
@@ -241,9 +246,9 @@ export function collapseDrawer() {
   updateScrubberPosition();
 }
 
-function toggleDrawer() {
+function toggleDrawer(via) {
   if (document.getElementById('results')?.classList.contains('expanded')) collapseDrawer();
-  else expandDrawer();
+  else expandDrawer(via);
 }
 
 // single = only one unique route survived dedup: hide the sunny/shady tabs
