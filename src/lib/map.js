@@ -377,7 +377,10 @@ export function setActiveRoute(type) {
   if (drawn) drawRoutes();
 }
 
-export function displayRoutes(startC, endC, sunny, shady) {
+// fit: frame the two ends. Only a search's first render asks for it: a
+// scrubber tick or the vegetation pass redraws the same routes, and refitting
+// then undid whatever zoom or pan the user had made to look at a street.
+export function displayRoutes(startC, endC, sunny, shady, { fit = true } = {}) {
   clearMap();
   drawn = { sunny, shady };
   drawRoutes();
@@ -385,7 +388,7 @@ export function displayRoutes(startC, endC, sunny, shady) {
   markerLayers.push(L.marker([startC.lat, startC.lng], { icon: pinIcon('start'), keyboard: false }).addTo(_map));
   markerLayers.push(L.marker([endC.lat,   endC.lng],   { icon: pinIcon('end'), keyboard: false }).addTo(_map));
 
-  fitWithChrome(L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]));
+  if (fit) fitWithChrome(L.latLngBounds([startC.lat, startC.lng], [endC.lat, endC.lng]));
   // The fit may not fire a zoomend (same zoom as before), and the labels were
   // placed at the zoom before it.
   placeLabels();

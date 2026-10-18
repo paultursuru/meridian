@@ -113,8 +113,9 @@ export function createSearchSession(ctx: SearchContext) {
   });
 
   // Re-scores the fetched routes for one instant and redraws. Only the sun
-  // moves, so this is cheap enough for every scrubber tick.
-  function renderAt(atDate: Date) {
+  // moves, so this is cheap enough for every scrubber tick. Only the first
+  // render frames the route: later ones keep the user's zoom and pan.
+  function renderAt(atDate: Date, { fit = false } = {}) {
     const sunNow = getSun(atDate, midLat, midLng);
     updateSunInfo(sunNow, sunTimes, destTz, atDate);
     // Swiss routes only. Wins over the grazing-sun note: both say "trust
@@ -136,7 +137,7 @@ export function createSearchSession(ctx: SearchContext) {
     const ranked = rankRoutes(routes, night);
     delta = ranked.delta;
 
-    map.displayRoutes(startC, endC, ranked.sunny, single ? null : ranked.shady);
+    map.displayRoutes(startC, endC, ranked.sunny, single ? null : ranked.shady, { fit });
     showResults(ranked.sunny, ranked.shady, single, night, heightState === 'failed');
 
     // The URL always holds the instant on screen, scrubbed or not.
@@ -155,7 +156,7 @@ export function createSearchSession(ctx: SearchContext) {
     state.searchShown = true;
     // The demo button is for the empty app only.
     hideOnboardingButton(true);
-    renderAt(tDate);
+    renderAt(tDate, { fit: true });
     // From the first frame, not once the weather lands.
     if (route && !single) selectRoute(route);
     notifySearchSucceeded();
