@@ -16,6 +16,10 @@ const WALK_MS   = 5 / 3.6;
 // 502 is nginx failing to reach the Worker it relays to.
 const RETRYABLE  = new Set([429, 502, 503, 504]);
 const BACKOFF_MS = [1000, 3000];
+// ORS can stop answering without ever failing: unbounded, the search then sat
+// on its routing status for good. No retry after it, which would only triple
+// the wait.
+const ORS_TIMEOUT_MS = 15000;
 
 // Thrown when ORS keeps returning 429 after retries — lets the UI show a
 // friendly "too many requests" message instead of a raw "ORS 429".
@@ -41,6 +45,14 @@ function routeFailedError(status) {
 function routingUnavailableError(status) {
   const err = new Error(`ORS ${status} after retries`);
   err.code = 'ROUTING_UNAVAILABLE';
+  return err;
+}
+
+// Same message as above for the user, its own code in the data: a service
+// that hangs and one that answers 503 are not the same outage.
+function routingTimeoutError() {
+  const err = new Error(`ORS gave no answer within ${ORS_TIMEOUT_MS} ms`);
+  err.code = 'ROUTING_TIMEOUT';
   return err;
 }
 
@@ -101,14 +113,22 @@ async function orsPost(body) {
   let lastStatus;
   for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
     if (attempt > 0) await new Promise(res => setTimeout(res, BACKOFF_MS[attempt - 1]));
-    const r = await fetchOrNetworkError(ORS_PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (RETRYABLE.has(r.status)) { lastStatus = r.status; continue; }
-    if (!r.ok) throw routeFailedError(r.status);
-    const d = await r.json();
+    let d;
+    try {
+      // The signal also bounds reading the body.
+      const r = await fetchOrNetworkError(ORS_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(ORS_TIMEOUT_MS),
+      });
+      if (RETRYABLE.has(r.status)) { lastStatus = r.status; continue; }
+      if (!r.ok) throw routeFailedError(r.status);
+      d = await r.json();
+    } catch (err) {
+      if (err?.name === 'TimeoutError') throw routingTimeoutError();
+      throw err;
+    }
     return parseFeatures(d.features || []);
   }
   if (lastStatus === 429) throw rateLimitError();

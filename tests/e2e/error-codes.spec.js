@@ -134,6 +134,28 @@ test('a routing service that is down says the addresses are fine', async ({ page
   expect(ev.data.code).toBe('ROUTING_UNAVAILABLE');
 });
 
+// A routing service that takes the request and never answers. The search
+// used to sit on its routing status for good, with nothing to say why.
+test('a route that never answers ends on the routing-unavailable message', async ({ page }) => {
+  // The browser's own timer: no fake clock reaches AbortSignal.timeout.
+  test.setTimeout(45_000);
+  await captureEvents(page);
+  await mockUpstreams(page);
+  // Registered last, so it wins over the route mock above. Never fulfilled.
+  await page.route('**/api/route**', () => {});
+  await page.goto('/en/');
+  await waitForApp(page);
+
+  await search(page, 'lausanne gare', 'renens');
+
+  const toast = page.locator('#toast');
+  await expect(toast).toHaveClass(/\bon\b/, { timeout: 25_000 });
+  await expect(toast).toHaveText(/routing service is not responding/i);
+  await expect(page.locator('#search-btn')).toBeEnabled();
+  const [ev] = await eventsOfType(page, 'search');
+  expect(ev.data).toMatchObject({ status: 'error', code: 'ROUTING_TIMEOUT', step: 'route' });
+});
+
 // A network that refuses a host, as a corporate filter does: the request gets
 // no response at all, and fetch rejects instead of returning a status.
 test.describe('a request that never gets an answer', () => {

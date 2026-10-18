@@ -246,9 +246,16 @@ function splitBbox(bbox) {
   return quadrants(bbox, 2, 2);
 }
 
+// A lookup that never answers would hold the search on its buildings status
+// for good. Past this, the route renders without shadows and the note says so.
+const SWISS_TIMEOUT_MS = 10000;
+
 async function fetchSwissBuildingsTile(bbox) {
   const [s, w, n, e] = bbox;
-  const r = await fetchOrNetworkError(`${SWISSBUILDINGS_ENDPOINT}/?bbox=${w},${s},${e},${n}`);
+  // The signal also bounds reading the body.
+  const r = await fetchOrNetworkError(`${SWISSBUILDINGS_ENDPOINT}/?bbox=${w},${s},${e},${n}`, {
+    signal: AbortSignal.timeout(SWISS_TIMEOUT_MS),
+  });
   if (!r.ok) {
     const err = new Error(`swissbuildings-lookup HTTP ${r.status}`);
     err.status = r.status;
