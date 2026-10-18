@@ -1,7 +1,7 @@
 import { initAutocomplete } from '../lib/autocomplete.js';
 import { reverseGeocode } from '../lib/geocode.js';
 import { track } from '../lib/analytics.js';
-import { map } from './mapApi';
+import { map, mapLoaded, viewCenter } from './mapApi';
 import { el, input, button, type Role, type Autocomplete, type Place } from './dom';
 
 const ac = {} as Record<Role, Autocomplete>;
@@ -19,13 +19,26 @@ export function syncInputState() {
 }
 
 // Bias a lookup towards the other endpoint once resolved, else the map.
-export const searchAnchor = (other: Role) => ac[other].getPlace() ?? map.mapCenter();
+export const searchAnchor = (other: Role) => ac[other].getPlace() ?? viewCenter();
 
-// Fills a field with a resolved place and pins it on the map.
+// Fills a field with a resolved place and pins it on the map. Before the map
+// has loaded, pinFilledFields pins it once it has.
 export function applyPlace(role: Role, place: Place, pinOptions?: { pan?: boolean }) {
   ac[role].setPlace(place);
-  map.setPreviewPin(role, place, pinOptions);
+  if (mapLoaded()) map.setPreviewPin(role, place, pinOptions);
   syncInputState();
+}
+
+const ROLES: Role[] = ['start', 'end'];
+
+export const anyFieldFilled = () => ROLES.some(role => ac[role].getPlace());
+
+// Pins what the fields got before the map loaded: a suggestion picked, a
+// shared link restoring. A single place is shown, as picking it would have;
+// with two, a search is next and frames them both.
+export function pinFilledFields() {
+  const filled = ROLES.filter(role => ac[role].getPlace());
+  for (const role of filled) map.setPreviewPin(role, ac[role].getPlace()!, { pan: filled.length === 1 });
 }
 
 // A point picked on the map (openPickPopup in map.js). The coordinates fill
@@ -48,7 +61,7 @@ async function fillFromMap(role: Role, lat: number, lng: number) {
 
 function clearField(role: Role) {
   ac[role].clear();
-  map.clearPreviewPin(role);
+  if (mapLoaded()) map.clearPreviewPin(role);
   syncInputState();
   input(`inp-${role}`).focus();
 }
@@ -59,7 +72,7 @@ function swapEndpoints() {
   const b = ac.end.getState();
   ac.start.setState(b);
   ac.end.setState(a);
-  map.swapPreviewPins();
+  if (mapLoaded()) map.swapPreviewPins();
   syncInputState();
   // Accumulate the angle so the transition replays in full on every click.
   swapAngle += 180;
@@ -77,20 +90,19 @@ export function resetFields() {
 }
 
 export function initFields({ onSubmit, onFocus }: { onSubmit: () => void; onFocus: () => void }) {
-  ac.start = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => { map.setPreviewPin('start', p); syncInputState(); }, getAnchor: () => searchAnchor('end') });
-  ac.end   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => { map.setPreviewPin('end',   p); syncInputState(); }, getAnchor: () => searchAnchor('start') });
-  const roles: Role[] = ['start', 'end'];
-  roles.forEach(role => input(`inp-${role}`).addEventListener('input', syncInputState));
+  ac.start = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => { if (mapLoaded()) map.setPreviewPin('start', p); syncInputState(); }, getAnchor: () => searchAnchor('end') });
+  ac.end   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => { if (mapLoaded()) map.setPreviewPin('end',   p); syncInputState(); }, getAnchor: () => searchAnchor('start') });
+  ROLES.forEach(role => input(`inp-${role}`).addEventListener('input', syncInputState));
   syncInputState();
 
   window.addEventListener('map-point-picked', (e: Event) => {
     const { role, lat, lng } = (e as CustomEvent<{ role: Role; lat: number; lng: number }>).detail;
     fillFromMap(role, lat, lng);
   });
-  roles.forEach(role => button(`clear-${role}`).addEventListener('click', () => clearField(role)));
+  ROLES.forEach(role => button(`clear-${role}`).addEventListener('click', () => clearField(role)));
   button('swap-btn').addEventListener('click', swapEndpoints);
   // After initAutocomplete: its own Enter handler, bound first, stops this one
   // when Enter picks a highlighted suggestion.
-  roles.forEach(role => input(`inp-${role}`).addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') onSubmit(); }));
-  roles.forEach(role => input(`inp-${role}`).addEventListener('focus', onFocus));
+  ROLES.forEach(role => input(`inp-${role}`).addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') onSubmit(); }));
+  ROLES.forEach(role => input(`inp-${role}`).addEventListener('focus', onFocus));
 }

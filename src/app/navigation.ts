@@ -4,7 +4,7 @@ import { ONBOARDING } from '../lib/onboarding.js';
 import { hideResults, hideScrubber, showQualityNote, setStatus } from '../lib/ui.js';
 import { tr } from '../lib/i18n.js';
 import { track } from '../lib/analytics.js';
-import { map } from './mapApi';
+import { map, mapLoaded } from './mapApi';
 import { el, input, button } from './dom';
 import { state, urlHasSearch } from './state';
 import { field, applyPlace, resetFields } from './fields';
@@ -63,7 +63,8 @@ export function resetSearch() {
   showOnboardingNote(false);
   closeDepartPopover();
   hideOnboardingButton(false);
-  map.clearMap();
+  // Back can land while a search still waits on the map.
+  if (mapLoaded()) map.clearMap();
   resetFields();
   setDepartureNow();
   hideResults();

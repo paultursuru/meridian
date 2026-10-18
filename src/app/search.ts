@@ -11,7 +11,7 @@ import { fetchWeather } from '../lib/weather.js';
 import { setStatus, showToast, hideScrubber } from '../lib/ui.js';
 import { tr } from '../lib/i18n.js';
 import { track } from '../lib/analytics.js';
-import { map } from './mapApi';
+import { map, mapLoaded, mapReady } from './mapApi';
 import { el, input, button } from './dom';
 import { state } from './state';
 import { field, searchAnchor } from './fields';
@@ -121,7 +121,7 @@ export async function handleSearch(
   hideScrubber();
 
   // Where a failure happened, for the `search` event: the code says what.
-  let step: 'geocode' | 'time' | 'route' | 'shade' | 'render' = 'geocode';
+  let step: 'geocode' | 'time' | 'route' | 'map' | 'shade' | 'render' = 'geocode';
   try {
     searchStatus(tr('status_geocoding'));
     // Same anchor as the autocomplete: typed + Enter resolves where the
@@ -153,6 +153,13 @@ export async function handleSearch(
     const routes = await buildRoutes(startC, endC, searchStatus);
     if (stale()) return;
     if (!routes.length) throw noRouteError();
+
+    // The form answers before map.js has loaded, and so do the geocoder and
+    // the routing. The buildings and the drawing need the map.
+    step = 'map';
+    if (!mapLoaded()) searchStatus(tr('map_loading'));
+    await mapReady;
+    if (stale()) return;
 
     step = 'shade';
     const bbox = routesBbox(routes);
