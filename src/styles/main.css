@@ -1276,6 +1276,7 @@ p.opensource-badge {
 
 .footer-links {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
   width: 100%;
@@ -1285,6 +1286,8 @@ p.opensource-badge {
   color: rgba(216,219,200,0.6);
   text-decoration: none;
   font-size: 0.82rem;
+  /* Long labels (Romansh) wrap as whole links, not mid-label. */
+  white-space: nowrap;
 }
 .footer-link:hover { color: #f0f2a0; }
 
