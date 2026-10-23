@@ -39,6 +39,7 @@ Live at [meridian-way.ch](https://meridian-way.ch), available in French, German,
 | Timezone resolution                         | `tz-lookup`                                                                                                                                                                                                             |
 | Error monitoring                            | [Sentry](https://sentry.io) (`@sentry/astro`)                                                                                                                                                                           |
 | Analytics                                   | [Umami](https://umami.is)                                                                                                                                                                                               |
+| LLM-readable pages                          | [astro-mark-don](https://github.com/paultursuru/astro-mark-don), an Astro integration by the same author: a `.md` copy of every page at build time, plus `/llms.txt` with the rule for linking straight to a route    |
 
 
 Nominatim, Photon, SunCalc, Overpass and Open-Meteo are free and require no API key. OpenRouteService requires a key, held server-side in the `ors-proxy` Worker and never exposed to the client.
@@ -87,6 +88,7 @@ meridian/
 │   │   ├── tzCenters.js      # IANA timezone -> approximate [lat, lng], for the first-load map center
 │   │   ├── ui.js             # status toast, tabs, swipeable results drawer
 │   │   └── weather.js        # Open-Meteo cloud cover / temperature fetch
+│   ├── llms.md               # body of /llms.txt: how an LLM builds a link to a route
 │   └── styles/main.css
 ├── tests/                    # Vitest unit tests
 ├── ors-proxy/                # Cloudflare Worker: ORS API key + response cache (KV)
