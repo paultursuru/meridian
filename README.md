@@ -27,7 +27,7 @@ Live at [meridian-way.ch](https://meridian-way.ch), available in French, German,
 | Layer                                       | Technology                                                                                                                                                                                                              |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Framework                                   | [Astro](https://astro.build) v6                                                                                                                                                                                         |
-| Map                                         | [Leaflet](https://leafletjs.com) + [MapLibre GL](https://maplibre.org) (`@maplibre/maplibre-gl-leaflet`), Stadia Maps Alidade Smooth vector tiles (`alidade_smooth`, an OSM Bright derivative)                          |
+| Map                                         | [Leaflet](https://leafletjs.com) + [MapLibre GL](https://maplibre.org) (`@maplibre/maplibre-gl-leaflet`), Stadia Maps Alidade Smooth vector tiles (`alidade_smooth`, an OSM Bright derivative); [OpenFreeMap](https://openfreemap.org) Positron as the fallback when Stadia refuses (quota) |
 | Pedestrian routing + elevation              | [OpenRouteService](https://openrouteservice.org) `foot-walking`, proxied and cached through a Cloudflare Worker                                                                                                         |
 | Geocoding (autocomplete)                    | [Photon](https://photon.komoot.io) (komoot.io)                                                                                                                                                                          |
 | Geocoding (search / reverse)                | [Nominatim](https://nominatim.org) (OSM)                                                                                                                                                                                |
@@ -208,6 +208,10 @@ fallback. The `openmaptiles` source behind the Stadia style carries a
 memory and queryable synchronously. The query itself costs no network round
 trip: the only wait is the basemap finishing its own tile load, measured at
 0.7s on a short route against the 11.2s median of the Overpass path.
+
+OpenFreeMap, the basemap the map switches to when Stadia refuses its requests
+(a 429 once the monthly quota is spent, see `src/lib/basemap.js`), serves the
+same `openmaptiles` schema, so this path keeps working after the switch.
 
 Those tiles only carry full-resolution buildings from zoom 14 up: measured on
 Milano, a z13 tile holds 16% of the buildings its z14 children do, and a z12
