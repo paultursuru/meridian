@@ -167,6 +167,8 @@ The displayed walking duration includes a **climb-time supplement** when the rou
 
 A share button copies (or opens the native share sheet for) a URL that encodes the search: start/end coordinates and labels plus the destination-local date/time, so a route can be bookmarked or sent to someone else.
 
+The same URL opens a route from anywhere, an LLM included: `https://meridian-way.ch/?from=LAT,LNG&to=LAT,LNG&dt=YYYY-MM-DDTHH:MM&r=shady`. `from` and `to` are required and take coordinates (the app does not geocode them), `fromq`/`toq` are the labels shown in the fields, `dt` is local time at the destination (current time when absent) and `r` is `sunny` or `shady`. The full rule is in [/llms.txt](https://meridian-way.ch/llms.txt), written from [src/llms.md](src/llms.md).
+
 The drawer is driven by touch/mouse drag events and snaps to either state with a CSS `transform` transition (no layout reflow).
 
 A **time scrubber** sits just above the drawer once results are shown: dragging it re-scores every route ORS already returned for a different time of day (bounded to sunrise–sunset) and redraws the map and stats live. This is pure client-side re-scoring — buildings and trees are already fetched, so scrubbing makes zero new network calls.
