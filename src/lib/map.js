@@ -6,10 +6,14 @@ import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx } from './
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
+import { track } from './analytics.js';
+import { STADIA_STYLE, FALLBACK_STYLE, refusal, tuneFallback } from './basemap.js';
 import targetIcon from '../icons/target.svg?raw';
 
 let _map = null;
 let _glMap = null;
+// Whether the basemap has drawn once, whichever style it ended up on.
+let basemapLoaded = false;
 let routeLayers   = [];
 let routeLabels   = {};
 let markerLayers  = [];
@@ -223,17 +227,17 @@ const OnboardingControl = L.Control.extend({
 
 export function initMap() {
   _map = L.map('map').setView([46.5197, 6.6323], 14);
-  // OSM Bright GL vector style (openmaptiles/alidade-smooth-gl-style), hosted by Stadia Maps.
-  // Keyless on localhost; for production add a Stadia API key or domain auth.
-  const glLayer = L.maplibreGL({
-    style: 'https://tiles.stadiamaps.com/styles/alidade_smooth.json',
-    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(_map);
+  // No attribution option: maplibre-gl-leaflet ignores it and reads the
+  // style's own sources instead, which is what lets it follow a fallback.
+  const glLayer = L.maplibreGL({ style: STADIA_STYLE }).addTo(_map);
 
   _glMap = glLayer.getMaplibreMap();
+  // Fires after the fallback style too, when Stadia refused the first one.
   _glMap.once('load', () => {
+    basemapLoaded = true;
     document.getElementById('map-splash')?.classList.add('hidden');
   });
+  watchBasemapErrors(glLayer);
 
   new LocateControl().addTo(_map);
   new OnboardingControl().addTo(_map);
@@ -251,6 +255,35 @@ export function initMap() {
     const el = document.getElementById(id);
     if (el) L.DomEvent.disableClickPropagation(el);
   }
+}
+
+// Every basemap error, whichever style it comes from. The first time Stadia
+// refuses something (see basemap.js), the map swaps to OpenFreeMap: once per
+// page, so OpenFreeMap's own failures never swap anything back.
+function watchBasemapErrors(glLayer) {
+  let switched = false;
+  _glMap.on('error', (e) => {
+    // A listener mutes MapLibre's own console report: keep it.
+    console.error(e.error);
+    // A tile that fails with anything but a 404 doesn't redraw the map. When
+    // the last tile of the first view does, 'load' never fires and the splash
+    // stays up.
+    _glMap.triggerRepaint();
+    const refused = !switched && refusal(e.error);
+    if (!refused) return;
+    switched = true;
+    const before = glLayer.getAttribution();
+    _glMap.once('style.load', () => tuneFallback(_glMap));
+    _glMap.setStyle(FALLBACK_STYLE, { diff: false });
+    track('basemap_fallback', refused);
+    // Before the first load, maplibre-gl-leaflet sets the attribution on
+    // 'load' by itself. After it, nothing does.
+    if (basemapLoaded) {
+      _glMap.once('idle', () => {
+        _map.attributionControl?.removeAttribution(before).addAttribution(glLayer.getAttribution());
+      });
+    }
+  });
 }
 
 // Click anywhere on the map to use that spot as an endpoint, so a walk can be

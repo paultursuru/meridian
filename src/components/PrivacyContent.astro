@@ -12,7 +12,7 @@ const { lang } = Astro.props;
 {lang === 'fr' && (
   <div class="privacy-pane">
     <h1>Politique de confidentialité</h1>
-    <p class="privacy-date"><em>Dernière mise à jour : septembre 2026</em></p>
+    <p class="privacy-date"><em>Dernière mise à jour : octobre 2026</em></p>
 
     <h2>Ce que MeridianWay fait (et ne fait pas)</h2>
     <p>MeridianWay ne crée pas de compte utilisateur, ne vous demande aucune information personnelle et ne tient aucun fichier de ses utilisateurs. Tout le calcul (position du soleil, score d'ombre) s'effectue directement dans votre navigateur. Le site est hébergé par Fly.io, et trois relais (Cloudflare Workers) opérés par MeridianWay transmettent une partie des requêtes et en gardent les réponses en cache.</p>
@@ -27,6 +27,7 @@ const { lang } = Astro.props;
       <tbody>
         <tr><td><strong>Fly.io</strong><br /><span class="svc">hébergement</span></td><td>Pages demandées</td><td>Mise à disposition du site</td></tr>
         <tr><td><strong>Stadia Maps</strong></td><td>Zone de la carte affichée</td><td>Fond de carte</td></tr>
+        <tr><td><strong>OpenFreeMap</strong><br /><span class="svc">seulement si Stadia Maps est indisponible</span></td><td>Zone de la carte affichée</td><td>Fond de carte de secours</td></tr>
         <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Texte saisi dans les champs adresse ; lieu déjà choisi dans l'autre champ</td><td>Suggestions d'autocomplétion</td></tr>
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Adresse saisie ; coordonnées GPS si vous utilisez la géolocalisation</td><td>Géocodage et géocodage inverse</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Point central de l'itinéraire</td><td>Météo : nébulosité et température</td></tr>
@@ -66,7 +67,7 @@ const { lang } = Astro.props;
 {lang === 'de' && (
   <div class="privacy-pane">
     <h1>Datenschutzerklärung</h1>
-    <p class="privacy-date"><em>Zuletzt aktualisiert: September 2026</em></p>
+    <p class="privacy-date"><em>Zuletzt aktualisiert: Oktober 2026</em></p>
 
     <h2>Was MeridianWay tut (und nicht tut)</h2>
     <p>MeridianWay erstellt keine Benutzerkonten, fragt keine persönlichen Angaben ab und führt keine Kartei über seine Nutzerinnen und Nutzer. Alle Berechnungen (Sonnenposition, Schattenbewertung) erfolgen direkt in Ihrem Browser. Die Website wird bei Fly.io gehostet; drei von MeridianWay betriebene Relais (Cloudflare Workers) leiten einen Teil der Anfragen weiter und speichern die Antworten zwischen.</p>
@@ -81,6 +82,7 @@ const { lang } = Astro.props;
       <tbody>
         <tr><td><strong>Fly.io</strong><br /><span class="svc">Hosting</span></td><td>Aufgerufene Seiten</td><td>Bereitstellung der Website</td></tr>
         <tr><td><strong>Stadia Maps</strong></td><td>Angezeigter Kartenausschnitt</td><td>Hintergrundkarte</td></tr>
+        <tr><td><strong>OpenFreeMap</strong><br /><span class="svc">nur wenn Stadia Maps nicht verfügbar ist</span></td><td>Angezeigter Kartenausschnitt</td><td>Ersatz-Hintergrundkarte</td></tr>
         <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>In den Adressfeldern eingegebener Text; im anderen Feld bereits gewählter Ort</td><td>Autocomplete-Vorschläge</td></tr>
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Eingegebene Adresse; GPS-Koordinaten, wenn Sie die Standortbestimmung nutzen</td><td>Geo- und Reverse-Geocoding</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Mittelpunkt der Route</td><td>Wetter: Bewölkung und Temperatur</td></tr>
@@ -120,7 +122,7 @@ const { lang } = Astro.props;
 {lang === 'it' && (
   <div class="privacy-pane">
     <h1>Informativa sulla privacy</h1>
-    <p class="privacy-date"><em>Ultimo aggiornamento: settembre 2026</em></p>
+    <p class="privacy-date"><em>Ultimo aggiornamento: ottobre 2026</em></p>
 
     <h2>Cosa fa (e non fa) MeridianWay</h2>
     <p>MeridianWay non crea account utente, non chiede informazioni personali e non tiene alcun archivio dei suoi utenti. Tutti i calcoli (posizione del sole, punteggio ombra) vengono eseguiti direttamente nel tuo browser. Il sito è ospitato da Fly.io, e tre relay (Cloudflare Workers) gestiti da MeridianWay inoltrano parte delle richieste e ne conservano le risposte in cache.</p>
@@ -135,6 +137,7 @@ const { lang } = Astro.props;
       <tbody>
         <tr><td><strong>Fly.io</strong><br /><span class="svc">hosting</span></td><td>Pagine richieste</td><td>Messa a disposizione del sito</td></tr>
         <tr><td><strong>Stadia Maps</strong></td><td>Area della mappa visualizzata</td><td>Mappa di base</td></tr>
+        <tr><td><strong>OpenFreeMap</strong><br /><span class="svc">solo se Stadia Maps non è disponibile</span></td><td>Area della mappa visualizzata</td><td>Mappa di base di riserva</td></tr>
         <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Testo inserito nei campi indirizzo; luogo già scelto nell'altro campo</td><td>Suggerimenti di completamento automatico</td></tr>
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Indirizzo inserito; coordinate GPS se usi la geolocalizzazione</td><td>Geocodifica e geocodifica inversa</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Punto centrale dell'itinerario</td><td>Meteo: nuvolosità e temperatura</td></tr>
@@ -174,7 +177,7 @@ const { lang } = Astro.props;
 {lang === 'en' && (
   <div class="privacy-pane">
     <h1>Privacy Policy</h1>
-    <p class="privacy-date"><em>Last updated: September 2026</em></p>
+    <p class="privacy-date"><em>Last updated: October 2026</em></p>
 
     <h2>What MeridianWay does (and doesn't do)</h2>
     <p>MeridianWay creates no user accounts, asks for no personal information and keeps no records of its users. All calculations (sun position, shadow scoring) run directly in your browser. The site is hosted by Fly.io, and three relays (Cloudflare Workers) run by MeridianWay forward some of the requests and cache the responses.</p>
@@ -189,6 +192,7 @@ const { lang } = Astro.props;
       <tbody>
         <tr><td><strong>Fly.io</strong><br /><span class="svc">hosting</span></td><td>Pages requested</td><td>Serving the site</td></tr>
         <tr><td><strong>Stadia Maps</strong></td><td>Displayed map area</td><td>Base map</td></tr>
+        <tr><td><strong>OpenFreeMap</strong><br /><span class="svc">only when Stadia Maps is unavailable</span></td><td>Displayed map area</td><td>Backup base map</td></tr>
         <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Text typed in address fields; place already chosen in the other field</td><td>Autocomplete suggestions</td></tr>
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Address entered; GPS coordinates if you use geolocation</td><td>Geocoding and reverse geocoding</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Midpoint of the route</td><td>Weather: cloud cover and temperature</td></tr>
@@ -228,7 +232,7 @@ const { lang } = Astro.props;
 {lang === 'rm' && (
   <div class="privacy-pane">
     <h1>Disposiziuns davart la protecziun da datas</h1>
-    <p class="privacy-date"><em>Ultima actualisaziun: settember 2026</em></p>
+    <p class="privacy-date"><em>Ultima actualisaziun: october 2026</em></p>
 
     <h2>Tge che MeridianWay fa (e na fa)</h2>
     <p>MeridianWay na fa nagins contos d’utilisader, na dumonda naginas indicaziuns persunalas e na maina nagina cartoteca da ses utilisaders. Tut las calculaziuns (posiziun dal sulegl, evaluaziun da la sumbriva) vegnan fatgas directamain en Voss navigatur. La website vegn ospitada da Fly.io, e trais relais (Cloudflare Workers) manads da MeridianWay transmettan ina part da las dumondas ed arcuneschan las respostas en il cache.</p>
@@ -243,6 +247,7 @@ const { lang } = Astro.props;
       <tbody>
         <tr><td><strong>Fly.io</strong><br /><span class="svc">hosting</span></td><td>Paginas dumandadas</td><td>Metter a disposiziun la website</td></tr>
         <tr><td><strong>Stadia Maps</strong></td><td>Zona da la charta mussada</td><td>Charta da basa</td></tr>
+        <tr><td><strong>OpenFreeMap</strong><br /><span class="svc">mo sche Stadia Maps n’è betg disponibel</span></td><td>Zona da la charta mussada</td><td>Charta da basa da reserva</td></tr>
         <tr><td><strong>Photon</strong><br /><span class="svc">komoot GmbH, DE</span></td><td>Text endatà en ils champs d’adressas; lieu gia tschernì en l’auter champ</td><td>Propostas da cumplettaziun automatica</td></tr>
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Adressa endatada; coordinatas GPS sche Vus utilisais la geolocaziun</td><td>Geocodaziun e geocodaziun inversa</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Punct central da la ruta</td><td>Aura: nivels e temperatura</td></tr>
