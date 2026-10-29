@@ -49,8 +49,8 @@ const url = langUrl(lang, path);
 
 <div class="content-wrap">
   <nav class="content-nav">
-    <a class="wordmark" href={langPath(lang)}><span class="meri">Meridian</span><span class="way">Way</span></a>
-    <a class="open-app" href={langPath(lang)}>{t.about_back.replace('← ', '')}</a>
+    <a class="wordmark" href={langPath(lang)} data-app-link="logo"><span class="meri">Meridian</span><span class="way">Way</span></a>
+    <a class="open-app" href={langPath(lang)} data-app-link="nav">{t.about_back.replace('← ', '')}</a>
   </nav>
 
   <main>
@@ -125,8 +125,16 @@ const url = langUrl(lang, path);
 
 <!-- Bundled by Astro (not is:inline): the CSP forbids inline scripts. -->
 <script>
-  import { trackPageview } from '../lib/analytics.js';
+  import { trackPageview, track } from '../lib/analytics.js';
   trackPageview();
+
+  // Clicks into the app, by page and by link. Umami sends with keepalive, so
+  // the event survives the navigation.
+  document.addEventListener('click', (e) => {
+    const link = (e.target as Element).closest<HTMLAnchorElement>('a[data-app-link]');
+    if (!link) return;
+    track('app_open', { page: location.pathname.replace(/^\/|\/$/g, ''), link: link.dataset.appLink });
+  });
 </script>
 
 </body>

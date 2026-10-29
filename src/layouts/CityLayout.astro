@@ -106,7 +106,7 @@ const sunFirst = c.defaultMode === 'sun';
           <p>{frTypo(r.summary)}</p>
           <div class="route-row" data-side="sun"><span>{r.sunny.label}</span><span class="vh"> : </span><span class="meta">{frTypo(`${r.sunny.minutes} min, ${r.sunny.km} km`)}</span></div>
           <div class="route-row" data-side="shade"><span>{r.other.label}</span><span class="vh"> : </span><span class="meta">{frTypo(`${r.other.minutes} min, ${r.other.km} km`)}</span></div>
-          <a class="route-link" href={appLink(r)}>Voir ce trajet dans MeridianWay</a>
+          <a class="route-link" href={appLink(r)} data-app-link="route">Voir ce trajet dans MeridianWay</a>
         </li>
       ))}
     </ul>
@@ -135,7 +135,7 @@ const sunFirst = c.defaultMode === 'sun';
   <section class="method">
     <h2>{frTypo('D\'où viennent ces chiffres ?')}</h2>
     <p>{frTypo(c.method)}</p>
-    <p><a href="/comment-ca-marche/">{frTypo('Comment ça marche ?')}</a> · <a href={langPath(city.lang)}>Ouvrir MeridianWay</a></p>
+    <p><a href="/comment-ca-marche/">{frTypo('Comment ça marche ?')}</a> · <a href={langPath(city.lang)} data-app-link="method">Ouvrir MeridianWay</a></p>
   </section>
 </ContentLayout>
 
