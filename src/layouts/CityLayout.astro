@@ -1,0 +1,299 @@
+---
+// A city page: the season's content from src/data/cities/, the animated logo
+// and the "À l'ombre / Au soleil" toggle. The toggle only changes the mood and
+// which column stands out: both columns stay in the HTML for crawlers.
+import ContentLayout from './ContentLayout.astro';
+import SunLogo from '../components/city/SunLogo.astro';
+import { langUrl, langPath, SITE_URL } from '../lib/i18n';
+import { buildShareQuery } from '../lib/share.js';
+import { frTypo } from '../lib/frTypo';
+import type { CityPage, CityRoute } from '../data/cities/types';
+
+interface Props {
+  city: CityPage;
+}
+
+const { city } = Astro.props;
+const c = city.seasons[city.season];
+if (!c) throw new Error(`${city.slug}: no content for season "${city.season}"`);
+
+const path = `${city.slug}/`;
+const url = langUrl(city.lang, path);
+
+// The next such day from the build, so the app never opens on a past date.
+function nextDay(monthDay: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const year = new Date().getFullYear();
+  return `${year}-${monthDay}` >= today ? `${year}-${monthDay}` : `${year + 1}-${monthDay}`;
+}
+
+const appLink = (r: CityRoute) => `${langPath(city.lang)}?${buildShareQuery({
+  start: r.from, end: r.to, date: nextDay(r.when.monthDay), time: r.when.time, route: 'sunny',
+})}`;
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      '@id': url,
+      url,
+      name: c.title,
+      description: c.metaDescription,
+      inLanguage: city.lang,
+      dateModified: city.computedOn,
+      about: { '@type': 'City', name: city.name, containedInPlace: { '@type': 'Country', name: 'Suisse' } },
+      isPartOf: { '@type': 'WebSite', name: 'MeridianWay', url: `${SITE_URL}/` },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'MeridianWay', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: city.name, item: url },
+      ],
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: c.faq.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+    },
+  ],
+};
+
+const sunFirst = c.defaultMode === 'sun';
+---
+<ContentLayout lang={city.lang} title={c.metaTitle} description={c.metaDescription} path={path} bodyClass={sunFirst ? 'city-page sun' : 'city-page'}>
+  <script slot="head" is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+  <header class="city-hero">
+    <div class="city-logo"><SunLogo mode={c.defaultMode} /></div>
+    <div>
+      <h1>{frTypo(c.title)}</h1>
+      <p class="lede">{c.lede.map(part => part.strong ? <strong>{frTypo(part.text)}</strong> : frTypo(part.text))}</p>
+      <button id="sun-toggle" type="button" role="switch" aria-checked={sunFirst ? 'true' : 'false'} aria-label="Au soleil">
+        <span class="thumb" aria-hidden="true"></span>
+        <span class="opt opt-shade">À l'ombre</span>
+        <span class="opt opt-sun">Au soleil</span>
+      </button>
+    </div>
+  </header>
+
+  <section>
+    <h2>{frTypo(c.glance.heading)}</h2>
+    <div class="glance">
+      {(['shade', 'sun'] as const).map(side => (
+        <div class="glance-card" data-side={side}>
+          <h3>{c.glance[side].title}</h3>
+          <ul>
+            {c.glance[side].items.map(item => (
+              <li>
+                <span class="glance-label">{frTypo(item.label)}</span><span class="vh"> : </span>
+                <span class="glance-value">{frTypo(item.value)}</span>
+                {item.bar != null && <span class="bar"><i style={`width: ${item.bar}%`}></i></span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2>{c.routes.heading}</h2>
+    <ul class="routes">
+      {c.routes.items.map(r => (
+        <li class="route-card">
+          <h3>{r.from.label} → {r.to.label}, {frTypo(r.when.label)}</h3>
+          <p>{frTypo(r.summary)}</p>
+          <div class="route-row" data-side="sun"><span>{r.sunny.label}</span><span class="vh"> : </span><span class="meta">{frTypo(`${r.sunny.minutes} min, ${r.sunny.km} km`)}</span></div>
+          <div class="route-row" data-side="shade"><span>{r.other.label}</span><span class="vh"> : </span><span class="meta">{frTypo(`${r.other.minutes} min, ${r.other.km} km`)}</span></div>
+          <a class="route-link" href={appLink(r)} data-app-link="route">Voir ce trajet dans MeridianWay</a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section>
+    <h2>{frTypo(c.spots.heading)}</h2>
+    <p class="muted">{frTypo(c.spots.intro)}</p>
+    <ol class="spots">
+      {c.spots.items.map(s => (
+        <li><span class="spot-name">{s.name}</span><span class="vh"> (</span><span class="spot-where">{s.where}</span><span class="vh">) : </span><span class="spot-hours">{frTypo(s.hours)}</span></li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="faq">
+    <h2>Questions fréquentes</h2>
+    {c.faq.map(f => (
+      <>
+        <h3>{frTypo(f.q)}</h3>
+        <p>{frTypo(f.a)}</p>
+      </>
+    ))}
+  </section>
+
+  <section class="method">
+    <h2>{frTypo('D\'où viennent ces chiffres ?')}</h2>
+    <p>{frTypo(c.method)}</p>
+    <p><a href="/comment-ca-marche/">{frTypo('Comment ça marche ?')}</a> · <a href={langPath(city.lang)} data-app-link="method">Ouvrir MeridianWay</a></p>
+  </section>
+</ContentLayout>
+
+<style is:global>
+  body.city-page {
+    --sun-core: #f0f2a0;
+    --sun-op: 0.4;
+    --theme-dur: 1400ms;
+  }
+  body.city-page.sun {
+    --bg: #f6f0d4;
+    --fg: #2a2d1b;
+    --muted: rgba(42,45,27,0.62);
+    --line: rgba(42,45,27,0.15);
+    --card: #fffaf0;
+    --sunc: #c58a00;
+    --shadec: #8d5ba3;
+    --sun-core: #ffc93c;
+    --sun-op: 1;
+    --logo-m: #e2ac00;
+    --logo-w: #cdc9af;
+  }
+  body.city-page, body.city-page * {
+    transition: background-color var(--theme-dur) ease, color var(--theme-dur) ease, border-color var(--theme-dur) ease,
+      fill var(--theme-dur) ease, stroke var(--theme-dur) ease, stop-color var(--theme-dur) ease, opacity var(--theme-dur) ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body.city-page { --theme-dur: 200ms; }
+  }
+
+  .city-hero {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .city-page .lede { margin-bottom: 1.25rem; }
+  .city-page .lede strong { font-weight: normal; color: var(--shadec); }
+
+  #sun-toggle {
+    position: relative;
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    font: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--fg);
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  #sun-toggle .opt { position: relative; z-index: 1; padding: 7px 18px; white-space: nowrap; }
+  #sun-toggle .thumb {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    border-radius: 999px;
+    background: var(--shadec);
+    transition: transform calc(var(--theme-dur) * 0.6) cubic-bezier(.65,0,.35,1), background-color var(--theme-dur) ease;
+  }
+  body.city-page.sun #sun-toggle .thumb { transform: translateX(100%); background: var(--sunc); }
+  body.city-page:not(.sun) #sun-toggle .opt-shade { color: var(--bg); }
+  #sun-toggle:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+
+  .city-page main h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+  .city-page .muted { color: var(--muted); }
+
+  .glance { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .glance-card {
+    --c: var(--shadec);
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    opacity: 0.6;
+  }
+  .glance-card[data-side=sun] { --c: var(--sunc); }
+  body.city-page:not(.sun) .glance-card[data-side=shade],
+  body.city-page.sun .glance-card[data-side=sun] { opacity: 1; border-color: var(--c); }
+  .glance-card h3 { display: flex; align-items: center; gap: 8px; }
+  .glance-card h3::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+  .city-page .glance-card ul { list-style: none; margin: 0; display: grid; gap: 0.8rem; }
+  .glance-label { display: block; color: var(--muted); font-size: 0.8rem; }
+  .glance-value { display: block; font-size: 1.05rem; }
+  .bar { display: block; height: 6px; border-radius: 3px; background: var(--line); margin-top: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--c); }
+
+  .city-page .routes { list-style: none; margin: 0; }
+  .route-card { background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; }
+  .route-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.4rem 0; border-top: 1px solid var(--line); }
+  .route-row::before { content: ''; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--sunc); }
+  .route-row[data-side=shade]::before { background: var(--shadec); }
+  .route-row > span:first-of-type { flex: 1; }
+  .route-row .meta { color: var(--muted); font-size: 0.9rem; }
+  .city-page .route-link { display: inline-block; margin-top: 0.75rem; }
+
+  .city-page .spots { list-style: none; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .spots li { border-left: 3px solid var(--sunc); padding: 0.2rem 0 0.2rem 0.75rem; margin: 0; }
+  .spot-name { display: block; }
+  .spot-where { display: block; color: var(--muted); font-size: 0.85rem; }
+  .spot-hours { display: block; font-size: 0.95rem; }
+
+  .city-page .faq h3 { margin-top: 1.25rem; }
+  .city-page .faq p { color: var(--muted); }
+  .city-page .method p:first-of-type { color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 640px) {
+    .city-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 0.5rem; }
+    .city-logo { width: 190px; }
+    .glance, .city-page .spots { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  import { targetAngle, shadowMatrix, sunTransform, swingMs, easeInOutCubic, type LogoMode } from '../lib/sunLogo';
+
+  const toggle = document.getElementById('sun-toggle');
+  const shadow = document.getElementById('sun-logo-shadow');
+  const sun = document.getElementById('sun-logo-sun');
+
+  if (toggle && shadow && sun) {
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let mode: LogoMode = document.body.classList.contains('sun') ? 'sun' : 'shade';
+    let theta = targetAngle(mode);
+    let frame = 0;
+
+    const draw = (t: number) => {
+      shadow.setAttribute('transform', shadowMatrix(t));
+      sun.setAttribute('transform', sunTransform(t));
+    };
+
+    toggle.addEventListener('click', () => {
+      mode = mode === 'sun' ? 'shade' : 'sun';
+      document.body.classList.toggle('sun', mode === 'sun');
+      toggle.setAttribute('aria-checked', String(mode === 'sun'));
+
+      // Restart from wherever the sun is, so a second click mid-swing turns it back.
+      cancelAnimationFrame(frame);
+      const from = theta;
+      const to = targetAngle(mode);
+      const duration = swingMs(from, to);
+      if (reduced || duration < 16) {
+        theta = to;
+        draw(theta);
+        return;
+      }
+      const start = performance.now();
+      const step = (now: number) => {
+        const p = Math.min(1, (now - start) / duration);
+        theta = from + (to - from) * easeInOutCubic(p);
+        draw(theta);
+        if (p < 1) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+    });
+  }
+</script>

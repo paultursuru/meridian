@@ -10,7 +10,7 @@ async function stubUpstreams(page) {
   await page.route(/nominatim|photon|open-meteo|workers\.dev|stadiamaps/, route => route.abort());
 }
 
-for (const path of ['/', '/en/about', '/en/privacy']) {
+for (const path of ['/', '/en/about', '/en/privacy', '/lausanne/', '/comment-ca-marche/']) {
   test(`${path} names the hook on the Umami tag and defines it`, async ({ page }) => {
     await stubUpstreams(page);
     await page.goto(path);

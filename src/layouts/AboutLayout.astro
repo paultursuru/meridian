@@ -65,6 +65,7 @@ const pageUrl = (l: Lang) => langUrl(l, 'about/');
       <a href={langPath(lang, 'about')} class="footer-link">{t.aria_about}</a>
       <span class="footer-link">-</span>
       <a href={langPath(lang, 'privacy')} class="footer-link">{t.about_privacy}</a>
+      {lang === 'fr' && <><span class="footer-link">-</span>{' '}<a href="/comment-ca-marche/" class="footer-link">Comment ça marche ?</a></>}
       <span class="footer-link">-</span>
       <a href="/llms.txt" class="footer-link">llms.txt</a>
     </div>
