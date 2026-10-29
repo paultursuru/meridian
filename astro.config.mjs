@@ -33,6 +33,13 @@ export default defineConfig({
         },
       },
     },
+    build: {
+      // Astro inlines a page script under 4 kB into the HTML, which the CSP
+      // (script-src 'self') blocks in production only: dev always serves
+      // scripts as files. Keep every script a file; other assets keep the
+      // default limit.
+      assetsInlineLimit: (file) => (file.endsWith('.js') ? false : undefined),
+    },
   },
   integrations: [
     sitemap({
