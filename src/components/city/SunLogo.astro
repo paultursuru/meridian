@@ -1,0 +1,37 @@
+---
+// The M and its shadow, server-rendered at the given mode's angle so the logo
+// is right before any script runs. CityLayout's script animates it.
+import { GLYPH, SUN_GLOW_R, SUN_CORE_R, targetAngle, shadowMatrix, sunTransform, viewBox, type LogoMode } from '../../lib/sunLogo';
+
+interface Props {
+  mode: LogoMode;
+}
+
+const t = targetAngle(Astro.props.mode);
+---
+<svg id="sun-logo" viewBox={viewBox()} aria-hidden="true">
+  <defs>
+    <radialGradient id="sun-glow">
+      <stop offset="0" class="glow-in" />
+      <stop offset="1" class="glow-out" />
+    </radialGradient>
+  </defs>
+  <g id="sun-logo-sun" transform={sunTransform(t)}>
+    <circle r={SUN_GLOW_R} fill="url(#sun-glow)" />
+    <circle id="sun-logo-core" r={SUN_CORE_R} />
+  </g>
+  <use id="sun-logo-shadow" href="#sun-logo-m" transform={shadowMatrix(t)} />
+  <g id="sun-logo-m-wrap">
+    <text id="sun-logo-m" x={GLYPH.x} y={GLYPH.baseline} text-anchor="middle" font-size={GLYPH.size} font-family="BricolageGrotesqueMedium, system-ui, sans-serif">M</text>
+  </g>
+</svg>
+
+<style>
+  #sun-logo { width: 100%; height: auto; display: block; overflow: visible; }
+  #sun-logo-m-wrap { fill: var(--logo-m); stroke: var(--logo-m); stroke-width: 5; stroke-linejoin: round; }
+  #sun-logo-shadow { fill: var(--logo-w); stroke: var(--logo-w); stroke-width: 5; stroke-linejoin: round; }
+  #sun-logo-sun { opacity: var(--sun-op); }
+  #sun-logo-core { fill: var(--sun-core); }
+  .glow-in { stop-color: var(--sun-core); stop-opacity: 0.55; }
+  .glow-out { stop-color: var(--sun-core); stop-opacity: 0; }
+</style>

@@ -66,7 +66,7 @@ export default defineConfig({
       remove: [
         'button', '#header', '#search-panel', '#map-splash', '#map-sun-info-row',
         '#map-sun-info-details', '#status', '#about-header', '#about-optout',
-        '#time-scrubber', '#results',
+        '#time-scrubber', '#results', '.city-logo',
       ],
       // Same output for the same pages, so a deploy doesn't rewrite every .md.
       timestamp: false,
@@ -75,7 +75,7 @@ export default defineConfig({
         title: 'MeridianWay',
         description: 'Walking directions with two routes between the same points: one in the sun, one in the shade, at a chosen date and time. Building heights are measured ones in Switzerland (swisstopo swissBUILDINGS3D), from OpenStreetMap elsewhere. Free web app, no account.',
         content: readFileSync(new URL('./src/llms.md', import.meta.url), 'utf-8'),
-        pages: /(^|\/)about\/$/,
+        pages: /(^|\/)(about|comment-ca-marche|lausanne)\/$/,
       },
     }),
   ],

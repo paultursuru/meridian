@@ -1,0 +1,133 @@
+---
+// Shell for the single-language content pages (city pages, "Comment ça
+// marche ?"): head, a nav back to the app, and the same footer as the about
+// page. The page puts its own structured data in the "head" slot.
+import '../styles/main.css';
+import { translations, langUrl, langPath, type Lang } from '../lib/i18n';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  path: string; // e.g. 'lausanne/'
+  bodyClass?: string;
+}
+
+const { lang, title, description, path, bodyClass = '' } = Astro.props;
+const t = translations[lang];
+const url = langUrl(lang, path);
+---
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#0e120a" />
+  <meta name="description" content={description} />
+  <link rel="canonical" href={url} />
+  <link rel="alternate" hreflang={lang} href={url} />
+  <link rel="alternate" hreflang="x-default" href={url} />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content={url} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content="https://meridian-way.ch/meridian-way-og-img.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content={t.og_image_alt} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <slot name="head" />
+  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false" data-before-send="umamiBeforeSend"></script>
+</head>
+<body class:list={['content-page', bodyClass]}>
+
+<div class="content-wrap">
+  <nav class="content-nav">
+    <a class="wordmark" href={langPath(lang)}><span class="meri">Meridian</span><span class="way">Way</span></a>
+    <a class="open-app" href={langPath(lang)}>{t.about_back.replace('← ', '')}</a>
+  </nav>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="content-footer">
+    <a href={langPath(lang, 'about')}>{t.aria_about}</a>
+    <span>-</span>
+    <a href={langPath(lang, 'privacy')}>{t.about_privacy}</a>
+    {lang === 'fr' && <><span>-</span>{' '}<a href="/comment-ca-marche/">Comment ça marche ?</a></>}
+    <span>-</span>
+    <a href="/llms.txt">llms.txt</a>
+  </footer>
+</div>
+
+<style is:global>
+  body.content-page {
+    --bg: #0e120a;
+    --fg: #d8dbc8;
+    --muted: rgba(216,219,200,0.62);
+    --line: rgba(240,242,160,0.13);
+    --card: #161b12;
+    --sunc: #f0f2a0;
+    --shadec: #e8c8f0;
+    --logo-m: #f0f2a0;
+    --logo-w: #e8c8f0;
+    background: var(--bg);
+    color: var(--fg);
+    height: max-content;
+    min-height: 100vh;
+    overflow: auto;
+    padding: 1.5rem 1rem 4rem;
+    line-height: 1.5;
+  }
+  .content-wrap { max-width: 760px; margin: 0 auto; }
+  .content-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .content-nav .wordmark { font-size: 1.3rem; letter-spacing: -0.5px; text-decoration: none; }
+  .content-nav .wordmark .meri { color: var(--logo-m); }
+  .content-nav .wordmark .way { color: var(--shadec); font-style: italic; }
+  .content-nav .open-app { color: var(--fg); font-size: 0.9rem; }
+  .content-page main h1 { font-size: 2rem; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 0.75rem; }
+  .content-page main h2 { font-size: 1.25rem; letter-spacing: -0.3px; margin: 2.5rem 0 1rem; }
+  .content-page main p { margin-bottom: 0.9rem; }
+  .content-page main a { color: var(--fg); }
+  .content-page main ul, .content-page main ol { margin: 0 0 1rem 1.25rem; }
+  .content-page main li { margin-bottom: 0.4rem; }
+  .content-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .content-footer a { color: var(--muted); }
+  /* Separators for the markdown copy and screen readers, hidden on screen */
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (max-width: 640px) {
+    .content-page main h1 { font-size: 1.6rem; }
+  }
+</style>
+
+<!-- Bundled by Astro (not is:inline): the CSP forbids inline scripts. -->
+<script>
+  import { trackPageview } from '../lib/analytics.js';
+  trackPageview();
+</script>
+
+</body>
+</html>

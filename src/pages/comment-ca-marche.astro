@@ -1,0 +1,59 @@
+---
+// French only for now, like the city pages it explains.
+import ContentLayout from '../layouts/ContentLayout.astro';
+import { langUrl, SITE_URL } from '../lib/i18n';
+import { frTypo } from '../lib/frTypo';
+
+const title = 'Comment ça marche ? : MeridianWay';
+const description = 'Comment MeridianWay calcule un chemin à pied au soleil ou à l\'ombre : les chemins, la position du soleil, les ombres des bâtiments et des arbres, et les limites du calcul.';
+const url = langUrl('fr', 'comment-ca-marche/');
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebPage', '@id': url, url, name: 'Comment ça marche ?', description, inLanguage: 'fr',
+      isPartOf: { '@type': 'WebSite', name: 'MeridianWay', url: `${SITE_URL}/` } },
+    { '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'MeridianWay', item: `${SITE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Comment ça marche ?', item: url },
+    ] },
+  ],
+};
+---
+<ContentLayout lang="fr" title={title} description={description} path="comment-ca-marche/">
+  <script slot="head" is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+  <h1>Comment ça marche&nbsp;?</h1>
+  <p>MeridianWay propose deux chemins à pied entre deux points, l'un au soleil, l'autre à l'ombre, à la date et à l'heure que vous choisissez. Voici d'où viennent les chiffres, et où ils s'arrêtent.</p>
+
+  <h2>1. Trouver des chemins</h2>
+  <p>OpenRouteService, avec son profil piéton, calcule jusqu'à trois variantes entre le départ et l'arrivée. Une variante presque identique à une autre ne compte qu'une fois, et celles qui font plus de 1,8&nbsp;fois le plus court sont écartées. La durée tient compte de la montée&nbsp;: 4&nbsp;minutes par tranche de 100&nbsp;m de dénivelé positif.</p>
+
+  <h2>2. Placer le soleil</h2>
+  <p>La hauteur et la direction du soleil sont calculées pour chaque tronçon du trajet, au moment où vous y passerez à pied. Sur une longue marche, le soleil a le temps de tourner.</p>
+
+  <h2>3. Projeter les ombres</h2>
+  <ul>
+    <li><strong>Les bâtiments.</strong> En Suisse, ils viennent de swissBUILDINGS3D, le modèle 3D de swisstopo&nbsp;: une emprise et une hauteur mesurée pour chaque bâtiment. Ailleurs, ils viennent d'OpenStreetMap, avec une hauteur estimée quand elle manque (10&nbsp;m par défaut, 2,5&nbsp;m pour un garage ou un abri).</li>
+    <li><strong>Les arbres et les forêts.</strong> Ils viennent d'OpenStreetMap. Les feuillus perdent leur ombre en hiver&nbsp;: 5&nbsp;% de leur feuillage de décembre à février, tout leur feuillage de mai à septembre.</li>
+    <li><strong>Le test.</strong> Chaque tronçon est testé en trois points. Depuis chacun, l'app remonte vers le soleil&nbsp;: si un bâtiment ou un arbre coupe le rayon plus près que la longueur de son ombre, le point est à l'ombre.</li>
+  </ul>
+
+  <h2>4. Comparer</h2>
+  <p>Chaque chemin reçoit la part de sa distance passée au soleil. L'app montre le plus ensoleillé et le plus ombragé, et la nuit, seulement le plus court. L'onglet ouvert d'abord dépend de la météo prévue&nbsp;: l'ombre à partir de 24&nbsp;°C, le soleil en dessous.</p>
+
+  <h2>Les limites</h2>
+  <ul>
+    <li><strong>Le soleil rasant.</strong> Sous 5° au-dessus de l'horizon, les ombres deviennent très longues et le relief compte plus que les bâtiments. L'app le signale.</li>
+    <li><strong>Le relief.</strong> L'app mesure chaque bâtiment de son pied à son toit, comme s'il était posé au niveau de la rue. Dans une ville en pente comme Lausanne, elle voit donc plus d'ombre qu'il n'y en a quand le soleil vient du bas de la pente.</li>
+    <li><strong>Une seule hauteur par bâtiment.</strong> C'est la plus haute, et le toit est traité comme plat&nbsp;: un clocher fait de l'ombre comme si toute l'église avait sa hauteur.</li>
+    <li><strong>Les nuages.</strong> L'ombre est calculée par la géométrie. Quand le ciel est couvert, l'app le signale, mais les deux chemins restent calculés comme par grand soleil.</li>
+    <li><strong>Le lever et le coucher.</strong> Ce sont les heures astronomiques&nbsp;: derrière les Alpes, le soleil apparaît plus tard.</li>
+    <li><strong>Les arbres.</strong> Ils ne sont pas tous cartographiés dans OpenStreetMap, et leur hauteur est souvent estimée (8&nbsp;m par défaut).</li>
+  </ul>
+
+  <h2>Les pages par ville</h2>
+  <p>Les pages par ville, comme <a href="/lausanne/">Lausanne en hiver</a>, reprennent ce calcul sur toutes les rues du centre, à plusieurs heures de la journée. Elles ajoutent le relief&nbsp;: chaque bâtiment compte pour la hauteur de son toit au-dessus de la rue, d'après le modèle de terrain swissALTI3D de swisstopo. Seuls les chiffres qui ne dépendent pas des autres limites y sont publiés, arrondis.</p>
+
+  <h2>Données et crédits</h2>
+  <p>Bâtiments et terrain&nbsp;: swisstopo (swissBUILDINGS3D, swissALTI3D). Carte, bâtiments hors de Suisse, arbres et chemins&nbsp;: © les contributeurs d'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Itinéraires&nbsp;: OpenRouteService. Recherche d'adresses&nbsp;: Photon et Nominatim. Position du soleil&nbsp;: SunCalc. Météo&nbsp;: Open-Meteo. Le code de MeridianWay est ouvert, sur <a href="https://github.com/paultursuru/meridian" target="_blank" rel="noopener">GitHub</a>.</p>
+</ContentLayout>
