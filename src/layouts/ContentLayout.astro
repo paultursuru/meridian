@@ -4,6 +4,7 @@
 // page. The page puts its own structured data in the "head" slot.
 import '../styles/main.css';
 import { translations, langUrl, langPath, type Lang } from '../lib/i18n';
+import { cityLinks } from '../data/cities/links';
 
 interface Props {
   lang: Lang;
@@ -62,6 +63,7 @@ const url = langUrl(lang, path);
     <span>-</span>
     <a href={langPath(lang, 'privacy')}>{t.about_privacy}</a>
     {lang === 'fr' && <><span>-</span>{' '}<a href="/comment-ca-marche/">Comment ça marche ?</a></>}
+    {lang === 'fr' && cityLinks.map(c => <><span>-</span>{' '}<a href={c.href}>{c.label}</a></>)}
     <span>-</span>
     <a href="/llms.txt">llms.txt</a>
   </footer>
