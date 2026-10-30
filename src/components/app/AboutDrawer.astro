@@ -3,6 +3,7 @@ import { translations, LANGS, langPath, type Lang } from '../../lib/i18n';
 import AboutContent from '../AboutContent.astro';
 import AnalyticsOptOut from '../AnalyticsOptOut.astro';
 import githubIcon from '../../icons/github.svg?raw';
+import { cityLinks } from '../../data/cities/links';
 
 interface Props {
   lang: Lang;
@@ -39,6 +40,8 @@ const t = translations[lang];
     <a href={langPath(lang, 'about')} class="footer-link">{t.aria_about}</a>
     <span class="footer-link">-</span>
     <a href={langPath(lang, 'privacy')} class="footer-link">{t.about_privacy}</a>
+    {lang === 'fr' && <><span class="footer-link">-</span>{' '}<a href="/comment-ca-marche/" class="footer-link">Comment ça marche ?</a></>}
+    {lang === 'fr' && cityLinks.map(c => <><span class="footer-link">-</span>{' '}<a href={c.href} class="footer-link">{c.label}</a></>)}
     <span class="footer-link">-</span>
     <a href="/llms.txt" class="footer-link">llms.txt</a>
   </div>
