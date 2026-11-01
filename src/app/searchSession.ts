@@ -84,7 +84,7 @@ export function createSearchSession(ctx: SearchContext) {
   // 'partial' can be wrong: applyVegetation re-runs this.
   function updateHeightNote() {
     if (night) { showQualityNote(null); return; }
-    const note = heightNote({ buildingsStatus, buildings, vegStatus, source: buildingsSource });
+    const note = heightNote({ buildingsStatus, buildings, vegStatus, source: buildingsSource, cause: buildingsCause });
     heightState = note.state;
     showQualityNote(note.text, note.level);
   }

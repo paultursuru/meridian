@@ -61,7 +61,8 @@ function prepareSunriseJump(tDate: Date, lat: number, lng: number, timeZone: str
 
 // Outside Switzerland, the basemap's building layer answers in ms where
 // Overpass takes ~11s. Read cell by cell along the routes; anything short of a
-// usable answer falls through to Overpass.
+// usable answer falls through to Overpass, unless the route is too long for it
+// as well.
 async function loadBuildings(
   routes: Awaited<ReturnType<typeof buildRoutes>>,
   bbox: ReturnType<typeof routesBbox>,
@@ -77,6 +78,7 @@ async function loadBuildings(
       (i: number, n: number) => searchStatus(tr('status_buildings_segment', { i: String(i), n: String(n) })),
     );
     if (tileRes.status === 'ok') return tileRes;
+    if (tileRes.reason === 'too_long') return { buildings: [], status: 'failed', source: 'tiles', cause: 'too_long' };
     // Back to the generic message after the per-segment ones.
     searchStatus(tr('status_buildings'));
   }

@@ -44,9 +44,10 @@ const CELL_PAD = 0.0015;
 
 // Ceiling on the grid, not on the pans: one view covers several cells, and how
 // many depends on the screen, so this sits well above the number of times the
-// map actually moves. It exists only so a route long enough to be hopeless is
-// handed over before the map moves at all. The wall-clock budget below is what
-// really guards the cost. About 25 km of route.
+// map actually moves. It exists only so a route long enough to be hopeless
+// gives up before the map moves at all. The wall-clock budget below is what
+// really guards the cost. About 25 km of route at 46 degrees north, and less
+// further north, where the same cells are narrower.
 const MAX_CELLS = 64;
 
 // Wall-clock ceiling for the whole segmented attempt, split adaptively across
@@ -222,7 +223,8 @@ function routePieces(routes, map, minZoom) {
 // Same { buildings, status, source } contract as fetchBuildings(), plus a
 // 'skipped' status meaning "the tiles can't answer this one" — too far out to
 // hold building data, or nothing came back. The caller falls back to Overpass
-// on anything that isn't 'ok'.
+// on anything that isn't 'ok', except 'too_long': a route that outgrows the grid
+// sends Overpass a bbox it can't answer in time either.
 //
 // `map` is injected (map.js's fitToBbox/glZoom/queryBuildingFeatures) so this
 // module keeps no Leaflet or MapLibre import and stays unit-testable.
@@ -241,7 +243,7 @@ export async function fetchTileBuildings(routes, map, onSegment) {
     const pieces = routePieces(routes, map, MIN_TILE_ZOOM);
     // Long enough that the grid alone would outlast the budget. Moving the map
     // there would just add tile loads to a search that gains nothing from them.
-    if (!pieces) return skipped('zoom', { fitMs: 0, queryMs: 0 });
+    if (!pieces) return skipped('too_long', { fitMs: 0, queryMs: 0 });
 
     const byKey = new Map();
     const pending = pieces.slice();

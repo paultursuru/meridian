@@ -110,13 +110,21 @@ describe('heightNote', () => {
 
   const measured = (n) => Array.from({ length: n }, () => ({ hasHeight: true, height: 12 }));
   const guessed = (n) => Array.from({ length: n }, () => ({ hasHeight: false, height: 10 }));
-  const note = (buildings, { buildingsStatus = 'ok', vegStatus = 'ok', source = 'osm' } = {}) =>
-    heightNote({ buildingsStatus, buildings, vegStatus, source });
+  const note = (buildings, { buildingsStatus = 'ok', vegStatus = 'ok', source = 'osm', cause } = {}) =>
+    heightNote({ buildingsStatus, buildings, vegStatus, source, cause });
 
   it('warns when the buildings fetch failed', () => {
     expect(note([], { buildingsStatus: 'failed' })).toEqual({
       state: 'failed',
       text: tr('height_data_failed') + ' ' + tr('height_data_retry'),
+      level: 'warn',
+    });
+  });
+
+  it('does not ask to retry a route that is too long', () => {
+    expect(note([], { buildingsStatus: 'failed', cause: 'too_long' })).toEqual({
+      state: 'failed',
+      text: tr('height_data_too_long'),
       level: 'warn',
     });
   });

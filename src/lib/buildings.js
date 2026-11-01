@@ -113,9 +113,11 @@ export function resolveHeightNoteState(buildingsStatus, buildingsCount, vegStatu
 }
 
 // The coverage note under the results: its state, its text and its level.
-export function heightNote({ buildingsStatus, buildings, vegStatus, source }) {
+export function heightNote({ buildingsStatus, buildings, vegStatus, source, cause }) {
   const state = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
   if (state === 'failed') {
+    // Trying again changes nothing here, so don't ask for it.
+    if (cause === 'too_long') return { state, text: tr('height_data_too_long'), level: 'warn' };
     return { state, text: tr('height_data_failed') + ' ' + tr('height_data_retry'), level: 'warn' };
   }
   if (state === 'empty') {
