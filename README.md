@@ -237,9 +237,11 @@ instead of one per cell.
 
 Buildings are kept within a 150 m margin of each cell and deduplicated across
 cells, since a building near a cell edge passes two filters and would
-otherwise cast twice. The whole attempt is capped at 6s, and anything short of
-a usable answer (route too long for the grid, empty tiles, budget spent) falls
-through to the Overpass path unchanged.
+otherwise cast twice. The whole attempt is capped at 6s, and empty tiles or a
+spent budget fall through to the Overpass path unchanged. A route too long for
+the grid does not: Overpass never answered the bounding box it would send within
+its 12s budget, so the routes are drawn right away without building shade, and
+the note says why.
 
 Harvesting by tile extent rather than by visible box was checked against a
 cell-by-cell crawl of the same route: the building counts differ by about 2%,

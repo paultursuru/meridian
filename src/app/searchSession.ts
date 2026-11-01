@@ -26,7 +26,7 @@ type BuildingsResult = Awaited<ReturnType<typeof fetchBuildings>>;
 type VegetationResult = Awaited<ReturnType<typeof fetchVegetation>>;
 type HourlyWeather = Awaited<ReturnType<typeof fetchWeather>>;
 
-// cause: why a 'failed' fetch came back empty (see failReason).
+// cause: why a 'failed' fetch came back empty (failReason, or 'too_long').
 export type ShadeData = Pick<BuildingsResult, 'buildings' | 'status' | 'source'> & { cause?: string };
 
 export type SearchContext = {
@@ -84,7 +84,7 @@ export function createSearchSession(ctx: SearchContext) {
   // 'partial' can be wrong: applyVegetation re-runs this.
   function updateHeightNote() {
     if (night) { showQualityNote(null); return; }
-    const note = heightNote({ buildingsStatus, buildings, vegStatus, source: buildingsSource });
+    const note = heightNote({ buildingsStatus, buildings, vegStatus, source: buildingsSource, cause: buildingsCause });
     heightState = note.state;
     showQualityNote(note.text, note.level);
   }

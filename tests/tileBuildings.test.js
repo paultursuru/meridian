@@ -296,7 +296,7 @@ describe('fetchTileBuildings', () => {
       const map = cellMap([square(45.001, 9.001)]);
       const res = await fetchTileBuildings([route([[9.0, 45.0], [9.0, 45.4]])], map);
       expect(res.status).toBe('skipped');
-      expect(res.reason).toBe('zoom');
+      expect(res.reason).toBe('too_long');
       expect(map.viewAt).not.toHaveBeenCalled();
       expect(map.fitToBbox).not.toHaveBeenCalled();
     });
