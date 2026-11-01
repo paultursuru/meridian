@@ -12,7 +12,8 @@
     "astro": "astro",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
@@ -28,7 +29,12 @@
     "tz-lookup": "^6.1.25"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-astro": "^1.7.0",
+    "globals": "^17.14.0",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^4.1.9",
     "wrangler": "^4.86.0"
   }
