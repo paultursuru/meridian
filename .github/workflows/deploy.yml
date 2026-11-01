@@ -21,6 +21,8 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run lint
+
       - run: npm test
 
       # Review #1's 5.5 / review #2's §9.1: the one e2e layer, gating deploy
