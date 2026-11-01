@@ -59,10 +59,9 @@ function prepareSunriseJump(tDate: Date, lat: number, lng: number, timeZone: str
   };
 }
 
-// Outside Switzerland, the basemap's building layer answers in ms where
-// Overpass takes ~11s. Read cell by cell along the routes; anything short of a
-// usable answer falls through to Overpass, unless the route is too long for it
-// as well.
+// Outside Switzerland, the basemap tiles answer in ms where Overpass takes ~11s.
+// Anything short of a usable answer falls through to Overpass, unless the route
+// is too long for it as well.
 async function loadBuildings(
   routes: Awaited<ReturnType<typeof buildRoutes>>,
   bbox: ReturnType<typeof routesBbox>,

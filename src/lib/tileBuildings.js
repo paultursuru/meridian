@@ -42,12 +42,9 @@ const CELL_PER = 200;
 // costs no zoom.
 const CELL_PAD = 0.0015;
 
-// Ceiling on the grid, not on the pans: one view covers several cells, and how
-// many depends on the screen, so this sits well above the number of times the
-// map actually moves. It exists only so a route long enough to be hopeless
-// gives up before the map moves at all. The wall-clock budget below is what
-// really guards the cost. About 25 km of route at 46 degrees north, and less
-// further north, where the same cells are narrower.
+// Caps the grid, not the pans: a route past it gives up before the map moves at
+// all. About 25 km at 46 degrees north, less further north where cells narrow.
+// The wall-clock budget below is what really guards the cost.
 const MAX_CELLS = 64;
 
 // Wall-clock ceiling for the whole segmented attempt, split adaptively across
@@ -220,23 +217,9 @@ function routePieces(routes, map, minZoom) {
   return cells.map((cell) => ({ fit: cell, filter: padBox(cell, CELL_PAD) }));
 }
 
-// Same { buildings, status, source } contract as fetchBuildings(), plus a
-// 'skipped' status meaning "the tiles can't answer this one" — too far out to
-// hold building data, or nothing came back. The caller falls back to Overpass
-// on anything that isn't 'ok', except 'too_long': a route that outgrows the grid
-// sends Overpass a bbox it can't answer in time either.
-//
-// `map` is injected (map.js's fitToBbox/glZoom/queryBuildingFeatures) so this
-// module keeps no Leaflet or MapLibre import and stays unit-testable.
-//
-// `routes` is the route list itself, not its bbox: the grid follows where the
-// route actually goes, so a diagonal route never pans to the empty corners of
-// its bounding box.
-//
-// `onSegment(i, total)` is called before each pan, 1-based, only when the
-// route needed splitting (total > 1). The common single-piece case fires it
-// never, so a caller that just wants "buildings, please" can ignore the
-// third argument entirely.
+// Same contract as fetchBuildings(), plus a 'skipped' status with a reason. The
+// caller falls back to Overpass, except on 'too_long': it can't answer that bbox
+// in time either. `map` is injected so this module stays unit-testable.
 export async function fetchTileBuildings(routes, map, onSegment) {
   const t0 = now();
   try {

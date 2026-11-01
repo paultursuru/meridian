@@ -26,7 +26,7 @@ type BuildingsResult = Awaited<ReturnType<typeof fetchBuildings>>;
 type VegetationResult = Awaited<ReturnType<typeof fetchVegetation>>;
 type HourlyWeather = Awaited<ReturnType<typeof fetchWeather>>;
 
-// cause: why a 'failed' fetch came back empty (see failReason).
+// cause: why a 'failed' fetch came back empty (failReason, or 'too_long').
 export type ShadeData = Pick<BuildingsResult, 'buildings' | 'status' | 'source'> & { cause?: string };
 
 export type SearchContext = {
