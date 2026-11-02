@@ -130,4 +130,14 @@ describe('overpassFetch failure codes', () => {
     await vi.runAllTimersAsync();
     await assertion;
   });
+
+  it('fails at once on another HTTP error instead of reading its JSON as an empty answer', async () => {
+    let calls = 0;
+    globalThis.fetch = async () => {
+      calls++;
+      return response('{"error":"not_found"}', { 'X-Upstream': 'api.overpass.ch' }, 404);
+    };
+    await expect(overpassFetch('q', { backoffMs: [1000] })).rejects.toMatchObject({ status: 404, upstream: 'api.overpass.ch' });
+    expect(calls).toBe(1);
+  });
 });

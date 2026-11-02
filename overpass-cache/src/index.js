@@ -21,9 +21,9 @@ const OVERPASS_OSM_CH = 'https://overpass.osm.ch/api/interpreter';
 // used for non-Switzerland routes to begin with, so the overlap in practice
 // is small.
 const SWISS_BBOX = { s: 45.8, w: 5.9, n: 47.9, e: 10.6 };
-// 502 is how overpass-api.de says it is at capacity. 401 to 403 are about one
-// instance's key, not the query, so the next instance can still answer.
-const RETRYABLE_STATUS = new Set([401, 402, 403, 429, 502, 503, 504]);
+// 502 is how overpass-api.de says it is at capacity. 401 to 404 are about one
+// instance's key or address, not the query, so the next one can still answer.
+const RETRYABLE_STATUS = new Set([401, 402, 403, 404, 429, 502, 503, 504]);
 // Only for an upstream with a fallback behind it: a hung one would otherwise
 // use up the client's 12s budget before the next one is even tried.
 const FALLBACK_AFTER_MS = 8000;

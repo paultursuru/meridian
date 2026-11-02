@@ -62,7 +62,7 @@ describe('overpass-cache upstream order', () => {
 });
 
 describe('overpass-cache fallback', () => {
-  it.each([401, 403, 429, 502, 503, 504])('moves on after a %i from the first instance', async (status) => {
+  it.each([401, 403, 404, 429, 502, 503, 504])('moves on after a %i from the first instance', async (status) => {
     const calls = stubUpstreams({ [KEYED_URL]: { status }, [OVERPASS_DE]: {} });
     const res = await search(MILAN);
     expect(calls.map((call) => call.url)).toEqual([KEYED_URL, OVERPASS_DE]);
