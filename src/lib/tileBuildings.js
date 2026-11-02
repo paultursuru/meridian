@@ -42,8 +42,8 @@ const CELL_PER = 200;
 // costs no zoom.
 const CELL_PAD = 0.0015;
 
-// Caps the grid, not the pans: a route past it gives up before the map moves at
-// all. About 25 km at 46 degrees north, less further north where cells narrow.
+// Caps the grid, not the pans: routes past it give up before the map moves at
+// all. About 25 km for a lone straight line, often 15 once alternatives diverge.
 // The wall-clock budget below is what really guards the cost.
 const MAX_CELLS = 64;
 
@@ -218,8 +218,8 @@ function routePieces(routes, map, minZoom) {
 }
 
 // Same contract as fetchBuildings(), plus a 'skipped' status with a reason. The
-// caller falls back to Overpass, except on 'too_long': it can't answer that bbox
-// in time either. `map` is injected so this module stays unit-testable.
+// caller falls back to Overpass, except on 'too_long': that whole bbox is too
+// heavy to be worth fetching. `map` is injected so this module stays unit-testable.
 export async function fetchTileBuildings(routes, map, onSegment) {
   const t0 = now();
   try {

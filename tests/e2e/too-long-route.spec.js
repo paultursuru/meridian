@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-// Mississauga -> Toronto: 65 grid cells on a straight line, one past the
-// ceiling. Overpass has never answered a bbox this size within its budget, so
-// the search should not ask, and should not tell the visitor to try again.
+// Mississauga -> Toronto: past the grid ceiling, even on a straight line. That
+// whole bbox is too heavy to be worth fetching, so the search should not ask,
+// and should not tell the visitor to try again.
 const MISSISSAUGA = { lat: 43.578, lng: -79.666 };
 const TORONTO = { lat: 43.645, lng: -79.38 };
 const routeFeature = (...points) => ({

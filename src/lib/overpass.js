@@ -2,7 +2,7 @@ import { fetchOrNetworkError } from './errors.js';
 
 // The overpass-cache Worker, relayed by nginx.conf (Vite in dev).
 const ENDPOINT = '/api/overpass';
-const RETRYABLE = new Set([429, 503, 504]);
+const RETRYABLE = new Set([429, 502, 503, 504]);
 // Vegetation no longer blocks the first render (src/app/search.ts's two-pass
 // search), so stalling here just delays the background refinement, not the
 // result — one retry is plenty for a decorative layer instead of the ~10s a
@@ -35,7 +35,7 @@ function upstreamOf(res) {
   return res.headers.get('X-Upstream') || 'unknown';
 }
 
-// Fetches an Overpass query, retrying on HTTP 429/503/504 and on HTML error
+// Fetches an Overpass query, retrying on HTTP 429/502/503/504 and on HTML error
 // pages returned with status 200 (e.g. Overpass "Dispatcher timeout"
 // responses). backoffMs controls the retry ladder (defaults to the
 // decorative/vegetation one retry; pass a longer ladder for callers on the

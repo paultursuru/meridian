@@ -61,7 +61,7 @@ function prepareSunriseJump(tDate: Date, lat: number, lng: number, timeZone: str
 
 // Outside Switzerland, the basemap tiles answer in ms where Overpass takes ~11s.
 // Anything short of a usable answer falls through to Overpass, unless the route
-// is too long for it as well.
+// is so long that its whole bbox would be too heavy.
 async function loadBuildings(
   routes: Awaited<ReturnType<typeof buildRoutes>>,
   bbox: ReturnType<typeof routesBbox>,
