@@ -1,6 +1,6 @@
 // Cache Cloudflare Worker devant Overpass.
 // Reçoit les requêtes Overpass du navigateur, renvoie une réponse mise en cache
-// (KV) si elle existe, sinon appelle overpass-api.de, stocke et renvoie.
+// (KV) si elle existe, sinon appelle un serveur Overpass, stocke et renvoie.
 
 const ALLOWED_ORIGINS = new Set([
   'https://meridian-way.ch',
@@ -8,14 +8,9 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 const OVERPASS_DE = 'https://overpass-api.de/api/interpreter';
-const OVERPASS_CH = 'https://overpass.osm.ch/api/interpreter'; // Swiss-only extract — measured 2026-07-28: byte-identical results to overpass-api.de, in less than half the time (0.69s vs 1.59s, Lausanne bbox), and 0.14s/empty for a bbox outside Switzerland.
-// Swiss routes are the core audience and the .ch domain: try the Swiss
-// instance first so they don't queue behind the world's traffic on the
-// global one. Non-Swiss bboxes still go through overpass-api.de only —
-// kumi.systems and private.coffee both timed out (60s) when measured and
-// aren't wired in without being re-tested first.
-const UPSTREAMS_CH = [OVERPASS_CH, OVERPASS_DE];
-const UPSTREAMS_DEFAULT = [OVERPASS_DE];
+// Swiss-only extract: about twice as fast there, but a bbox elsewhere comes back
+// empty with no error. Not to be confused with the unrelated overpass.ch.
+const OVERPASS_OSM_CH = 'https://overpass.osm.ch/api/interpreter';
 // Coarse on purpose ("a coarse Swiss bounding-box test is enough") — this
 // only decides upstream *order*, not correctness. Swisstopo's own extent is
 // ~45.82-47.81°N, 5.96-10.49°E; padded slightly. Known limitation: a route
@@ -26,7 +21,12 @@ const UPSTREAMS_DEFAULT = [OVERPASS_DE];
 // used for non-Switzerland routes to begin with, so the overlap in practice
 // is small.
 const SWISS_BBOX = { s: 45.8, w: 5.9, n: 47.9, e: 10.6 };
-const RETRYABLE_STATUS = new Set([429, 503, 504]);
+// 502 is how overpass-api.de says it is at capacity. 401 to 403 are about one
+// instance's key, not the query, so the next instance can still answer.
+const RETRYABLE_STATUS = new Set([401, 402, 403, 429, 502, 503, 504]);
+// Only for an upstream with a fallback behind it: a hung one would otherwise
+// use up the client's 12s budget before the next one is even tried.
+const FALLBACK_AFTER_MS = 8000;
 const TTL = 60 * 60 * 24 * 30; // 30 jours en secondes
 // Même durée que TTL, pour que le navigateur ne redemande pas une réponse que
 // KV a déjà. Jamais posé sur une erreur : un 504 caché serait pire que le 504.
@@ -59,13 +59,18 @@ export default {
     // client, au plus 2 sous-requêtes — voir docs/2-search-latency-onepager.md
     // step 4 : c'est ça qui remplace les 10s de backoff côté client.
     const query = new URLSearchParams(body).get('data') || '';
-    const upstreams = isSwissBbox(extractBbox(query)) ? UPSTREAMS_CH : UPSTREAMS_DEFAULT;
+    const upstreams = upstreamsFor(extractBbox(query), env);
     const { text, status, upstream, trail } = await fetchFromUpstreams(upstreams, body);
 
     // On ne met en cache que les vraies réponses JSON réussies, jamais une
     // erreur ou une page HTML d'Overpass (sinon on cacherait une panne 30 jours).
     if (status === 200) {
-      await env.OVERPASS_CACHE.put(cacheKey, text, { expirationTtl: TTL });
+      // KV refuses a value over 25 MiB by throwing. The answer is still good.
+      try {
+        await env.OVERPASS_CACHE.put(cacheKey, text, { expirationTtl: TTL });
+      } catch (err) {
+        console.warn('overpass-cache: answer not cached', err);
+      }
     }
 
     return withCors(
@@ -106,6 +111,13 @@ function isSwissBbox(bbox) {
   return w < SWISS_BBOX.e && e > SWISS_BBOX.w && s < SWISS_BBOX.n && n > SWISS_BBOX.s;
 }
 
+// Outside Switzerland, the keyed full-planet instance goes first (secret
+// OVERPASS_KEYED_URL, the key is in its path) and overpass-api.de takes over.
+function upstreamsFor(bbox, env) {
+  if (isSwissBbox(bbox)) return [OVERPASS_OSM_CH, OVERPASS_DE];
+  return env.OVERPASS_KEYED_URL ? [env.OVERPASS_KEYED_URL, OVERPASS_DE] : [OVERPASS_DE];
+}
+
 // Tries each upstream in order, POSTing the same body to each. Stops at the
 // first clean 200 (real JSON, not an HTML error page — Overpass sends those
 // with a 200 too, e.g. "Dispatcher timeout"). Only moves to the next
@@ -118,11 +130,12 @@ function isSwissBbox(bbox) {
 async function fetchFromUpstreams(upstreams, body) {
   let last = { text: '', status: 502, upstream: '' };
   const trail = [];
-  for (const url of upstreams) {
+  for (const [index, url] of upstreams.entries()) {
     const host = new URL(url).host;
     const startedAt = Date.now();
     const note = (status) => trail.push(`${host}=${status}/${Date.now() - startedAt}ms`);
-    let res;
+    const hasFallback = index < upstreams.length - 1;
+    let res, text;
     try {
       // Overpass exige un User-Agent identifiant (sinon il répond 406), que le
       // navigateur fournit automatiquement mais pas un Worker.
@@ -133,13 +146,15 @@ async function fetchFromUpstreams(upstreams, body) {
           'User-Agent': 'MeridianWay/1.0 (+https://meridian-way.ch)',
         },
         body,
+        signal: hasFallback ? AbortSignal.timeout(FALLBACK_AFTER_MS) : undefined,
       });
-    } catch (err) {
+      text = await res.text();
+    } catch {
       note('throw');
-      last = { text: String(err?.message || err), status: 502, upstream: host };
+      // Not the error's own message: it could quote the URL, and so the key.
+      last = { text: 'upstream unreachable', status: 502, upstream: host };
       continue;
     }
-    const text = await res.text();
     const isHtmlError = text.trimStart().startsWith('<');
     // An HTML body on a 200 is Overpass reporting a failure (a dispatcher
     // timeout, say), so the trail records what it really was, not the 200.

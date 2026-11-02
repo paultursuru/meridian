@@ -126,6 +126,8 @@ npm test           # run the Vitest suite
 
 The Cloudflare Workers in `ors-proxy/`, `overpass-cache/` and `swissbuildings-lookup/` are separate deployables (each with its own `wrangler.toml`; the first two bind a KV namespace, `swissbuildings-lookup/` binds the `swissbuildings-tiles` R2 bucket instead); they are not part of the Astro build and only need redeploying when their own code changes.
 
+Outside Switzerland, `overpass-cache` asks a keyed Overpass instance first, then falls back to `overpass-api.de`, which often refuses requests when saturated. The instance's full URL, key included, is the Worker secret `OVERPASS_KEYED_URL`. Without it, `overpass-api.de` serves alone.
+
 The browser never calls `*.workers.dev` directly: `nginx.conf` relays `/api/route`, `/api/overpass` and `/api/buildings/` to the three Workers (Vite's dev proxy does the same locally), because some corporate web filters block `workers.dev` hosts while the site's own domain gets through. Since `swissbuildings-lookup` rate-limits per IP and every relayed request comes from the Fly machine, nginx forwards the visitor's IP with a shared secret.
 
 ---
@@ -239,9 +241,9 @@ Buildings are kept within a 150 m margin of each cell and deduplicated across
 cells, since a building near a cell edge passes two filters and would
 otherwise cast twice. The whole attempt is capped at 6s, and empty tiles or a
 spent budget fall through to the Overpass path unchanged. A route too long for
-the grid does not: Overpass never answered the bounding box it would send within
-its 12s budget, so the routes are drawn right away without building shade, and
-the note says why.
+the grid does not: its whole bounding box is too heavy to be worth fetching
+(71 MiB and 75,000 buildings across Mississauga-Toronto), so the routes are drawn
+right away without building shade, and the note says why.
 
 Harvesting by tile extent rather than by visible box was checked against a
 cell-by-cell crawl of the same route: the building counts differ by about 2%,

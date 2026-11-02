@@ -121,4 +121,13 @@ describe('overpassFetch failure codes', () => {
     await vi.runAllTimersAsync();
     await assertion;
   });
+
+  it('keeps the 502 of a saturated instance instead of failing on its text body', async () => {
+    vi.useFakeTimers();
+    globalThis.fetch = async () => response('# 502 Gateway Timeout\n\nat capacity', {}, 502);
+    const p = overpassFetch('q');
+    const assertion = expect(p).rejects.toMatchObject({ status: 502 });
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
 });
