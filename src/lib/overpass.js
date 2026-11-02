@@ -35,6 +35,13 @@ function upstreamOf(res) {
   return res.headers.get('X-Upstream') || 'unknown';
 }
 
+function httpError(r) {
+  const err = new Error(`Overpass HTTP ${r.status}`);
+  err.status = r.status;
+  err.upstream = upstreamOf(r);
+  return err;
+}
+
 // Fetches an Overpass query, retrying on HTTP 429/502/503/504 and on HTML error
 // pages returned with status 200 (e.g. Overpass "Dispatcher timeout"
 // responses). backoffMs controls the retry ladder (defaults to the
@@ -65,10 +72,14 @@ export async function overpassFetch(query, { backoffMs = BACKOFF_MS, deadlineMs 
         signal: AbortSignal.timeout(remaining),
       });
       if (RETRYABLE.has(r.status)) {
-        lastErr = new Error(`Overpass HTTP ${r.status}`);
-        lastErr.status = r.status;
-        lastErr.upstream = upstreamOf(r);
+        lastErr = httpError(r);
         continue;
+      }
+      // Any other error fails the same on a retry, and its JSON body must not
+      // read as a successful answer with no elements.
+      if (r.status >= 400) {
+        lastErr = httpError(r);
+        break;
       }
       const text = await r.text();
       // Overpass returns an HTML/XML error page (status 200) on server overload
