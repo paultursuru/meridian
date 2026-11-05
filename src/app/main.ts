@@ -4,6 +4,7 @@ import { trackPageview, track } from '../lib/analytics.js';
 import { setMap, mapFailed, mapReady, selectRoute } from './mapApi';
 import { urlHasSearch } from './state';
 import { initIntro, hideOnboardingButton, hideAppDescription } from './intro';
+import { initSplash } from './splash';
 import { initSunInfo } from './sunInfo';
 import { initFields, pinFilledFields, anyFieldFilled } from './fields';
 import { initDeparture, setDepartureNow } from './departure';
@@ -15,6 +16,9 @@ import { initNavigation, restoreFromUrl, startOnboarding, leaveOnboarding } from
 
 // Auto page views are off on the tag (see analytics.js): this one is ours.
 trackPageview();
+
+// Starts the logo swinging straight away: it covers the map's whole load.
+initSplash();
 
 // Leaflet + MapLibre (~330 KB) get their own chunk, and nothing here waits on
 // it: on a mid-range phone it lands seconds after the form shows, and the form
