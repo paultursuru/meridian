@@ -1,27 +1,42 @@
 import L from 'leaflet';
 import leafletCss from 'leaflet/dist/leaflet.css?inline';
-import maplibreCss from 'maplibre-gl/dist/maplibre-gl.css?inline';
-import '@maplibre/maplibre-gl-leaflet';
 import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
+import { TZ_CENTERS } from './tzCenters.js';
 import { track } from './analytics.js';
-import { STADIA_STYLE, FALLBACK_STYLE, refusal, tuneFallback } from './basemap.js';
+import { STADIA_STYLE, FALLBACK_STYLE, RASTER_TILES, RASTER_ATTRIBUTION, refusal, tuneFallback }
+  from './basemap.js';
 import targetIcon from '../icons/target.svg?raw';
 
-// Leaflet's and MapLibre's stylesheets.
-function applyMapCss() {
+// Ahead of our own stylesheet, so main.css still wins.
+function insertMapCss(css) {
   const style = document.createElement('style');
-  style.textContent = `${leafletCss}\n${maplibreCss}`;
-  // Ahead of our own stylesheet, so main.css still wins
+  style.textContent = css;
   document.head.insertBefore(style, document.head.querySelector('link[rel="stylesheet"], style'));
+}
+
+// 278 KB gzipped, dead weight for a first view the raster tiles draw alone.
+// Dynamic so it stays out of the map chunk. Registers L.maplibreGL.
+async function loadMaplibre() {
+  const [, css] = await Promise.all([
+    import('@maplibre/maplibre-gl-leaflet'),
+    import('maplibre-gl/dist/maplibre-gl.css?inline'),
+  ]);
+  insertMapCss(css.default);
 }
 
 let _map = null;
 let _glMap = null;
+// The basemap the app opens on, until MapLibre draws over it.
+let _rasterLayer = null;
+// Settles when the vector basemap has drawn, and marks it as asked for.
+let _glReady = null;
 // Whether the basemap has drawn once, whichever style it ended up on.
 let basemapLoaded = false;
+// Not the same thing: the raster tiles lift the splash on their own.
+let glLoaded = false;
 let routeLayers   = [];
 let routeLabels   = {};
 let markerLayers  = [];
@@ -36,6 +51,9 @@ let activeType = 'sunny';
 
 // Breathing room between the route and an overlay covering the top of the map.
 const FIT_TOP_GAP = 16;
+
+// The vector basemap's dissolve in over the raster one.
+const SWAP_FADE_MS = 450;
 
 // The unselected route. Neutral on purpose: it only has to say "the other
 // way", its sun and shade are in its own tab.
@@ -233,21 +251,18 @@ const OnboardingControl = L.Control.extend({
   },
 });
 
-export function initMap() {
-  applyMapCss();
-  _map = L.map('map').setView([46.5197, 6.6323], 14);
-  // No attribution option: maplibre-gl-leaflet ignores it and reads the
-  // style's own sources instead, which is what lets it follow a fallback.
-  const glLayer = L.maplibreGL({ style: STADIA_STYLE }).addTo(_map);
+// The timezone guess is synchronous, so the first tiles drawn are the ones
+// that stay. Applied after the fact, it cost a whole view's tiles.
+function firstView() {
+  const tz = TZ_CENTERS[Intl.DateTimeFormat().resolvedOptions().timeZone];
+  return tz ? { center: [tz[0], tz[1]], zoom: 10 } : { center: [46.5197, 6.6323], zoom: 14 };
+}
 
-  _glMap = glLayer.getMaplibreMap();
-  // Fires after the fallback style too, when Stadia refused the first one.
-  _glMap.once('load', () => {
-    basemapLoaded = true;
-    // The intro lifts the splash: it waits for the swing to finish too.
-    window.dispatchEvent(new Event('basemap-drawn'));
-  });
-  watchBasemapErrors(glLayer);
+export function initMap() {
+  insertMapCss(leafletCss);
+  const { center, zoom } = firstView();
+  _map = L.map('map').setView(center, zoom);
+  initBasemap();
 
   new LocateControl().addTo(_map);
   new OnboardingControl().addTo(_map);
@@ -265,6 +280,79 @@ export function initMap() {
     const el = document.getElementById(id);
     if (el) L.DomEvent.disableClickPropagation(el);
   }
+}
+
+// Brings in the vector basemap, once. Whatever needs MapLibre awaits this.
+export function ensureBasemapGl() {
+  if (_glReady) return _glReady;
+  _glReady = loadMaplibre().then(() => new Promise((resolve) => {
+    // No attribution option: maplibre-gl-leaflet ignores it and reads the
+    // style's own sources instead, which is what lets it follow a fallback.
+    const glLayer = L.maplibreGL({ style: STADIA_STYLE }).addTo(_map);
+    _glMap = glLayer.getMaplibreMap();
+    const overRaster = _rasterLayer ? _glMap.getContainer() : null;
+    if (overRaster) overRaster.style.opacity = '0';
+    // Fires after the fallback style too, when Stadia refused the first one.
+    _glMap.once('load', () => {
+      glLoaded = true;
+      fadeInOver(overRaster);
+      markBasemapDrawn();
+      resolve();
+    });
+    watchBasemapErrors(glLayer);
+  }));
+  return _glReady;
+}
+
+// Image tiles draw the first view, with no WebGL at all. MapLibre still
+// comes, since it carries the footprints outside Switzerland (see
+// tileBuildings.js), but only once someone is using the page.
+function initBasemap() {
+  _rasterLayer = L.tileLayer(RASTER_TILES, {
+    attribution: RASTER_ATTRIBUTION,
+    maxZoom: 20,
+  }).addTo(_map);
+
+  let drew = 0;
+  _rasterLayer.on('tileload', () => { drew++; });
+  // 'load' fires once the first view has settled, failed tiles included.
+  _rasterLayer.once('load', () => {
+    if (drew > 0) return markBasemapDrawn();
+    // Not one tile drew, so Stadia is refusing us and an <img> error carries
+    // no status to say so. There is no raster OpenFreeMap: hand it to the
+    // vector map, which can switch styles, and let it lift the splash.
+    ensureBasemapGl();
+  });
+
+  // A gesture, not a timer: before one, nobody is looking at the map.
+  const boot = () => ensureBasemapGl();
+  for (const ev of ['pointerdown', 'wheel', 'keydown']) {
+    _map.getContainer().addEventListener(ev, boot, { once: true, passive: true });
+  }
+}
+
+// The two renderings place labels a pixel or two apart and fit a different
+// number of them in, so a swap in one frame reads as a jump.
+function fadeInOver(gl) {
+  if (!gl || matchMedia('(prefers-reduced-motion: reduce)').matches) return dropRaster();
+  gl.style.transition = `opacity ${SWAP_FADE_MS}ms ease`;
+  requestAnimationFrame(() => { gl.style.opacity = '1'; });
+  setTimeout(dropRaster, SWAP_FADE_MS);
+}
+
+// Two basemaps means two sets of tiles and two lines of attribution.
+function dropRaster() {
+  if (!_rasterLayer) return;
+  // Leaflet drops the layer's attribution with it.
+  _map.removeLayer(_rasterLayer);
+  _rasterLayer = null;
+}
+
+function markBasemapDrawn() {
+  if (basemapLoaded) return;
+  basemapLoaded = true;
+  // The intro lifts the splash: it waits for the swing to finish too.
+  window.dispatchEvent(new Event('basemap-drawn'));
 }
 
 // Every basemap error, whichever style it comes from. The first time Stadia
@@ -288,7 +376,7 @@ function watchBasemapErrors(glLayer) {
     track('basemap_fallback', refused);
     // Before the first load, maplibre-gl-leaflet sets the attribution on
     // 'load' by itself. After it, nothing does.
-    if (basemapLoaded) {
+    if (glLoaded) {
       _glMap.once('idle', () => {
         _map.attributionControl?.removeAttribution(before).addAttribution(glLayer.getAttribution());
       });

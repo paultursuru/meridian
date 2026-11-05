@@ -70,6 +70,8 @@ async function loadBuildings(
 ): Promise<ShadeData> {
   searchStatus(tr('status_buildings'));
   if (!switzerland) {
+    // The footprints come out of MapLibre's tiles, loaded on demand.
+    await map.ensureBasemapGl();
     const { bboxZoom, fitToBbox, glZoom, queryBuildingFeatures, viewportBbox, viewAt } = map;
     const tileRes = await fetchTileBuildings(
       routes,

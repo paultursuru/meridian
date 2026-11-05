@@ -2,7 +2,6 @@ import { reverseGeocode } from '../lib/geocode.js';
 import { geoError } from '../lib/errors.js';
 import { getPosition } from '../lib/geolocation.js';
 import { saveLastPosition, getLastPosition } from '../lib/lastPosition.js';
-import { TZ_CENTERS } from '../lib/tzCenters.js';
 import { setStatus, showToast } from '../lib/ui.js';
 import { tr } from '../lib/i18n.js';
 import { track } from '../lib/analytics.js';
@@ -67,22 +66,18 @@ export async function prefillFromRelaunch(): Promise<boolean> {
   }
 }
 
-// A better first view than the Lausanne default, without prompting or
-// showing the location dot: the position if permission is already granted,
-// else the browser's timezone (see tzCenters.js).
+// Better than the timezone view map.js opens on, without prompting or
+// showing the location dot: the position, when already granted.
 export async function initInitialMapCenter() {
   try {
     const status = await navigator.permissions?.query({ name: 'geolocation' as PermissionName });
     if (status?.state === 'granted') {
       const pos = await getPosition(5000);
       map.centerMap(pos.coords.latitude, pos.coords.longitude, 14);
-      return;
     }
   } catch {
-    // No Permissions API (older Safari), or the fix failed: use the timezone.
+    // No Permissions API (older Safari), or the fix failed.
   }
-  const tzCenter = TZ_CENTERS[Intl.DateTimeFormat().resolvedOptions().timeZone];
-  if (tzCenter) map.centerMap(tzCenter[0], tzCenter[1], 10);
 }
 
 // The map's locate control: never fills a field, and the only place the
