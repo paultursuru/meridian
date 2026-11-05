@@ -1,6 +1,6 @@
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import leafletCss from 'leaflet/dist/leaflet.css?inline';
+import maplibreCss from 'maplibre-gl/dist/maplibre-gl.css?inline';
 import '@maplibre/maplibre-gl-leaflet';
 import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
@@ -9,6 +9,14 @@ import { tr } from './i18n.js';
 import { track } from './analytics.js';
 import { STADIA_STYLE, FALLBACK_STYLE, refusal, tuneFallback } from './basemap.js';
 import targetIcon from '../icons/target.svg?raw';
+
+// Leaflet's and MapLibre's stylesheets.
+function applyMapCss() {
+  const style = document.createElement('style');
+  style.textContent = `${leafletCss}\n${maplibreCss}`;
+  // Ahead of our own stylesheet, so main.css still wins
+  document.head.insertBefore(style, document.head.querySelector('link[rel="stylesheet"], style'));
+}
 
 let _map = null;
 let _glMap = null;
@@ -226,6 +234,7 @@ const OnboardingControl = L.Control.extend({
 });
 
 export function initMap() {
+  applyMapCss();
   _map = L.map('map').setView([46.5197, 6.6323], 14);
   // No attribution option: maplibre-gl-leaflet ignores it and reads the
   // style's own sources instead, which is what lets it follow a fallback.
