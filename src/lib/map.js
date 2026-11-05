@@ -244,7 +244,8 @@ export function initMap() {
   // Fires after the fallback style too, when Stadia refused the first one.
   _glMap.once('load', () => {
     basemapLoaded = true;
-    document.getElementById('map-splash')?.classList.add('hidden');
+    // The intro lifts the splash: it waits for the swing to finish too.
+    window.dispatchEvent(new Event('basemap-drawn'));
   });
   watchBasemapErrors(glLayer);
 

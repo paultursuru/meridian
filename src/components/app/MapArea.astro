@@ -1,5 +1,6 @@
 ---
 import { translations, langPath, type Lang } from '../../lib/i18n';
+import SunLogo from '../SunLogo.astro';
 import { onboardingQuery } from '../../lib/onboarding.js';
 import arrowIcon from '../../icons/arrow.svg?raw';
 
@@ -22,7 +23,10 @@ const onboardingHref = `${langPath(lang)}?${onboardingQuery({ from: t.onboarding
     </div>
     <button id="app-description-close" aria-label={t.aria_close}>×</button>
   </div>
-  <div id="map-splash"><span>{t.map_loading}</span></div>
+  <div id="map-splash" class="sun">
+    <div id="map-splash-logo"><SunLogo mode="sun" /></div>
+    <span class="sr-only">{t.map_loading}</span>
+  </div>
   <a id="onboarding-btn" href={onboardingHref}>{t.onboarding_btn}</a>
   <button id="map-sun-info" type="button" aria-expanded="false" aria-label={t.aria_sun_info}>
     <div id="map-sun-info-row">

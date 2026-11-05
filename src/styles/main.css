@@ -53,7 +53,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1200;
+  z-index: 1300;
   display: flex;
   align-items: stretch;
   gap: 8px;
@@ -627,7 +627,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #map-splash {
   position: absolute;
   inset: 0;
-  z-index: 1000;
+  /* Over Leaflet's own controls and attribution, which sit at 1000: during
+     the intro they would otherwise float on top of the logo. */
+  z-index: 1200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -637,6 +639,38 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   transition: opacity 0.4s ease;
 }
 #map-splash.hidden { opacity: 0; pointer-events: none; }
+
+/* The intro logo, the city pages' M: sun on the right at first, then the
+   shadow swings over while the colours cool to the shade palette. */
+#map-splash {
+  --logo-m: #f0f2a0;
+  --logo-w: #e8c8f0;
+  --sun-core: #f0f2a0;
+  --sun-op: 0.4;
+}
+#map-splash.sun {
+  --sun-core: #ffc93c;
+  --sun-op: 1;
+}
+#map-splash #sun-logo * {
+  transition: fill 1.4s ease, stroke 1.4s ease, stop-color 1.4s ease, opacity 1.4s ease;
+}
+#map-splash-logo { width: min(58vw, 230px); }
+@media (prefers-reduced-motion: reduce) {
+  #map-splash #sun-logo * { transition: none; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 /* ── Status toast ── */
 #status {
