@@ -4,15 +4,19 @@ import type { Lang } from '../lib/i18n';
 interface Props {
   lang: Lang;
   allLangs?: boolean; // true = render all 4 panes (for the drawer), false = only current lang (for the page)
+  // The about page has no other title, so the pane carries its h1. In the
+  // drawer it stays an h2: the app's h1 is the header logo.
+  heading?: 'h1' | 'h2';
 }
 
-const { lang, allLangs = false } = Astro.props;
+const { lang, allLangs = false, heading = 'h2' } = Astro.props;
+const Title = heading;
 const show = (l: Lang) => allLangs || l === lang;
 ---
 
 {show('fr') && (
   <div class:list={['about-pane', { active: lang === 'fr' }]} data-lang="fr">
-    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <Title><span class="meri">Meridian</span><span class="way">Way</span></Title>
     <p class="about-tagline">Navigation piétonne selon votre ensoleillement.</p>
     <p>MeridianWay calcule deux itinéraires <strong>à pied</strong> entre un point de départ et une destination. L'objectif n'est pas le chemin le plus rapide, mais celui qui maximise ou minimise <strong>votre exposition au soleil</strong>.</p>
     <p>L'application analyse la position du soleil à l'heure choisie et les ombres portées par les bâtiments environnants. Pour les trajets en Suisse, les bâtiments viennent de <strong>swisstopo</strong>, avec une hauteur mesurée pour chacun. Ailleurs, ils viennent des données ouvertes d'<strong>OpenStreetMap</strong>.</p>
@@ -27,7 +31,7 @@ const show = (l: Lang) => allLangs || l === lang;
 
 {show('de') && (
   <div class:list={['about-pane', { active: lang === 'de' }]} data-lang="de">
-    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <Title><span class="meri">Meridian</span><span class="way">Way</span></Title>
     <p class="about-tagline">Fussgänger-Navigation nach Sonneneinstrahlung.</p>
     <p>MeridianWay berechnet zwei <strong>Fussgängerrouten</strong> zwischen Start und Ziel. Nicht die schnellste Strecke zählt, sondern jene, die <strong>Ihre Sonneneinstrahlung</strong> maximiert oder minimiert.</p>
     <p>Die App analysiert den genauen Sonnenstand zur gewählten Uhrzeit und die Schatten der umliegenden Gebäude. Für Routen in der Schweiz stammen die Gebäude von <strong>swisstopo</strong>, mit einer gemessenen Höhe für jedes einzelne. Anderswo stammen sie aus den offenen Daten von <strong>OpenStreetMap</strong>.</p>
@@ -42,7 +46,7 @@ const show = (l: Lang) => allLangs || l === lang;
 
 {show('it') && (
   <div class:list={['about-pane', { active: lang === 'it' }]} data-lang="it">
-    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <Title><span class="meri">Meridian</span><span class="way">Way</span></Title>
     <p class="about-tagline">Navigazione pedonale secondo l'esposizione solare.</p>
     <p>MeridianWay calcola due <strong>percorsi pedonali</strong> tra un punto di partenza e una destinazione. L'obiettivo non è il tragitto più veloce, ma quello che massimizza o minimizza <strong>la tua esposizione al sole</strong>.</p>
     <p>L'applicazione analizza la posizione del sole all'ora scelta e le ombre proiettate dagli edifici circostanti. Per i percorsi in Svizzera, gli edifici provengono da <strong>swisstopo</strong>, con un'altezza misurata per ognuno. Altrove, provengono dai dati aperti di <strong>OpenStreetMap</strong>.</p>
@@ -57,7 +61,7 @@ const show = (l: Lang) => allLangs || l === lang;
 
 {show('en') && (
   <div class:list={['about-pane', { active: lang === 'en' }]} data-lang="en">
-    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <Title><span class="meri">Meridian</span><span class="way">Way</span></Title>
     <p class="about-tagline">Pedestrian navigation for your sun exposure.</p>
     <p>MeridianWay calculates two <strong>walking routes</strong> between a starting point and a destination. The goal isn't the fastest path, it's the one that maximises or minimises <strong>your exposure to the sun</strong>.</p>
     <p>The app analyses the sun's exact position at the chosen time and the shadows cast by surrounding buildings. For routes within Switzerland, buildings come from <strong>swisstopo</strong>, with a measured height for every one of them. Elsewhere, they come from the open data of <strong>OpenStreetMap</strong>.</p>
@@ -72,7 +76,7 @@ const show = (l: Lang) => allLangs || l === lang;
 
 {show('rm') && (
   <div class:list={['about-pane', { active: lang === 'rm' }]} data-lang="rm">
-    <h2><span class="meri">Meridian</span><span class="way">Way</span></h2>
+    <Title><span class="meri">Meridian</span><span class="way">Way</span></Title>
     <p class="about-tagline">Giai a pe, tut tenor la glisch dal sulegl.</p>
     <p>MeridianWay calculescha duas rutas da peduns tranter ina partenza ed ina destinaziun. La finamira n’è betg la via la pli svelta, mabain quella che maximescha u minimescha la radiaziun dal sulegl.</p>
     <p>L’app analisescha la posiziun dal sulegl durant l’ura tschernida e las sumbrivas ch’ils edifizis en vischinanza bittan. Per las rutas en Svizra derivan ils edifizis da swisstopo, cun in’autezza mesirada per mintgin. Ordaifer la Svizra derivan els da las datas avertas da OpenStreetMap.</p>

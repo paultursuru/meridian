@@ -1195,14 +1195,14 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 .about-pane { display: none; }
 .about-pane.active { display: block; }
 
-.about-pane h2 {
+.about-pane :is(h1, h2) {
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: -0.5px;
   margin-bottom: 6px;
 }
-.about-pane h2 .meri { color: #f0f2a0; }
-.about-pane h2 .way  { color: #e8c8f0; font-style: italic; }
+.about-pane :is(h1, h2) .meri { color: #f0f2a0; }
+.about-pane :is(h1, h2) .way  { color: #e8c8f0; font-style: italic; }
 
 .about-tagline {
   font-size: 0.9rem;

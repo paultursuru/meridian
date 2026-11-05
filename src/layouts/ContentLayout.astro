@@ -3,6 +3,7 @@
 // marche ?"): head, a nav back to the app, and the same footer as the about
 // page. The page puts its own structured data in the "head" slot.
 import '../styles/main.css';
+import MarkdownAlternate from '../components/MarkdownAlternate.astro';
 import { translations, langUrl, langPath, type Lang } from '../lib/i18n';
 import { cityLinks } from '../data/cities/links';
 
@@ -31,6 +32,7 @@ const url = langUrl(lang, path);
   <meta name="theme-color" content="#0e120a" />
   <meta name="description" content={description} />
   <link rel="canonical" href={url} />
+  <MarkdownAlternate />
   <link rel="alternate" hreflang={lang} href={url} />
   <link rel="alternate" hreflang="x-default" href={url} />
   <meta property="og:type" content="article" />
