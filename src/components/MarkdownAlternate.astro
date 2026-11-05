@@ -1,0 +1,8 @@
+---
+// Where this page's Markdown copy is (astro-mark-don writes one per page), for
+// the agents that parse the HTML. nginx.conf sends the same thing as a `Link`
+// header, for the fetchers that never read the body.
+const path = Astro.url.pathname.replace(/\/$/, '');
+const href = `${path || '/index'}.md`;
+---
+<link rel="alternate" type="text/markdown" href={href} />

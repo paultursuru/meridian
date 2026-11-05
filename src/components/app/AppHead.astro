@@ -1,5 +1,6 @@
 ---
 import { translations, LANGS, langUrl, SITE_URL, type Lang } from '../../lib/i18n';
+import MarkdownAlternate from '../MarkdownAlternate.astro';
 
 interface Props {
   lang: Lang;
@@ -23,6 +24,7 @@ const t = translations[lang];
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 <meta name="description" content={t.meta_description} />
 <link rel="canonical" href={langUrl(lang)} />
+<MarkdownAlternate />
 {LANGS.map(l => <link rel="alternate" hreflang={l} href={langUrl(l)} />)}
 <link rel="alternate" hreflang="x-default" href={langUrl('fr')} />
 <meta property="og:type" content="website" />
