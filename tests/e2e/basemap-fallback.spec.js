@@ -3,6 +3,9 @@ import { test, expect } from '@playwright/test';
 // Once its quota is spent, Stadia answers 429 to everything until the 1st and
 // the map goes blank. The map then switches to OpenFreeMap, once. Both are
 // mocked: the switch is what is pinned here, not either provider's tiles.
+//
+// The app opens on raster tiles and brings MapLibre in later (see map.js),
+// so most of this starts at `loadVectorMap`.
 
 const STADIA = 'https://tiles.stadiamaps.com';
 const OFM = 'https://tiles.openfreemap.org';
@@ -24,10 +27,21 @@ const styleFor = (host, attribution) => ({
 // An empty body is a valid vector tile with no layers in it.
 const emptyTile = (route) => route.fulfill({ body: Buffer.alloc(0), contentType: 'application/x-protobuf' });
 
+// A 1x1 transparent PNG: enough for Leaflet to count a raster tile as drawn.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64');
+
 // stadiaTiles decides what each Stadia tile request gets, so a test can
 // refuse them partway through.
-async function mockBasemaps(page, { stadiaStyle = 200, stadiaTiles = () => 200 } = {}) {
+async function mockBasemaps(page, { stadiaStyle = 200, stadiaTiles = () => 200, stadiaRaster = () => 200 } = {}) {
   const fallbackStyles = [];
+  await page.route(`${STADIA}/tiles/**`, (route) => {
+    const status = stadiaRaster();
+    return status === 200
+      ? route.fulfill({ body: PNG, contentType: 'image/png' })
+      : route.fulfill({ status, body: '' });
+  });
   await page.route(`${STADIA}/styles/**`, (route) => (stadiaStyle === 200
     ? route.fulfill({ json: styleFor(STADIA, 'Stadia test') })
     : route.fulfill({ status: stadiaStyle, body: '' })));
@@ -54,16 +68,39 @@ const events = (page, name) => page.evaluate((n) => window.__events.filter(([e])
 
 const splash = (page) => page.locator('#map-splash');
 const attribution = (page) => page.locator('.leaflet-control-attribution');
+const glCanvas = (page) => page.locator('#map canvas');
 
-test('a refused style loads the fallback, and the splash goes', async ({ page }) => {
+// The first gesture on the map is what brings MapLibre in.
+async function loadVectorMap(page) {
+  await page.locator('#map').click({ position: { x: 30, y: 30 } });
+  await expect(glCanvas(page)).toHaveCount(1, { timeout: 20_000 });
+}
+
+test('a refused style loads the fallback once the vector map is asked for', async ({ page }) => {
   await collectEvents(page);
   const fallbackStyles = await mockBasemaps(page, { stadiaStyle: 429 });
   await page.goto('/');
 
+  // The raster tiles draw, so the splash goes without MapLibre at all.
   await expect(splash(page)).toHaveClass(/hidden/, { timeout: 20_000 });
+  expect(fallbackStyles).toEqual([]);
+
+  await loadVectorMap(page);
   await expect(attribution(page)).toContainText('OpenFreeMap test');
   expect(fallbackStyles).toEqual([`${OFM}/styles/positron`]);
   expect(await events(page, 'basemap_fallback')).toEqual([{ status: 429, resource: 'style' }]);
+});
+
+test('refused raster tiles bring the vector map in on their own, and the splash goes', async ({ page }) => {
+  await collectEvents(page);
+  const fallbackStyles = await mockBasemaps(page, { stadiaRaster: () => 429, stadiaStyle: 429 });
+  await page.goto('/');
+
+  // Nothing is clicked: drawing no tile at all is what asks for MapLibre.
+  await expect(glCanvas(page)).toHaveCount(1, { timeout: 20_000 });
+  await expect(splash(page)).toHaveClass(/hidden/, { timeout: 20_000 });
+  await expect(attribution(page)).toContainText('OpenFreeMap test');
+  expect(fallbackStyles).toEqual([`${OFM}/styles/positron`]);
 });
 
 test('tiles refused after the first draw switch the map, and the attribution follows', async ({ page }) => {
@@ -72,6 +109,7 @@ test('tiles refused after the first draw switch the map, and the attribution fol
   const fallbackStyles = await mockBasemaps(page, { stadiaTiles: () => (refuse ? 429 : 200) });
   await page.goto('/');
   await expect(splash(page)).toHaveClass(/hidden/, { timeout: 20_000 });
+  await loadVectorMap(page);
   await expect(attribution(page)).toContainText('Stadia test');
 
   // The quota runs out mid-visit: the next tiles the map asks for are refused.
@@ -88,9 +126,10 @@ test('a server error is a hiccup: the map stays on Stadia, and still lifts the s
   await collectEvents(page);
   const fallbackStyles = await mockBasemaps(page, { stadiaTiles: () => 503 });
   await page.goto('/');
-  // MapLibre doesn't redraw after a failed tile: with every tile failing, the
-  // first draw, and the splash with it, rests on map.js asking for one.
   await expect(splash(page)).toHaveClass(/hidden/, { timeout: 20_000 });
+  // MapLibre doesn't redraw after a failed tile: with every tile failing, its
+  // own first draw rests on map.js asking for one.
+  await loadVectorMap(page);
 
   expect(fallbackStyles).toEqual([]);
   expect(await events(page, 'basemap_fallback')).toEqual([]);

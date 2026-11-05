@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { STADIA_STYLE, FALLBACK_STYLE, refusal, resourceOf, tuneFallback } from '../src/lib/basemap.js';
+import { STADIA_STYLE, FALLBACK_STYLE, RASTER_TILES, refusal, resourceOf, tuneFallback } from '../src/lib/basemap.js';
 
 // The end-to-end switch (splash, attribution, event) is in
 // tests/e2e/basemap-fallback.spec.js.
@@ -59,5 +59,16 @@ describe('tuneFallback', () => {
     const map = glMap(['background']);
     tuneFallback(map);
     expect(map.setPaintProperty).not.toHaveBeenCalled();
+  });
+});
+
+describe('RASTER_TILES', () => {
+  it('is the image form of the vector style, with the retina marker Leaflet fills in', () => {
+    expect(RASTER_TILES).toContain('alidade_smooth');
+    expect(RASTER_TILES).toContain('{z}/{x}/{y}{r}.png');
+  });
+
+  it('comes from the host the refusal check watches', () => {
+    expect(RASTER_TILES.startsWith('https://tiles.stadiamaps.com/')).toBe(true);
   });
 });

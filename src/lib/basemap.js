@@ -17,6 +17,16 @@ export const STADIA_STYLE = 'https://tiles.stadiamaps.com/styles/alidade_smooth.
 // Light like alidade_smooth, and the closest of OpenFreeMap's styles to it.
 export const FALLBACK_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 
+// The same style as plain image tiles, so the first view draws without
+// WebGL. `{r}` is Leaflet's retina marker.
+export const RASTER_TILES = 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png';
+
+// Word for word what the vector style credits, so the bar never changes.
+export const RASTER_ATTRIBUTION =
+  '&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> ' +
+  '&copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
 const STADIA = /^https:\/\/tiles\.stadiamaps\.com\//;
 
 // Refusals that last the session: the quota (429), or the key or domain check
