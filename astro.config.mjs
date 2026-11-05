@@ -65,6 +65,10 @@ export default defineConfig({
       sourcemaps: {
         filesToDeleteAfterUpload: ['**/*.map'],
       },
+      // The SDK's own logging, which only ever prints with `debug: true`.
+      bundleSizeOptimizations: {
+        excludeDebugStatements: true,
+      },
     }),
     // A .md copy of each page, and /llms.txt with the rule for linking
     // straight to a route.
