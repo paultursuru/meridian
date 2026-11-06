@@ -2,6 +2,7 @@
 // French only for now, like the city pages it explains.
 import ContentLayout from '../layouts/ContentLayout.astro';
 import { langUrl, SITE_URL } from '../lib/i18n';
+import { buildShareQuery } from '../lib/share.js';
 
 const title = 'Comment ça marche ? : MeridianWay';
 const description = 'Comment MeridianWay calcule un chemin à pied au soleil ou à l\'ombre : les chemins, la position du soleil, les ombres des bâtiments et des arbres, et les limites du calcul.';
@@ -17,6 +18,15 @@ const structuredData = {
     ] },
   ],
 };
+
+// The next 15 July, so the example never points at a past date.
+const now = new Date();
+const julyYear = now.getFullYear() + (now > new Date(now.getFullYear(), 6, 15) ? 1 : 0);
+const exampleLink = '/?' + buildShareQuery({
+  start: { lat: 46.5167, lng: 6.6291, label: 'Gare de Lausanne' },
+  end: { lat: 46.5086, lng: 6.6339, label: 'Musée olympique, Lausanne' },
+  date: `${julyYear}-07-15`, time: '15:00', route: 'shady',
+});
 ---
 <ContentLayout lang="fr" title={title} description={description} path="comment-ca-marche/">
   <script slot="head" is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
@@ -52,6 +62,18 @@ const structuredData = {
 
   <h2>Les pages par ville</h2>
   <p>Les pages par ville, comme <a href="/lausanne/">Lausanne en hiver</a>, reprennent ce calcul sur toutes les rues du centre, à plusieurs heures de la journée. Elles ajoutent le relief&nbsp;: chaque bâtiment compte pour la hauteur de son toit au-dessus de la rue, d'après le modèle de terrain swissALTI3D de swisstopo. Seuls les chiffres qui ne dépendent pas des autres limites y sont publiés, arrondis.</p>
+
+  <h2>Partager un trajet</h2>
+  <p>Chaque recherche a son propre lien&nbsp;: la barre d'adresse garde le départ, l'arrivée, l'heure et le chemin affiché. Copiez-la pour envoyer le trajet, il rouvre la même recherche.</p>
+  <p>Un assistant comme ChatGPT, Claude ou le mode IA de Google peut aussi préparer ce lien pour vous. Demandez-lui par exemple&nbsp;: «&nbsp;Donne-moi le lien MeridianWay pour aller à l'ombre de la gare de Lausanne au Musée olympique, le 15&nbsp;juillet à 15&nbsp;h.&nbsp;» Le lien suit ce modèle&nbsp;:</p>
+  <pre><code>https://meridian-way.ch/?from=LAT,LNG&amp;fromq=DÉPART&amp;to=LAT,LNG&amp;toq=ARRIVÉE&amp;dt=AAAA-MM-JJTHH:MM&amp;r=shady</code></pre>
+  <ul>
+    <li><code>from</code>, <code>to</code>&nbsp;: les coordonnées du départ et de l'arrivée, latitude puis longitude en degrés décimaux. Ce sont les deux seuls paramètres obligatoires.</li>
+    <li><code>fromq</code>, <code>toq</code>&nbsp;: les noms affichés dans les champs de recherche.</li>
+    <li><code>dt</code>&nbsp;: la date et l'heure locales. Sans lui, l'app prend l'heure actuelle.</li>
+    <li><code>r</code>&nbsp;: le chemin montré d'abord, <code>sunny</code> au soleil ou <code>shady</code> à l'ombre.</li>
+  </ul>
+  <p>Le lien de cet exemple&nbsp;: <a href={exampleLink} data-app-link="share-example">de la gare de Lausanne au Musée olympique, le 15&nbsp;juillet à 15&nbsp;h, à l'ombre</a>.</p>
 
   <h2>Données et crédits</h2>
   <p>Bâtiments et terrain&nbsp;: swisstopo (swissBUILDINGS3D, swissALTI3D). Carte, bâtiments hors de Suisse, arbres et chemins&nbsp;: © les contributeurs d'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Itinéraires&nbsp;: OpenRouteService. Recherche d'adresses&nbsp;: Photon et Nominatim. Position du soleil&nbsp;: SunCalc. Météo&nbsp;: Open-Meteo. Le code de MeridianWay est ouvert, sur <a href="https://github.com/paultursuru/meridian" target="_blank" rel="noopener">GitHub</a>.</p>
