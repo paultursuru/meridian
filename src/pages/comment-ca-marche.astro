@@ -2,7 +2,7 @@
 // French only for now, like the city pages it explains.
 import ContentLayout from '../layouts/ContentLayout.astro';
 import { langUrl, SITE_URL } from '../lib/i18n';
-import { buildShareQuery } from '../lib/share.js';
+import { shareExample } from '../lib/shareExample.js';
 
 const title = 'Comment ça marche ? : MeridianWay';
 const description = 'Comment MeridianWay calcule un chemin à pied au soleil ou à l\'ombre : les chemins, la position du soleil, les ombres des bâtiments et des arbres, et les limites du calcul.';
@@ -19,14 +19,7 @@ const structuredData = {
   ],
 };
 
-// The next 15 July, so the example never points at a past date.
-const now = new Date();
-const julyYear = now.getFullYear() + (now > new Date(now.getFullYear(), 6, 15) ? 1 : 0);
-const exampleLink = '/?' + buildShareQuery({
-  start: { lat: 46.5167, lng: 6.6291, label: 'Gare de Lausanne' },
-  end: { lat: 46.5086, lng: 6.6339, label: 'Musée olympique, Lausanne' },
-  date: `${julyYear}-07-15`, time: '15:00', route: 'shady',
-});
+const example = shareExample();
 ---
 <ContentLayout lang="fr" title={title} description={description} path="comment-ca-marche/">
   <script slot="head" is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
@@ -65,7 +58,7 @@ const exampleLink = '/?' + buildShareQuery({
 
   <h2>Partager un trajet</h2>
   <p>Chaque recherche a son propre lien&nbsp;: la barre d'adresse garde le départ, l'arrivée, l'heure et le chemin affiché. Copiez-la pour envoyer le trajet, il rouvre la même recherche.</p>
-  <p>Un assistant comme ChatGPT, Claude ou le mode IA de Google peut aussi préparer ce lien pour vous. Demandez-lui par exemple&nbsp;: «&nbsp;Donne-moi le lien MeridianWay pour aller à l'ombre de la gare de Lausanne au Musée olympique, le 15&nbsp;juillet à 15&nbsp;h.&nbsp;» Le lien suit ce modèle&nbsp;:</p>
+  <p>Un assistant comme ChatGPT, Claude ou le mode IA de Google peut aussi préparer ce lien pour vous. Demandez-lui par exemple&nbsp;: «&nbsp;Donne-moi le lien MeridianWay pour aller de la gare de Lausanne au Musée olympique samedi à 15&nbsp;h, <span data-share-route>{example.words}</span>.&nbsp;» Le lien suit ce modèle&nbsp;:</p>
   <pre><code>https://meridian-way.ch/?from=LAT,LNG&amp;fromq=DÉPART&amp;to=LAT,LNG&amp;toq=ARRIVÉE&amp;dt=AAAA-MM-JJTHH:MM&amp;r=shady</code></pre>
   <ul>
     <li><code>from</code>, <code>to</code>&nbsp;: les coordonnées du départ et de l'arrivée, latitude puis longitude en degrés décimaux. Ce sont les deux seuls paramètres obligatoires.</li>
@@ -73,8 +66,16 @@ const exampleLink = '/?' + buildShareQuery({
     <li><code>dt</code>&nbsp;: la date et l'heure locales. Sans lui, l'app prend l'heure actuelle.</li>
     <li><code>r</code>&nbsp;: le chemin montré d'abord, <code>sunny</code> au soleil ou <code>shady</code> à l'ombre.</li>
   </ul>
-  <p>Le lien de cet exemple&nbsp;: <a href={exampleLink} data-app-link="share-example">de la gare de Lausanne au Musée olympique, le 15&nbsp;juillet à 15&nbsp;h, à l'ombre</a>.</p>
+  <p>Le lien de cet exemple&nbsp;: <a href={example.href} data-app-link="share-example">de la gare de Lausanne au Musée olympique, samedi à 15&nbsp;h, <span data-share-route>{example.words}</span></a>.</p>
 
   <h2>Données et crédits</h2>
   <p>Bâtiments et terrain&nbsp;: swisstopo (swissBUILDINGS3D, swissALTI3D). Carte, bâtiments hors de Suisse, arbres et chemins&nbsp;: © les contributeurs d'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>. Itinéraires&nbsp;: OpenRouteService. Recherche d'adresses&nbsp;: Photon et Nominatim. Position du soleil&nbsp;: SunCalc. Météo&nbsp;: Open-Meteo. Le code de MeridianWay est ouvert, sur <a href="https://github.com/paultursuru/meridian" target="_blank" rel="noopener">GitHub</a>.</p>
+
+  <!-- Bundled (not is:inline): the CSP forbids inline scripts. -->
+  <script>
+    import { shareExample } from '../lib/shareExample.js';
+    const { href, words } = shareExample();
+    document.querySelector('a[data-app-link="share-example"]')?.setAttribute('href', href);
+    document.querySelectorAll('[data-share-route]').forEach((el) => { el.textContent = words; });
+  </script>
 </ContentLayout>
