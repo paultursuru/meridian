@@ -28,6 +28,7 @@ const t = translations[lang];
 {LANGS.map(l => <link rel="alternate" hreflang={l} href={langUrl(l)} />)}
 <link rel="alternate" hreflang="x-default" href={langUrl('fr')} />
 <meta property="og:type" content="website" />
+<meta property="og:site_name" content="MeridianWay" />
 <meta property="og:url" content={langUrl(lang)} />
 <meta property="og:title" content={t.title} />
 <meta property="og:description" content={t.meta_description} />
@@ -37,6 +38,14 @@ const t = translations[lang];
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content={t.og_image_alt} />
 <meta name="twitter:card" content="summary_large_image" />
+{/* Google takes the site name shown in results from WebSite on the home page */}
+<script is:inline type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "MeridianWay",
+  "alternateName": ["Meridian Way", "meridian-way.ch"],
+  "url": "https://meridian-way.ch/"
+})} />
 <script is:inline type="application/ld+json" set:html={JSON.stringify({
   "@context": "https://schema.org",
   "@type": "WebApplication",
