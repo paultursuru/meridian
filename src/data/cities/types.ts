@@ -37,6 +37,15 @@ export interface SeasonContent {
   };
   routes: { heading: string; items: CityRoute[] };
   spots: { heading: string; intro: string; items: { name: string; where: string; hours: string }[] };
+  markets?: {
+    anchor: string;
+    heading: string;
+    intro: string;
+    items: { name: string; where: string; hours: string; shade?: boolean }[];
+    tip: string;
+    note: string;
+    link: { label: string; href: string };
+  };
   faq: { q: string; a: string }[];
   method: string;
 }
