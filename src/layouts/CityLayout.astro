@@ -122,6 +122,20 @@ const sunFirst = c.defaultMode === 'sun';
     </ol>
   </section>
 
+  {c.markets && (
+    <section id={c.markets.anchor} class="markets">
+      <h2>{frTypo(c.markets.heading)}</h2>
+      <p class="muted">{frTypo(c.markets.intro)}</p>
+      <ol class="spots">
+        {c.markets.items.map(m => (
+          <li data-side={m.shade ? 'shade' : 'sun'}><span class="spot-name">{m.name}</span><span class="vh"> (</span><span class="spot-where">{m.where}</span><span class="vh">) : </span><span class="spot-hours">{frTypo(m.hours)}</span></li>
+        ))}
+      </ol>
+      <p class="market-tip">{frTypo(c.markets.tip)}</p>
+      <p class="muted">{frTypo(c.markets.note)} <a href={c.markets.link.href} target="_blank" rel="noopener">{c.markets.link.label}</a></p>
+    </section>
+  )}
+
   <section class="faq">
     <h2>Questions fréquentes</h2>
     {c.faq.map(f => (
@@ -241,6 +255,8 @@ const sunFirst = c.defaultMode === 'sun';
   .spot-name { display: block; }
   .spot-where { display: block; color: var(--muted); font-size: 0.85rem; }
   .spot-hours { display: block; font-size: 0.95rem; }
+  .spots li[data-side=shade] { border-left-color: var(--shadec); }
+  .market-tip { margin-top: 1rem; }
 
   .city-page .faq h3 { margin-top: 1.25rem; }
   .city-page .faq p { color: var(--muted); }
