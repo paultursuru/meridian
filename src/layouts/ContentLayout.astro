@@ -91,6 +91,8 @@ const url = langUrl(lang, path);
     padding: 1.5rem 1rem 4rem;
     line-height: 1.5;
   }
+  /* The browser's default ring falls under 3:1 on the dark cards */
+  .content-page a:focus-visible, .content-page button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
   .content-wrap { max-width: 760px; margin: 0 auto; }
   .content-nav {
     display: flex;
