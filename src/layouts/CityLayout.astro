@@ -69,11 +69,12 @@ const sunFirst = c.defaultMode === 'sun';
     <div>
       <h1>{frTypo(c.title)}</h1>
       <p class="lede">{c.lede.map(part => part.strong ? <strong>{frTypo(part.text)}</strong> : frTypo(part.text))}</p>
-      <button id="sun-toggle" type="button" role="switch" aria-checked={sunFirst ? 'true' : 'false'} aria-label="Au soleil">
+      {/* Two buttons, not one switch: each visible label is its own accessible name. */}
+      <div id="sun-toggle" role="group" aria-label="Ambiance de la page">
         <span class="thumb" aria-hidden="true"></span>
-        <span class="opt opt-shade">À l'ombre</span>
-        <span class="opt opt-sun">Au soleil</span>
-      </button>
+        <button class="opt opt-shade" type="button" data-mode="shade" aria-pressed={sunFirst ? 'false' : 'true'}>À l'ombre</button>
+        <button class="opt opt-sun" type="button" data-mode="sun" aria-pressed={sunFirst ? 'true' : 'false'}>Au soleil</button>
+      </div>
     </div>
   </header>
 
@@ -83,7 +84,7 @@ const sunFirst = c.defaultMode === 'sun';
       {(['shade', 'sun'] as const).map(side => (
         <div class="glance-card" data-side={side}>
           <h3>{c.glance[side].title}</h3>
-          <ul>
+          <ul role="list">
             {c.glance[side].items.map(item => (
               <li>
                 <span class="glance-label">{frTypo(item.label)}</span><span class="vh"> : </span>
@@ -99,7 +100,7 @@ const sunFirst = c.defaultMode === 'sun';
 
   <section>
     <h2>{c.routes.heading}</h2>
-    <ul class="routes">
+    <ul class="routes" role="list">
       {c.routes.items.map(r => (
         <li class="route-card">
           <h3>{r.from.label} → {r.to.label}, {frTypo(r.when.label)}</h3>
@@ -115,7 +116,7 @@ const sunFirst = c.defaultMode === 'sun';
   <section>
     <h2>{frTypo(c.spots.heading)}</h2>
     <p class="muted">{frTypo(c.spots.intro)}</p>
-    <ol class="spots">
+    <ol class="spots" role="list">
       {c.spots.items.map(s => (
         <li><span class="spot-name">{s.name}</span><span class="vh"> (</span><span class="spot-where">{s.where}</span><span class="vh">) : </span><span class="spot-hours">{frTypo(s.hours)}</span></li>
       ))}
@@ -126,7 +127,7 @@ const sunFirst = c.defaultMode === 'sun';
     <section id={c.markets.anchor} class="markets">
       <h2>{frTypo(c.markets.heading)}</h2>
       <p class="muted">{frTypo(c.markets.intro)}</p>
-      <ol class="spots">
+      <ol class="spots" role="list">
         {c.markets.items.map(m => (
           <li data-side={m.shade ? 'shade' : 'sun'}><span class="spot-name">{m.name}</span><span class="vh"> (</span><span class="spot-where">{m.where}</span><span class="vh">) : </span><span class="spot-hours">{frTypo(m.hours)}</span></li>
         ))}
@@ -162,17 +163,17 @@ const sunFirst = c.defaultMode === 'sun';
   body.city-page.sun {
     --bg: #f6f0d4;
     --fg: #2a2d1b;
-    --muted: rgba(42,45,27,0.62);
+    --muted: rgba(42,45,27,0.7);
     --line: rgba(42,45,27,0.15);
     --card: #fffaf0;
-    --sunc: #c58a00;
-    --shadec: #8d5ba3;
+    --sunc: #b37d00;
+    --shadec: #8a58a0;
     --sun-core: #ffc93c;
     --sun-op: 1;
     --logo-m: #e2ac00;
     --logo-w: #cdc9af;
   }
-  body.city-page, body.city-page * {
+  body.city-page, body.city-page *, body.city-page *::before {
     transition: background-color var(--theme-dur) ease, color var(--theme-dur) ease, border-color var(--theme-dur) ease,
       fill var(--theme-dur) ease, stroke var(--theme-dur) ease, stop-color var(--theme-dur) ease, opacity var(--theme-dur) ease;
   }
@@ -187,59 +188,76 @@ const sunFirst = c.defaultMode === 'sun';
     align-items: center;
     margin-bottom: 1rem;
   }
+  /* The bright amber of the big M is too light for text */
+  body.city-page.sun .content-nav .wordmark .meri { color: #8a6400; }
   .city-page .lede { margin-bottom: 1.25rem; }
-  .city-page .lede strong { font-weight: normal; color: var(--shadec); }
+  .city-page .lede strong { color: var(--shadec); }
 
   #sun-toggle {
     position: relative;
     display: inline-grid;
     grid-template-columns: 1fr 1fr;
-    font: inherit;
     font-size: 0.95rem;
-    cursor: pointer;
     background: var(--card);
-    color: var(--fg);
     border: 1.5px solid var(--line);
     border-radius: 999px;
     padding: 4px;
   }
-  #sun-toggle .opt { position: relative; z-index: 1; padding: 7px 18px; white-space: nowrap; }
+  #sun-toggle .opt {
+    position: relative;
+    z-index: 1;
+    padding: 7px 18px;
+    white-space: nowrap;
+    font: inherit;
+    color: var(--fg);
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+  }
   #sun-toggle .thumb {
     position: absolute;
     top: 4px;
     bottom: 4px;
     left: 4px;
     width: calc(50% - 4px);
+    /* Invisible here, but forced-colors mode draws it once it drops the background */
+    border: 1.5px solid transparent;
     border-radius: 999px;
     background: var(--shadec);
     transition: transform calc(var(--theme-dur) * 0.6) cubic-bezier(.65,0,.35,1), background-color var(--theme-dur) ease;
   }
   body.city-page.sun #sun-toggle .thumb { transform: translateX(100%); background: var(--sunc); }
   body.city-page:not(.sun) #sun-toggle .opt-shade { color: var(--bg); }
-  #sun-toggle:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+  body.city-page.sun #sun-toggle .opt-sun { color: #1a1c10; }
 
   .city-page main h3 { font-size: 1rem; margin-bottom: 0.5rem; }
   .city-page .muted { color: var(--muted); }
 
   .glance { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  /* The other column recedes without fading its text, which has to stay readable:
+     muted text, and only the dot and bars lose opacity. Its fill is the page colour
+     rather than transparent, which would jump to its end colour and only fade in,
+     ahead of the page. */
   .glance-card {
     --c: var(--shadec);
-    background: var(--card);
+    --mark-op: 0.5;
+    color: var(--muted);
+    background: var(--bg);
     border: 1.5px solid var(--line);
     border-radius: 12px;
     padding: 1rem 1.1rem;
-    opacity: 0.6;
   }
   .glance-card[data-side=sun] { --c: var(--sunc); }
   body.city-page:not(.sun) .glance-card[data-side=shade],
-  body.city-page.sun .glance-card[data-side=sun] { opacity: 1; border-color: var(--c); }
+  body.city-page.sun .glance-card[data-side=sun] { --mark-op: 1; color: var(--fg); background: var(--card); border-color: var(--c); }
   .glance-card h3 { display: flex; align-items: center; gap: 8px; }
-  .glance-card h3::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+  .glance-card h3::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--c); opacity: var(--mark-op); }
   .city-page .glance-card ul { list-style: none; margin: 0; display: grid; gap: 0.8rem; }
   .glance-label { display: block; color: var(--muted); font-size: 0.8rem; }
   .glance-value { display: block; font-size: 1.05rem; }
   .bar { display: block; height: 6px; border-radius: 3px; background: var(--line); margin-top: 4px; overflow: hidden; }
-  .bar i { display: block; height: 100%; background: var(--c); }
+  .bar i { display: block; height: 100%; background: var(--c); opacity: var(--mark-op); }
 
   .city-page .routes { list-style: none; margin: 0; }
   .route-card { background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; }
@@ -287,10 +305,12 @@ const sunFirst = c.defaultMode === 'sun';
       sun.setAttribute('transform', sunTransform(t));
     };
 
-    toggle.addEventListener('click', () => {
-      mode = mode === 'sun' ? 'shade' : 'sun';
+    toggle.addEventListener('click', (e) => {
+      const opt = (e.target as Element).closest<HTMLButtonElement>('button[data-mode]');
+      if (!opt || opt.dataset.mode === mode) return;
+      mode = opt.dataset.mode as LogoMode;
       document.body.classList.toggle('sun', mode === 'sun');
-      toggle.setAttribute('aria-checked', String(mode === 'sun'));
+      toggle.querySelectorAll('button[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b === opt)));
 
       // Restart from wherever the sun is, so a second click mid-swing turns it back.
       cancelAnimationFrame(frame);
