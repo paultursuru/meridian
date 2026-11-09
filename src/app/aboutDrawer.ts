@@ -6,6 +6,7 @@ const drawer = () => el('about-drawer');
 export const isAboutOpen = () => drawer().classList.contains('open');
 
 function openAbout() {
+  drawer().removeAttribute('inert');
   drawer().classList.add('open');
   el('about-overlay').classList.add('on');
   el('app').setAttribute('inert', '');
@@ -19,6 +20,7 @@ function openAbout() {
 export function closeAbout() {
   if (!isAboutOpen()) return;
   drawer().classList.remove('open');
+  drawer().setAttribute('inert', '');
   el('about-overlay').classList.remove('on');
   el('app').removeAttribute('inert');
   el('about-btn').focus();
