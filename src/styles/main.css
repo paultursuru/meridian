@@ -787,9 +787,12 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   max-height: 82dvh;
   overflow: hidden;
   transform: translateY(100%);
-  transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  /* Off screen, its controls would still take Tab stops. Hidden once the slide
+     out ends, shown at once on the way in. */
+  visibility: hidden;
+  transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.32s;
 }
-#results.on       { transform: translateY(calc(100% - var(--drawer-peek))); }
+#results.on       { transform: translateY(calc(100% - var(--drawer-peek))); visibility: visible; transition-delay: 0s; }
 #results.expanded { transform: translateY(0); overflow-y: auto; overscroll-behavior: contain; }
 #results.night.on { transform: translateY(0); }
 
@@ -1131,7 +1134,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   border-radius: 50%;
   border: 1.5px solid rgba(240,242,160,0.2);
   background: transparent;
-  color: rgba(216,219,200,0.5);
+  color: rgba(216,219,200,0.54);
   font-size: 0.85rem;
   font-style: italic;
   font-weight: 700;
@@ -1369,7 +1372,7 @@ p.opensource-badge {
   #results.on,
   #results.expanded,
   #results.night.on { transform: none; }
-  #results.collapsed { transform: translateX(-100%); }
+  #results.collapsed { transform: translateX(-100%); visibility: hidden; transition-delay: 0s, 0.32s; }
 
   #drawer-handle { min-height: 46px; padding: 0; cursor: default; pointer-events: none; }
   #drawer-bar { display: none; }

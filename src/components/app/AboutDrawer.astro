@@ -13,7 +13,8 @@ const { lang } = Astro.props;
 const t = translations[lang];
 ---
 <div id="about-overlay"></div>
-<div id="about-drawer" role="dialog" aria-modal="true" aria-label={t.aria_about}>
+<!-- Inert while closed: off screen, its controls would still take Tab stops. -->
+<div id="about-drawer" role="dialog" aria-modal="true" aria-label={t.aria_about} inert>
   <div id="about-header">
     <div id="about-lang">
       {LANGS.map(l => (

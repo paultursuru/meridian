@@ -21,8 +21,10 @@ for (const [device, viewport] of Object.entries(VIEWPORTS)) {
       await option.click();
       await expect(option).toHaveAttribute('aria-pressed', 'true');
 
-      const { violations } = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
+      const { violations, incomplete } = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
       expect(violations.flatMap(v => v.nodes.map(n => `${v.id}: ${n.target.join(' ')}`))).toEqual([]);
+      // A rule that crashes lands in "incomplete", and the line above would pass without it.
+      expect(incomplete.filter(rule => rule.error).map(rule => rule.id)).toEqual([]);
     });
   }
 }
