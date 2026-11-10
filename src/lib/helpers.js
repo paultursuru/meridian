@@ -54,3 +54,15 @@ export function deltaPhrase(axis, gain, minutes, otherMin, tr) {
   const sign = diff > 0 ? '+' : diff < 0 ? '−' : '±';
   return tr(`delta_${axis}_less`, { time: `${sign}${Math.abs(diff)} min`, pct });
 }
+
+// Both tabs' sentences. Sun and shade add up to 100, so the sunny route's
+// lead in sun is also the shady route's lead in shade: one gap, same sign.
+export function deltaPhrases(sunny, shady, tr) {
+  const gap = Math.round(sunny.sunScore * 100) - Math.round(shady.sunScore * 100);
+  const sunnyMin = Math.round(sunny.duration / 60);
+  const shadyMin = Math.round(shady.duration / 60);
+  return {
+    sunny: deltaPhrase('sunny', gap, sunnyMin, shadyMin, tr),
+    shady: deltaPhrase('shady', gap, shadyMin, sunnyMin, tr),
+  };
+}

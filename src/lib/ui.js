@@ -1,4 +1,4 @@
-import { fmtDist, fmtDur, fmtHm, deltaPhrase } from './helpers.js';
+import { fmtDist, fmtDur, fmtHm, deltaPhrases } from './helpers.js';
 import { routesAlike } from './shadow.js';
 import { tr } from './i18n.js';
 import { track } from './analytics.js';
@@ -139,16 +139,9 @@ export function renderTab(id, rt) {
 // against what it gains on its own axis (shade for the shady tab, sun for
 // the sunny one).
 function renderDeltas(sunny, shady) {
-  const pctDelta = Math.round(sunny.sunScore * 100) - Math.round(shady.sunScore * 100);
-  const sunnyMin = Math.round(sunny.duration / 60);
-  const shadyMin = Math.round(shady.duration / 60);
-
-  // Each tab speaks for itself: shady gains shade (-pctDelta), sunny gains sun.
-  const write = (id, axis, gain, minutes, otherMin) => {
-    document.getElementById(id).textContent = deltaPhrase(axis, gain, minutes, otherMin, tr);
-  };
-  write('shady-delta', 'shady', -pctDelta, shadyMin, sunnyMin);
-  write('sunny-delta', 'sunny', pctDelta, sunnyMin, shadyMin);
+  const phrases = deltaPhrases(sunny, shady, tr);
+  document.getElementById('sunny-delta').textContent = phrases.sunny;
+  document.getElementById('shady-delta').textContent = phrases.shady;
 }
 
 // Folded state of the desktop side panel. One piece of state, written to two
