@@ -1338,7 +1338,9 @@ p.opensource-badge {
   }
   .depart-row { width: 100%; }
   .split-btn { width: 100%; }
-  #search-btn { flex: 1; }
+  /* 44px: the touch target size for the main action. #depart-toggle
+     stretches with it. */
+  #search-btn { flex: 1; min-height: 44px; }
   .depart-overlays { left: 0; right: 0; width: auto; }
   #about-drawer { width: 100vw; }
 }
