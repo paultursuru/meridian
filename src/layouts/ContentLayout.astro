@@ -13,9 +13,11 @@ interface Props {
   description: string;
   path: string; // e.g. 'lausanne/'
   bodyClass?: string;
+  // The 404 page: kept out of the index, no canonical or hreflang.
+  noindex?: boolean;
 }
 
-const { lang, title, description, path, bodyClass = '' } = Astro.props;
+const { lang, title, description, path, bodyClass = '', noindex = false } = Astro.props;
 const t = translations[lang];
 const url = langUrl(lang, path);
 ---
@@ -31,10 +33,14 @@ const url = langUrl(lang, path);
   <link rel="manifest" href="/site.webmanifest" />
   <meta name="theme-color" content="#0e120a" />
   <meta name="description" content={description} />
-  <link rel="canonical" href={url} />
-  <MarkdownAlternate />
-  <link rel="alternate" hreflang={lang} href={url} />
-  <link rel="alternate" hreflang="x-default" href={url} />
+  {noindex
+    ? <meta name="robots" content="noindex" />
+    : <>
+        <link rel="canonical" href={url} />
+        <MarkdownAlternate />
+        <link rel="alternate" hreflang={lang} href={url} />
+        <link rel="alternate" hreflang="x-default" href={url} />
+      </>}
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="MeridianWay" />
   <meta property="og:url" content={url} />

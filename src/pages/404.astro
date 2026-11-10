@@ -1,0 +1,23 @@
+---
+// French only: every unknown URL lands here, whatever its language.
+import ContentLayout from '../layouts/ContentLayout.astro';
+---
+<ContentLayout lang="fr" title="Page introuvable : MeridianWay" description="Cette page n'existe pas." path="404.html" noindex>
+  <h1>Page introuvable</h1>
+  <p>Cette adresse ne mène nulle part. Elle contient peut-être une faute de frappe, ou la page a changé de place.</p>
+  <p><a class="open-app-btn" href="/" data-app-link="404">Ouvrir l'application</a></p>
+</ContentLayout>
+
+<style is:global>
+  .content-page main a.open-app-btn {
+    display: inline-block;
+    padding: 0.7rem 1.4rem;
+    min-height: 44px;
+    background: #f0f2a0;
+    color: #0e120a;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .content-page main a.open-app-btn:hover { background: #e4e698; }
+</style>
