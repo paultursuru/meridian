@@ -1,5 +1,5 @@
 ---
-import { translations, type Lang } from '../../lib/i18n';
+import { translations, langPath, type Lang } from '../../lib/i18n';
 
 interface Props {
   lang: Lang;
@@ -10,7 +10,7 @@ const t = translations[lang];
 ---
 <div id="header">
   <h1>
-    <a href="/">
+    <a href={langPath(lang)}>
       <span class="meri">Meridian</span><span class="way">Way</span>
     </a>
   </h1>

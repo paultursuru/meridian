@@ -44,3 +44,12 @@ test('a link that stays on the content pages reports nothing', async ({ page }) 
 
   expect(sent.filter(([name]) => name === 'app_open')).toEqual([]);
 });
+
+// The app's logo leads back to the app in the language on screen.
+for (const path of ['/', '/en/', '/de/', '/it/', '/rm/']) {
+  test(`the logo on ${path} links to ${path}`, async ({ page }) => {
+    await stubUpstreams(page);
+    await page.goto(path);
+    await expect(page.locator('#header h1 a')).toHaveAttribute('href', path);
+  });
+}
