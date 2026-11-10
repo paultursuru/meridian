@@ -256,7 +256,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   position: relative;
 }
 .input-label {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: #d8dbc8;
   margin-bottom: 4px;
   padding-left: 4px;
@@ -1096,7 +1096,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: #d8dbc8;
 }
 .stat-lbl {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: rgba(216,219,200,0.64);
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -1124,7 +1124,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 .detail-split-shade .split-val { font-size: 1rem; font-weight: 700; color: #e8c8f0; }
 .detail-split-sun   .split-val { font-size: 1rem; font-weight: 700; color: #f0f2a0; }
-.split-lbl { font-size: 0.72rem; color: rgba(216,219,200,0.64); }
+.split-lbl { font-size: 0.75rem; color: rgba(216,219,200,0.64); }
 .elev-val { letter-spacing: 0.5px; }
 .elev-loading { animation: elev-pulse 1.2s ease-in-out infinite; }
 @keyframes elev-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.7; } }
@@ -1338,7 +1338,37 @@ p.opensource-badge {
   }
   .depart-row { width: 100%; }
   .split-btn { width: 100%; }
-  #search-btn { flex: 1; }
+  /* 44px: the touch target size for the main action. #depart-toggle
+     stretches with it. */
+  #search-btn { flex: 1; min-height: 44px; }
+  /* The form's icons keep their size; an invisible square answers a 44px
+     tap around each (24px is the WCAG AA floor, 44px the comfortable size).
+     The clear button moves left so its square and the locate one's sit side
+     by side, and the text stops before both. */
+  #search-panel input[type="text"] { padding-right: 90px; }
+  .clear-btn { right: 54px; }
+  #about-btn { position: relative; }
+  .clear-btn::after,
+  .geo-btn::after,
+  #swap-btn::after,
+  #about-btn::after,
+  #app-description-close::after,
+  #onboarding-note-close::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  /* Between the two fields there is no room for 44px of height: the swap
+     button widens only, and taps on the fields stay with the fields. */
+  #swap-btn::after { height: 100%; }
+  /* The share pill sits between the drawer's top edge, which clips anything
+     above it, and the tabs: its tap area reaches up to that edge and no
+     further down than before. */
+  #share-btn::before { inset: -8px -6px -4px; }
   .depart-overlays { left: 0; right: 0; width: auto; }
   #about-drawer { width: 100vw; }
 }

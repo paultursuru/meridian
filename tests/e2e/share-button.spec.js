@@ -66,6 +66,32 @@ test('the label clears the tabs', async ({ page }) => {
   expect(await coversTabLabel(page)).toBe(false);
 });
 
+test('a tap reaches the button from the drawer edge, and the tab keeps its label', async ({ page }) => {
+  await search(page);
+  // The drawer slides in: measure once it has stopped.
+  await page.waitForFunction(() => document.getElementById('results').getAnimations().length === 0);
+  const btn = await page.locator('#share-btn').boundingBox();
+  const drawer = await page.locator('#results').boundingBox();
+  const at = (x, y) => page.evaluate(([a, b]) => document.elementFromPoint(a, b)?.closest('button')?.id, [x, y]);
+  const cx = btn.x + btn.width / 2;
+  // From just under the drawer's top edge to just under the pill: over 24px.
+  // Inside the pill's width, clear of the drawer's rounded corner.
+  const top = drawer.y + 2;
+  const bottom = btn.y + btn.height + 2;
+  expect(bottom - top).toBeGreaterThanOrEqual(24);
+  for (const y of [top, bottom]) {
+    for (const x of [btn.x + 4, cx, btn.x + btn.width - 4]) expect(await at(x, y)).toBe('share-btn');
+  }
+  // The sunny tab's label stays the tab's.
+  const label = await page.evaluate(() => {
+    const range = document.createRange();
+    range.selectNodeContents(document.getElementById('tab-btn-sunny'));
+    const r = range.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  });
+  expect(await at(label.x, label.y)).toBe('tab-btn-sunny');
+});
+
 test('a short screen keeps the icon only, clear of the tabs', async ({ page }) => {
   await search(page, { width: 375, height: 667 });
   await expect(page.locator('#share-btn')).toBeVisible();
