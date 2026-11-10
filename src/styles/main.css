@@ -256,7 +256,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   position: relative;
 }
 .input-label {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: #d8dbc8;
   margin-bottom: 4px;
   padding-left: 4px;
@@ -1096,7 +1096,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: #d8dbc8;
 }
 .stat-lbl {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: rgba(216,219,200,0.64);
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -1124,7 +1124,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 .detail-split-shade .split-val { font-size: 1rem; font-weight: 700; color: #e8c8f0; }
 .detail-split-sun   .split-val { font-size: 1rem; font-weight: 700; color: #f0f2a0; }
-.split-lbl { font-size: 0.72rem; color: rgba(216,219,200,0.64); }
+.split-lbl { font-size: 0.75rem; color: rgba(216,219,200,0.64); }
 .elev-val { letter-spacing: 0.5px; }
 .elev-loading { animation: elev-pulse 1.2s ease-in-out infinite; }
 @keyframes elev-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.7; } }
