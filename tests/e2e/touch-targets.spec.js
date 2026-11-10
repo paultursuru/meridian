@@ -69,3 +69,10 @@ test('the swap button is 44px wide and leaves taps on the fields to them', async
     expect(await at(x + width / 2 + dx, end.y + 3)).toBe('inp-end');
   }
 });
+
+test('the bubbles close with a 44px tap', async ({ page }) => {
+  expect(await hitArea(page.locator('#app-description-close'))).toEqual([]);
+  // The demo's note, shown as the demo shows it, without running a search.
+  await page.evaluate(() => document.getElementById('onboarding-note').classList.add('on'));
+  expect(await hitArea(page.locator('#onboarding-note-close'))).toEqual([]);
+});

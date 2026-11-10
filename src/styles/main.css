@@ -1351,7 +1351,9 @@ p.opensource-badge {
   .clear-btn::after,
   .geo-btn::after,
   #swap-btn::after,
-  #about-btn::after {
+  #about-btn::after,
+  #app-description-close::after,
+  #onboarding-note-close::after {
     content: '';
     position: absolute;
     left: 50%;
@@ -1363,6 +1365,10 @@ p.opensource-badge {
   /* Between the two fields there is no room for 44px of height: the swap
      button widens only, and taps on the fields stay with the fields. */
   #swap-btn::after { height: 100%; }
+  /* The share pill sits between the drawer's top edge, which clips anything
+     above it, and the tabs: its tap area reaches up to that edge and no
+     further down than before. */
+  #share-btn::before { inset: -8px -6px -4px; }
   .depart-overlays { left: 0; right: 0; width: auto; }
   #about-drawer { width: 100vw; }
 }
