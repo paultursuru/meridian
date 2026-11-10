@@ -126,7 +126,7 @@ export function renderTab(id, rt) {
   const elevStat = g('elev-stat');
   elevStat.style.display = '';
   if (rt.elevation) {
-    elevEl.textContent = '↑' + rt.elevation.up + 'm  ↓' + rt.elevation.down + 'm';
+    elevEl.textContent = `↑\u00a0${rt.elevation.up}\u00a0m ↓\u00a0${rt.elevation.down}\u00a0m`;
     elevEl.classList.remove('elev-loading');
   } else {
     elevEl.textContent = '…';
