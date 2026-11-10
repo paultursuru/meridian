@@ -160,7 +160,7 @@ function drawRouteLabel(type, rt, active, onClick) {
     // width, height and margins inline on it.
     iconSize: null,
     html: `<div class="route-label-pill ${type}${active ? ' active' : ''}" title="${tr('tab_' + type)}">`
-      + `${type === 'sunny' ? '☀️' : '🌑'} ${pct}%</div>`,
+      + `${type === 'sunny' ? '☀️' : '🌑'} ${pct}&nbsp;%</div>`,
   });
   const [lng, lat] = rt.geometry.coordinates[0];
   const marker = L.marker([lat, lng], { icon, keyboard: false, zIndexOffset: active ? 1000 : 0 });

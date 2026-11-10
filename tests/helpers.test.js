@@ -51,25 +51,32 @@ describe('angleDiff', () => {
 
 describe('fmtDist', () => {
   it('shows metres below 1 km', () => {
-    expect(fmtDist(500)).toBe('500 m');
-    expect(fmtDist(999)).toBe('999 m');
+    expect(fmtDist(500)).toBe('500\u00a0m');
+    expect(fmtDist(999)).toBe('999\u00a0m');
   });
 
   it('shows kilometres with one decimal from 1 km', () => {
-    expect(fmtDist(1000)).toBe('1.0 km');
-    expect(fmtDist(1500)).toBe('1.5 km');
+    expect(fmtDist(1000)).toBe('1,0\u00a0km');
+    expect(fmtDist(3400)).toBe('3,4\u00a0km');
+  });
+
+  it('picks the decimal separator by language', () => {
+    expect(fmtDist(3400, 'it')).toBe('3,4\u00a0km');
+    expect(fmtDist(3400, 'de')).toBe('3.4\u00a0km');
+    expect(fmtDist(3400, 'en')).toBe('3.4\u00a0km');
+    expect(fmtDist(3400, 'rm')).toBe('3.4\u00a0km');
   });
 });
 
 describe('fmtDur', () => {
   it('shows minutes below an hour', () => {
-    expect(fmtDur(59)).toBe('1 min');   // rounds to nearest minute
-    expect(fmtDur(1800)).toBe('30 min');
+    expect(fmtDur(59)).toBe('1\u00a0min');   // rounds to nearest minute
+    expect(fmtDur(1800)).toBe('30\u00a0min');
   });
 
-  it('shows h+mm from one hour, zero-padding minutes', () => {
-    expect(fmtDur(3600)).toBe('1h00');
-    expect(fmtDur(3660)).toBe('1h01');
+  it('shows "h mm" from one hour, zero-padding minutes', () => {
+    expect(fmtDur(3600)).toBe('1\u00a0h\u00a000');
+    expect(fmtDur(3660)).toBe('1\u00a0h\u00a001');
   });
 });
 

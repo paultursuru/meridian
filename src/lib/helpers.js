@@ -26,13 +26,23 @@ export function localDateValue(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export function fmtDist(m) {
-  return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km';
+// Decimal separator by page language: comma in French and Italian, point in
+// Swiss German, English and Romansh. A no-break space keeps the unit with its number.
+const NUMBER_LOCALE = { fr: 'fr', it: 'it', de: 'de-CH', en: 'en', rm: 'de-CH' };
+
+export function fmtDist(m, lang = 'fr') {
+  if (m < 1000) return Math.round(m) + '\u00a0m';
+  const km = new Intl.NumberFormat(NUMBER_LOCALE[lang] ?? 'fr', {
+    minimumFractionDigits: 1, maximumFractionDigits: 1,
+  }).format(m / 1000);
+  return km + '\u00a0km';
 }
 
 export function fmtDur(s) {
   const m = Math.round(s / 60);
-  return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0');
+  return m < 60
+    ? m + '\u00a0min'
+    : Math.floor(m / 60) + '\u00a0h\u00a0' + String(m % 60).padStart(2, '0');
 }
 
 // "HH:mm" for a minutes-since-midnight value (0-1439) — the time scrubber's own unit.
