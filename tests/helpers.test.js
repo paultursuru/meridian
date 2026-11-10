@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { haversine, bearing, angleDiff, fmtDist, fmtDur, fmtHm, localDateValue } from '../src/lib/helpers.js';
+import { haversine, bearing, angleDiff, fmtDist, fmtDur, fmtHm, localDateValue, deltaPhrase } from '../src/lib/helpers.js';
 
 describe('haversine', () => {
   it('returns 0 for identical points', () => {
@@ -94,5 +94,18 @@ describe('localDateValue', () => {
     // previous day — the exact bug this helper replaces (review 2.2).
     const justPastMidnight = new Date(2026, 0, 1, 0, 30);
     expect(localDateValue(justPastMidnight)).toBe('2026-01-01');
+  });
+});
+
+describe('deltaPhrase', () => {
+  const tr = (k, v) => `${k}|${JSON.stringify(v)}`;
+  it('picks faster / same / slower when the route gains on its axis', () => {
+    expect(deltaPhrase('sunny', 5, 10, 15, tr)).toBe('delta_sunny_faster|{"min":"5","pct":"5"}');
+    expect(deltaPhrase('shady', 26, 12, 12, tr)).toBe('delta_shady_same|{"min":"0","pct":"26"}');
+    expect(deltaPhrase('sunny', 5, 20, 15, tr)).toBe('delta_sunny_slower|{"min":"5","pct":"5"}');
+  });
+  it('keeps the signed-time form for a loss or a tie', () => {
+    expect(deltaPhrase('sunny', -3, 10, 15, tr)).toBe('delta_sunny_less|{"time":"−5 min","pct":"3"}');
+    expect(deltaPhrase('sunny', 0, 15, 15, tr)).toBe('delta_sunny_less|{"time":"±0 min","pct":"0"}');
   });
 });
