@@ -35,11 +35,30 @@ export function showToast(msg, type = 'error') {
 // rather than "broken app". msg falsy (e.g. night search) hides the note.
 // level: 'info' (default, today's neutral coverage/empty/partial notes) or
 // 'warn' (a fetch outright failed — invalidates the ratio above it).
-export function showQualityNote(msg, level = 'info') {
+// note: heightNote()'s result, or null. A plain text shows as is; a summary
+// folds its details into a <details>, which stays open across a re-render
+// (the vegetation pass re-renders the note once it lands).
+export function showQualityNote(note) {
   const el = document.getElementById('quality-note');
-  el.textContent = msg || '';
-  el.classList.toggle('on', !!msg);
-  el.classList.toggle('warn', !!msg && level === 'warn');
+  const wasOpen = el.querySelector('details')?.open ?? false;
+  el.replaceChildren();
+  el.classList.toggle('on', !!note);
+  el.classList.toggle('warn', !!note && note.level === 'warn');
+  if (!note) return;
+  if (note.text) { el.textContent = note.text; return; }
+  const details = document.createElement('details');
+  details.open = wasOpen;
+  const summary = document.createElement('summary');
+  summary.textContent = note.summary;
+  const body = document.createElement('div');
+  body.textContent = note.details.join('\n');
+  details.append(summary, body);
+  el.append(details);
+  if (note.notice) {
+    const notice = document.createElement('p');
+    notice.textContent = note.notice;
+    el.append(notice);
+  }
 }
 
 // Desktop side panel (main.css): the results dock to the left of the map

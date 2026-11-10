@@ -133,19 +133,23 @@ describe('heightNote', () => {
     expect(note([])).toEqual({ state: 'empty', text: tr('height_data_none'), level: 'info' });
   });
 
-  it('names the source and gives the stats, with no "estimated" line at 100%', () => {
-    const { state, text, level } = note(measured(3), { source: 'swisstopo' });
-    expect(state).toBe('ok');
-    expect(level).toBe('info');
-    expect(text.split('\n')).toEqual([
-      tr('height_data_note_swisstopo'),
-      tr('height_data_line_stats', { n: '3', pct: '100', avgPart: tr('height_data_avg_suffix', { avg: '12' }) }),
-    ]);
+  it('names the source in one line and folds the stats, with no "estimated" line at 100%', () => {
+    expect(note(measured(3), { source: 'swisstopo' })).toEqual({
+      state: 'ok',
+      summary: tr('height_data_note_swisstopo'),
+      details: [
+        tr('height_data_updated'),
+        tr('height_data_line_stats', { n: '3', pct: '100', avgPart: tr('height_data_avg_suffix', { avg: '12' }) }),
+      ],
+      notice: null,
+      level: 'info',
+    });
   });
 
-  it('adds the "estimated" line below 100%', () => {
-    expect(note([...measured(1), ...guessed(1)]).text.split('\n')).toEqual([
-      tr('height_data_note_osm'),
+  it('adds the "estimated" line below 100%, and no update date for OpenStreetMap', () => {
+    const { summary, details } = note([...measured(1), ...guessed(1)]);
+    expect(summary).toBe(tr('height_data_note_osm'));
+    expect(details).toEqual([
       tr('height_data_line_stats', { n: '2', pct: '50', avgPart: tr('height_data_avg_suffix', { avg: '12' }) }),
       tr('height_data_line_estimated'),
     ]);
@@ -153,19 +157,18 @@ describe('heightNote', () => {
 
   it('gates the "estimated" line on the rounded pct', () => {
     // 249 of 250 is 99.6%, shown as 100%.
-    expect(note([...measured(249), ...guessed(1)]).text).not.toContain(tr('height_data_line_estimated'));
+    expect(note([...measured(249), ...guessed(1)]).details).not.toContain(tr('height_data_line_estimated'));
   });
 
   it('leaves the average out when no height was measured', () => {
-    expect(note(guessed(2)).text.split('\n')[1])
+    expect(note(guessed(2)).details[0])
       .toBe(tr('height_data_line_stats', { n: '2', pct: '0', avgPart: '' }));
   });
 
-  it('appends the vegetation line on a partial result, keeping the buildings note', () => {
-    const { state, text } = note(measured(2), { vegStatus: 'failed' });
-    const lines = text.split('\n');
+  it('keeps the vegetation line in view on a partial result, beside the buildings note', () => {
+    const { state, summary, notice } = note(measured(2), { vegStatus: 'failed' });
     expect(state).toBe('partial');
-    expect(lines[0]).toBe(tr('height_data_note_osm'));
-    expect(lines.at(-1)).toBe(tr('vegetation_failed'));
+    expect(summary).toBe(tr('height_data_note_osm'));
+    expect(notice).toBe(tr('vegetation_failed'));
   });
 });

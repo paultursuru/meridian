@@ -112,7 +112,9 @@ export function resolveHeightNoteState(buildingsStatus, buildingsCount, vegStatu
   return 'ok';
 }
 
-// The coverage note under the results: its state, its text and its level.
+// The coverage note under the results: its state, its level, and either a
+// plain `text` (a warning or an empty result, always in view) or a one-line
+// `summary` whose `details` fold away, with an optional `notice` kept in view.
 export function heightNote({ buildingsStatus, buildings, vegStatus, source, cause }) {
   const state = resolveHeightNoteState(buildingsStatus, buildings.length, vegStatus);
   if (state === 'failed') {
@@ -128,14 +130,18 @@ export function heightNote({ buildingsStatus, buildings, vegStatus, source, caus
   const stats = heightStats(buildings);
   const pct = Math.round(stats.pct * 100);
   const avgPart = stats.avgHeight == null ? '' : tr('height_data_avg_suffix', { avg: String(Math.round(stats.avgHeight)) });
-  const lines = [
-    tr(source === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm'),
-    tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart }),
-  ];
+  const details = [tr('height_data_line_stats', { n: String(stats.count), pct: String(pct), avgPart })];
+  if (source === 'swisstopo') details.unshift(tr('height_data_updated'));
   // Rounded pct, so "100% measured" never sits above "rest estimated".
-  if (pct < 100) lines.push(tr('height_data_line_estimated'));
-  if (state === 'partial') lines.push(tr('vegetation_failed'));
-  return { state, text: lines.join('\n'), level: 'info' };
+  if (pct < 100) details.push(tr('height_data_line_estimated'));
+  return {
+    state,
+    summary: tr(source === 'swisstopo' ? 'height_data_note_swisstopo' : 'height_data_note_osm'),
+    details,
+    // Missing trees change how far to trust the shade: not folded away.
+    notice: state === 'partial' ? tr('vegetation_failed') : null,
+    level: 'info',
+  };
 }
 
 
