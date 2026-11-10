@@ -945,8 +945,8 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 /* ── Weather note (overcast forecast, at the bottom of the drawer) ── */
 #weather-note {
   display: none;
-  padding: 11px 16px 9px;
-  border-top: 1.5px solid rgba(240,242,160,0.1);
+  padding: 9px 16px 11px;
+  border-bottom: 1.5px solid rgba(240,242,160,0.1);
   font-size: 0.82rem;
   color: rgba(216,219,200,0.55);
   text-align: center;
@@ -967,6 +967,23 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #quality-note.warn {
   color: #f0b84a;
 }
+#quality-note details > div { margin-top: 4px; }
+#quality-note summary { cursor: pointer; width: fit-content; }
+#quality-note summary:focus-visible { outline: 2px solid #d8dbc8; outline-offset: 2px; border-radius: 2px; }
+#quality-note p { margin: 6px 0 0; }
+
+/* Sun and shade marks, the same as on the city pages: an emoji moon sinks
+   into the dark panel, a coloured dot does not. */
+.side-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.4em;
+  border-radius: 50%;
+  vertical-align: 0.05em;
+}
+.side-dot.sun   { background: #f0f2a0; }
+.side-dot.shade { background: #e8c8f0; }
 
 /* ── Night note (sun below the horizon — sun/shade stats don't apply) ── */
 #night-note {
@@ -1101,27 +1118,20 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
+/* Metres in shade and in sun, on one line under the stats: a walker's
+   reading of the route, lighter than the percentages above it. */
 .detail-split {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 0.85rem;
 }
 .detail-split-shade,
-.detail-split-sun {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 10px 12px;
-  border-radius: 8px;
-}
-.detail-split-shade {
-  background: rgba(232,200,240,0.07);
-  border: 1px solid rgba(232,200,240,0.15);
-}
-.detail-split-sun {
-  background: rgba(240,242,160,0.07);
-  border: 1px solid rgba(240,242,160,0.15);
-}
+.detail-split-sun { white-space: nowrap; }
+.split-sep { color: rgba(216,219,200,0.4); }
+.route-details .detail-split .split-val,
+.route-details .detail-split .split-lbl { font-size: inherit; }
 .detail-split-shade .split-val { font-size: 1rem; font-weight: 700; color: #e8c8f0; }
 .detail-split-sun   .split-val { font-size: 1rem; font-weight: 700; color: #f0f2a0; }
 .split-lbl { font-size: 0.75rem; color: rgba(216,219,200,0.64); }
@@ -1450,7 +1460,6 @@ p.opensource-badge {
   #grazing-sun-note,
   #single-route-note,
   #similar-routes-note { order: 2; }
-  #weather-note { order: 3; }
   #quality-note { order: 4; }
   #night-note,
   #eclipse-note,

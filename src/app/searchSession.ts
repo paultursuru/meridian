@@ -86,7 +86,7 @@ export function createSearchSession(ctx: SearchContext) {
     if (night) { showQualityNote(null); return; }
     const note = heightNote({ buildingsStatus, buildings, vegStatus, source: buildingsSource, cause: buildingsCause });
     heightState = note.state;
-    showQualityNote(note.text, note.level);
+    showQualityNote(note);
   }
 
   // At the rendered instant. Empty until the weather lands.

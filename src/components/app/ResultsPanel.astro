@@ -27,13 +27,14 @@ const t = translations[lang];
   <div id="grazing-sun-note">{t.grazing_sun_note}</div>
   <div id="single-route-note">{t.single_route_note}</div>
   <div id="similar-routes-note">{t.similar_routes_note}</div>
+  <!-- Above the routes: an overcast sky changes how to read both of them. -->
+  <div id="weather-note"></div>
   <div id="tabs" role="tablist">
-    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady">{t.tab_shady}</button>
-    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny">{t.tab_sunny}</button>
+    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady"><span class="side-dot shade" aria-hidden="true"></span>{t.tab_shady}</button>
+    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny"><span class="side-dot sun" aria-hidden="true"></span>{t.tab_sunny}</button>
   </div>
   <RoutePane lang={lang} kind="sunny" active />
   <RoutePane lang={lang} kind="shady" />
-  <div id="weather-note"></div>
   <div id="quality-note"></div>
 </div>
 

@@ -116,15 +116,20 @@ test('clicking a card selects that route', async ({ page }) => {
   await expect(page.locator(`#tab-${sunnyActive ? 'sunny' : 'shady'}`)).not.toHaveClass(/active/);
 });
 
-test('every note sits under the route cards', async ({ page }) => {
+test('the overcast note heads the panel, every other note sits under the route cards', async ({ page }) => {
   // 20:30 local is a low sun (grazing note) under a fully overcast forecast
   // (weather note), on top of the height-data note every search gets: one of
-  // each family, which in the bottom sheet would straddle the cards.
-  await page.route('https://api.open-meteo.com/**', route => route.fulfill({
-    json: { hourly: { time: ['2026-08-13T20:00', '2026-08-13T21:00'], cloud_cover: [95, 95], temperature_2m: [18, 17] } },
-  }));
+  // each family. The sky changes how to read both routes, so it comes first.
   await page.setViewportSize(DESKTOP);
   await mockUpstreams(page);
+  // After mockUpstreams: the last route registered answers first. The app
+  // only asks for a forecast within its window, so the page's clock is set to
+  // that morning; the hours are unix seconds, as the app requests them.
+  await page.clock.setFixedTime(new Date('2026-08-13T08:00:00+02:00'));
+  const hour = (iso) => Date.parse(iso) / 1000;
+  await page.route('https://api.open-meteo.com/**', route => route.fulfill({
+    json: { hourly: { time: [hour('2026-08-13T20:00:00+02:00'), hour('2026-08-13T21:00:00+02:00')], cloud_cover: [95, 95], temperature_2m: [18, 17] } },
+  }));
   await page.goto(`/?from=${START}&to=${END}&dt=2026-08-13T20:30`);
   await expect(page.locator('#results')).toHaveClass(/on/, { timeout: 20_000 });
   await expect(page.locator('#grazing-sun-note')).toHaveClass(/on/);
@@ -133,14 +138,18 @@ test('every note sits under the route cards', async ({ page }) => {
   const tops = await page.evaluate(() => {
     const top = (sel) => document.querySelector(sel).getBoundingClientRect().top;
     return {
+      cardsStart: document.getElementById('tab-sunny').getBoundingClientRect().top,
       cardsEnd: document.getElementById('tab-shady').getBoundingClientRect().bottom,
-      notes: ['#grazing-sun-note', '#weather-note', '#quality-note']
+      weather: top('#weather-note'),
+      notes: ['#grazing-sun-note', '#quality-note']
         .filter(s => document.querySelector(s).classList.contains('on'))
         .map(s => top(s)),
     };
   });
 
-  expect(tops.notes.length).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('#weather-note')).toHaveClass(/on/);
+  expect(tops.weather).toBeLessThan(tops.cardsStart);
+  expect(tops.notes.length).toBe(2);
   for (const t of tops.notes) expect(t).toBeGreaterThanOrEqual(tops.cardsEnd);
   // And in the order they are stacked in, not scattered.
   expect([...tops.notes].sort((a, b) => a - b)).toEqual(tops.notes);

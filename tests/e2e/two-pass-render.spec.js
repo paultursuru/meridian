@@ -97,6 +97,9 @@ test('note upgrades from the optimistic first pass once vegetation actually fail
   await expect(note).toHaveClass(/on/);
   await expect(note).not.toHaveClass(/warn/);
   await expect(note).not.toContainText('Tree data unavailable');
+  // The stats fold under a one-line summary; open them before the re-render.
+  await expect(note.locator('details')).not.toHaveAttribute('open');
+  await note.locator('summary').click();
 
   // Once the background vegetation fetch's own retry ladder gives up, the
   // note must upgrade to the 'partial' state — appending the vegetation
@@ -106,4 +109,7 @@ test('note upgrades from the optimistic first pass once vegetation actually fail
   await expect(note).toContainText('Tree data unavailable', { timeout: 10_000 });
   await expect(note).toContainText('1 buildings'); // buildings stats line, still present
   await expect(note).not.toHaveClass(/warn/); // 'partial' is informational, not a warning
+  // Opened by the reader, still open; the tree line stays out of the fold.
+  await expect(note.locator('details')).toHaveAttribute('open', '');
+  await expect(note.locator('details + p')).toContainText('Tree data unavailable');
 });
