@@ -113,8 +113,8 @@ export function renderTab(id, rt) {
   const shadedM  = Math.round((1 - rt.sunScore) * rt.distance);
   const sunnyM   = Math.round(rt.sunScore * rt.distance);
 
-  g('shade-pct').textContent   = shadePct + '%';
-  g('sun-pct').textContent     = sunPct + '%';
+  g('shade-pct').textContent   = shadePct + '\u00a0%';
+  g('sun-pct').textContent     = sunPct + '\u00a0%';
   g('shade-fill').style.width  = shadePct + '%';
   g('sun-fill').style.width    = sunPct + '%';
   g('dist').textContent        = fmtDist(rt.distance, lang);
