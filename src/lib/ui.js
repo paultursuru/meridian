@@ -1,4 +1,5 @@
 import { fmtDist, fmtDur, fmtHm, deltaPhrase } from './helpers.js';
+import { routesAlike } from './shadow.js';
 import { tr } from './i18n.js';
 import { track } from './analytics.js';
 
@@ -254,6 +255,8 @@ function toggleDrawer(via) {
 export function showResults(sunny, shady, single = false, night = false, heightFailed = false) {
   document.getElementById('tabs').style.display = single ? 'none' : '';
   document.getElementById('single-route-note').classList.toggle('on', single && !night);
+  document.getElementById('similar-routes-note')
+    .classList.toggle('on', !single && routesAlike(sunny.sunScore, shady.sunScore));
   document.getElementById('night-note').classList.toggle('on', night);
   renderTab('tab-sunny', sunny);
   if (!single) renderTab('tab-shady', shady);
