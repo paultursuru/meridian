@@ -1341,6 +1341,28 @@ p.opensource-badge {
   /* 44px: the touch target size for the main action. #depart-toggle
      stretches with it. */
   #search-btn { flex: 1; min-height: 44px; }
+  /* The form's icons keep their size; an invisible square answers a 44px
+     tap around each (24px is the WCAG AA floor, 44px the comfortable size).
+     The clear button moves left so its square and the locate one's sit side
+     by side, and the text stops before both. */
+  #search-panel input[type="text"] { padding-right: 90px; }
+  .clear-btn { right: 54px; }
+  #about-btn { position: relative; }
+  .clear-btn::after,
+  .geo-btn::after,
+  #swap-btn::after,
+  #about-btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  /* Between the two fields there is no room for 44px of height: the swap
+     button widens only, and taps on the fields stay with the fields. */
+  #swap-btn::after { height: 100%; }
   .depart-overlays { left: 0; right: 0; width: auto; }
   #about-drawer { width: 100vw; }
 }
