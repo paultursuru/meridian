@@ -166,6 +166,16 @@ export function scoreRoute(rt, buildings, trees = [], sun, deciduousLeafFrac = 1
   return { score: totalLen > 0 ? sunLen / totalLen : 0.5, segShade };
 }
 
+// True when both routes sit 90 % or more on the same side (both sunny or both
+// shady) and are less than 3 points apart: the tabs stay, a note says so.
+// Scores are 0..1 and compared at the percentage the panel displays.
+export function routesAlike(scoreA, scoreB) {
+  const a = Math.round(scoreA * 100);
+  const b = Math.round(scoreB * 100);
+  const sameSide = (a >= 90 && b >= 90) || (a <= 10 && b <= 10);
+  return sameSide && Math.abs(a - b) < 3;
+}
+
 // Sorts scored routes in place, sunniest first, and picks the two to show.
 // Night collapses the sunny/shady distinction: only the shortest route.
 export function rankRoutes(routes, night) {

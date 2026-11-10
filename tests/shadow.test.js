@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scoreRoute, rankRoutes } from '../src/lib/shadow.js';
+import { scoreRoute, rankRoutes, routesAlike } from '../src/lib/shadow.js';
 
 // --- Test geometry helpers --------------------------------------------------
 
@@ -215,5 +215,20 @@ describe('rankRoutes', () => {
   it('picks the shortest route at night, whatever its score', () => {
     const shortest = route(0.5, 700);
     expect(rankRoutes([route(0.9, 1200), shortest, route(0.2, 900)], true).sunny).toBe(shortest);
+  });
+});
+
+describe('routesAlike', () => {
+  it('is true when both are 90 %+ on the same side and under 3 points apart', () => {
+    expect(routesAlike(0.99, 0.99)).toBe(true);
+    expect(routesAlike(0.90, 0.89)).toBe(false); // 89 is below the 90 % floor
+    expect(routesAlike(0.92, 0.90)).toBe(true);
+    expect(routesAlike(0.05, 0.03)).toBe(true);
+  });
+  it('is false at 3 points or more, or away from the extremes', () => {
+    expect(routesAlike(0.91, 0.88)).toBe(false);
+    expect(routesAlike(0.99, 0.95)).toBe(false);
+    expect(routesAlike(0.5, 0.5)).toBe(false);
+    expect(routesAlike(0.95, 0.05)).toBe(false);
   });
 });

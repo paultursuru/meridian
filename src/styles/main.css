@@ -908,7 +908,8 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #panel-toggle { display: none; }
 
 /* ── Single-route note (replaces the tabs when only one unique route exists) ── */
-#single-route-note {
+#single-route-note,
+#similar-routes-note {
   display: none;
   padding: 9px 16px 11px;
   border-bottom: 1.5px solid rgba(240,242,160,0.1);
@@ -916,7 +917,8 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: rgba(216,219,200,0.55);
   text-align: center;
 }
-#single-route-note.on { display: block; }
+#single-route-note.on,
+#similar-routes-note.on { display: block; }
 
 /* ── Eclipse note (2026-08-12 window, Swiss routes only; see sun.js) ── */
 #eclipse-note {
@@ -1416,13 +1418,15 @@ p.opensource-badge {
   #night-note,
   #eclipse-note,
   #grazing-sun-note,
-  #single-route-note { order: 2; }
+  #single-route-note,
+  #similar-routes-note { order: 2; }
   #weather-note { order: 3; }
   #quality-note { order: 4; }
   #night-note,
   #eclipse-note,
   #grazing-sun-note,
   #single-route-note,
+  #similar-routes-note,
   #weather-note,
   #quality-note {
     padding: 11px 16px;

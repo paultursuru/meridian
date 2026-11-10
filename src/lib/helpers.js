@@ -39,3 +39,18 @@ export function fmtDur(s) {
 export function fmtHm(minutes) {
   return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
 }
+
+// The trade-off sentence for one tab. `gain` is the points this route gains on
+// its own axis (sun for the sunny tab, shade for the shady one), `minutes` and
+// `otherMin` the two durations. A gain reads "X shorter / same / longer for Y
+// more"; a loss or a tie keeps the signed-time form.
+export function deltaPhrase(axis, gain, minutes, otherMin, tr) {
+  const diff = minutes - otherMin;
+  const pct = String(Math.abs(gain));
+  if (gain > 0) {
+    const kind = diff < 0 ? 'faster' : diff > 0 ? 'slower' : 'same';
+    return tr(`delta_${axis}_${kind}`, { min: String(Math.abs(diff)), pct });
+  }
+  const sign = diff > 0 ? '+' : diff < 0 ? '−' : '±';
+  return tr(`delta_${axis}_less`, { time: `${sign}${Math.abs(diff)} min`, pct });
+}

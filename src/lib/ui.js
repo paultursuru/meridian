@@ -1,4 +1,5 @@
-import { fmtDist, fmtDur, fmtHm } from './helpers.js';
+import { fmtDist, fmtDur, fmtHm, deltaPhrase } from './helpers.js';
+import { routesAlike } from './shadow.js';
 import { tr } from './i18n.js';
 import { track } from './analytics.js';
 
@@ -137,26 +138,17 @@ export function renderTab(id, rt) {
 // shade math needed. Each tab states what choosing it costs/saves in time
 // against what it gains on its own axis (shade for the shady tab, sun for
 // the sunny one).
-function fmtTimeDelta(deltaMin) {
-  const sign = deltaMin > 0 ? '+' : deltaMin < 0 ? '−' : '±';
-  return `${sign}${Math.abs(deltaMin)} min`;
-}
-
 function renderDeltas(sunny, shady) {
-  const sunnySunPct = Math.round(sunny.sunScore * 100);
-  const shadySunPct = Math.round(shady.sunScore * 100);
-  const pctDelta = sunnySunPct - shadySunPct; // shared by both axes (shade = 100 - sun)
+  const pctDelta = Math.round(sunny.sunScore * 100) - Math.round(shady.sunScore * 100);
   const sunnyMin = Math.round(sunny.duration / 60);
   const shadyMin = Math.round(shady.duration / 60);
 
-  document.getElementById('shady-delta').textContent = tr(
-    pctDelta >= 0 ? 'delta_shady_more' : 'delta_shady_less',
-    { time: fmtTimeDelta(shadyMin - sunnyMin), pct: String(Math.abs(pctDelta)) }
-  );
-  document.getElementById('sunny-delta').textContent = tr(
-    pctDelta >= 0 ? 'delta_sunny_more' : 'delta_sunny_less',
-    { time: fmtTimeDelta(sunnyMin - shadyMin), pct: String(Math.abs(pctDelta)) }
-  );
+  // Each tab speaks for itself: shady gains shade (-pctDelta), sunny gains sun.
+  const write = (id, axis, gain, minutes, otherMin) => {
+    document.getElementById(id).textContent = deltaPhrase(axis, gain, minutes, otherMin, tr);
+  };
+  write('shady-delta', 'shady', -pctDelta, shadyMin, sunnyMin);
+  write('sunny-delta', 'sunny', pctDelta, sunnyMin, shadyMin);
 }
 
 // Folded state of the desktop side panel. One piece of state, written to two
@@ -263,6 +255,8 @@ function toggleDrawer(via) {
 export function showResults(sunny, shady, single = false, night = false, heightFailed = false) {
   document.getElementById('tabs').style.display = single ? 'none' : '';
   document.getElementById('single-route-note').classList.toggle('on', single && !night);
+  document.getElementById('similar-routes-note')
+    .classList.toggle('on', !single && routesAlike(sunny.sunScore, shady.sunScore));
   document.getElementById('night-note').classList.toggle('on', night);
   renderTab('tab-sunny', sunny);
   if (!single) renderTab('tab-shady', shady);
