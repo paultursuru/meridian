@@ -2,6 +2,7 @@ import { fmtDist, fmtDur, fmtHm, deltaPhrase } from './helpers.js';
 import { routesAlike } from './shadow.js';
 import { tr } from './i18n.js';
 import { track } from './analytics.js';
+import { getLang } from './i18n.js';
 
 export function setStatus(msg) {
   const el = document.getElementById('status');
@@ -106,6 +107,7 @@ export function renderTab(id, rt) {
   const prefix = id.replace('tab-', '');
   const g = (suffix) => document.getElementById(`${prefix}-${suffix}`);
 
+  const lang = getLang();
   const sunPct   = Math.round(rt.sunScore * 100);
   const shadePct = 100 - sunPct;
   const shadedM  = Math.round((1 - rt.sunScore) * rt.distance);
@@ -115,10 +117,10 @@ export function renderTab(id, rt) {
   g('sun-pct').textContent     = sunPct + '%';
   g('shade-fill').style.width  = shadePct + '%';
   g('sun-fill').style.width    = sunPct + '%';
-  g('dist').textContent        = fmtDist(rt.distance);
+  g('dist').textContent        = fmtDist(rt.distance, lang);
   g('dur').textContent         = fmtDur(rt.duration);
-  g('shaded-dist').textContent = fmtDist(shadedM);
-  g('sun-dist').textContent    = fmtDist(sunnyM);
+  g('shaded-dist').textContent = fmtDist(shadedM, lang);
+  g('sun-dist').textContent    = fmtDist(sunnyM, lang);
 
   const elevEl   = g('elev');
   const elevStat = g('elev-stat');
