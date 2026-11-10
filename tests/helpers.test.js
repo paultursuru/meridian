@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { haversine, bearing, angleDiff, fmtDist, fmtDur, fmtHm, localDateValue, deltaPhrase } from '../src/lib/helpers.js';
+import { haversine, bearing, angleDiff, fmtDist, fmtDur, fmtHm, localDateValue, deltaPhrase, deltaPhrases } from '../src/lib/helpers.js';
 
 describe('haversine', () => {
   it('returns 0 for identical points', () => {
@@ -114,5 +114,26 @@ describe('deltaPhrase', () => {
   it('keeps the signed-time form for a loss or a tie', () => {
     expect(deltaPhrase('sunny', -3, 10, 15, tr)).toBe('delta_sunny_less|{"time":"−5 min","pct":"3"}');
     expect(deltaPhrase('sunny', 0, 15, 15, tr)).toBe('delta_sunny_less|{"time":"±0 min","pct":"0"}');
+  });
+});
+
+describe('deltaPhrases', () => {
+  const tr = (k, v) => `${k}|${JSON.stringify(v)}`;
+  it('gives each tab the lead of its own route: more sun for one, more shade for the other', () => {
+    // The demo: 71 % sun against 45 % sun, so 55 % shade against 29 %.
+    const sunny = { sunScore: 0.71, duration: 1140 };
+    const shady = { sunScore: 0.45, duration: 1140 };
+    expect(deltaPhrases(sunny, shady, tr)).toEqual({
+      sunny: 'delta_sunny_same|{"min":"0","pct":"26"}',
+      shady: 'delta_shady_same|{"min":"0","pct":"26"}',
+    });
+  });
+  it('states the time against the other route, from each side', () => {
+    const sunny = { sunScore: 0.8, duration: 20 * 60 };
+    const shady = { sunScore: 0.3, duration: 15 * 60 };
+    expect(deltaPhrases(sunny, shady, tr)).toEqual({
+      sunny: 'delta_sunny_slower|{"min":"5","pct":"50"}',
+      shady: 'delta_shady_faster|{"min":"5","pct":"50"}',
+    });
   });
 });
