@@ -27,7 +27,9 @@ jobs:
 
       # Review #1's 5.5 / review #2's §9.1: the one e2e layer, gating deploy
       # the same as the unit tests above.
-      - run: npx playwright install --with-deps chromium
+      # No --with-deps: the runner image already ships Chromium's system libs,
+      # apt only added fonts, and it hangs whenever the Ubuntu mirrors don't resolve.
+      - run: npx playwright install chromium
 
       - run: npm run test:e2e
 
