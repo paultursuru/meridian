@@ -11,6 +11,7 @@ import { field, applyPlace, resetFields } from './fields';
 import { setDepartureNow, closeDepartPopover } from './departure';
 import { hideAppDescription, showOnboardingNote, hideOnboardingButton, type DemoEntry } from './intro';
 import { resetSunInfo } from './sunInfo';
+import { hideFormSummary } from './formSummary';
 import { isAboutOpen, closeAbout } from './aboutDrawer';
 import { handleSearch, setSearchBusy } from './search';
 
@@ -69,6 +70,7 @@ export function resetSearch() {
   setDepartureNow();
   hideResults();
   hideScrubber();
+  hideFormSummary();
   showQualityNote(null);
   setStatus(null);
   // Rather than waiting on the upstreams of a search that no longer counts.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { haversine, bearing, angleDiff, fmtDist, fmtDur, fmtHm, localDateValue, deltaPhrase, deltaPhrases } from '../src/lib/helpers.js';
+import { haversine, bearing, angleDiff, fmtDist, fmtDur, fmtHm, localDateValue, deltaPhrase, deltaPhrases, placeShortName, summaryWhen } from '../src/lib/helpers.js';
 
 describe('haversine', () => {
   it('returns 0 for identical points', () => {
@@ -135,5 +135,33 @@ describe('deltaPhrases', () => {
       sunny: 'delta_sunny_slower|{"min":"5","pct":"50"}',
       shady: 'delta_shady_faster|{"min":"5","pct":"50"}',
     });
+  });
+});
+
+describe('placeShortName', () => {
+  it('keeps what comes before the first comma', () => {
+    expect(placeShortName('Lausanne-Gare, Av. de la Gare, Lausanne')).toBe('Lausanne-Gare');
+    expect(placeShortName('Musée Olympique, Lausanne')).toBe('Musée Olympique');
+    expect(placeShortName('  gare lausanne ')).toBe('gare lausanne');
+  });
+  it('keeps both coordinates of a point picked on the map', () => {
+    expect(placeShortName('46.51970, 6.63230')).toBe('46.51970, 6.63230');
+    expect(placeShortName('-33.86880, 151.20930')).toBe('-33.86880, 151.20930');
+  });
+});
+
+describe('summaryWhen', () => {
+  it('gives the time alone for today', () => {
+    expect(summaryWhen('2026-11-11', '12:14', '2026-11-11', 'fr')).toBe('12:14');
+  });
+  it('adds the day for another date, in the page language', () => {
+    expect(summaryWhen('2026-07-15', '15:00', '2026-11-11', 'fr')).toBe('15 juil., 15:00');
+    expect(summaryWhen('2026-07-15', '15:00', '2026-11-11', 'en')).toBe('Jul 15, 15:00');
+    expect(summaryWhen('2026-07-15', '15:00', '2026-11-11', 'de')).toBe('15. Juli, 15:00');
+  });
+  it('reads the date as a calendar day, not an instant', () => {
+    // No shift to the 14th west of UTC, nor to the 16th east of it.
+    expect(summaryWhen('2026-07-15', '00:30', '2026-11-11', 'fr')).toBe('15 juil., 00:30');
+    expect(summaryWhen('2026-07-15', '23:30', '2026-11-11', 'fr')).toBe('15 juil., 23:30');
   });
 });

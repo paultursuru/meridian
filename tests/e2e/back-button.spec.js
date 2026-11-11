@@ -140,7 +140,14 @@ async function pickSuggestion(page, field, q) {
 // A search at a set time through the "leave later" popover, the one path that
 // fixes the hour: "leave now" would make the scrubber depend on when the suite
 // runs. Resolves once that search is drawn and its URL written.
+// With a result on screen the form is folded into its summary line: open it,
+// as a thumb would.
+async function openForm(page) {
+  if (await page.locator('#form-summary').isVisible()) await page.click('#form-summary');
+}
+
 async function searchAt(page, time, date = DAY) {
+  await openForm(page);
   await page.click('#depart-toggle');
   await page.fill('#inp-date', date);
   await page.fill('#inp-time', time);
@@ -181,6 +188,9 @@ async function expectEmptyApp(page) {
   await expect(page.locator('#quality-note')).not.toHaveClass(/\bon\b/);
   await expect(page.locator('#status')).not.toHaveClass(/\bon\b/);
   await expect(page.locator('#search-btn')).toBeEnabled();
+  // The form is back, open, without its summary line.
+  await expect(page.locator('#form-summary')).toBeHidden();
+  await expect(page.locator('#inp-start')).toBeVisible();
 }
 
 // Every way of filling the fields ends in the same handleSearch, but each is
@@ -458,6 +468,7 @@ test.describe('a search still in flight', () => {
 
     const release = hold(held, 'ors');
     const asked = page.waitForRequest(/\/api\/route/);
+    await openForm(page);
     await page.click('#depart-toggle');
     await page.fill('#inp-time', '16:00');
     await page.click('#depart-confirm');

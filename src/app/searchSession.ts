@@ -18,6 +18,7 @@ import { el, input } from './dom';
 import { state, urlHasSearch } from './state';
 import { updateSunInfo, updateMapWeather } from './sunInfo';
 import { hideOnboardingButton } from './intro';
+import { showFormSummary, updateFormSummary } from './formSummary';
 
 // Cloud cover (%) above which the sunny/shady distinction stops mattering
 const OVERCAST_PCT = 60;
@@ -125,6 +126,13 @@ export function createSearchSession(ctx: SearchContext) {
     el('eclipse-note').classList.toggle('on', eclipse);
     el('grazing-sun-note').classList.toggle('on', !night && !eclipse && isGrazingSun(sunNow.altDeg));
     updateWeatherInfo(atDate);
+    updateFormSummary({
+      start: startQ,
+      end: endQ,
+      date: dateValueInZone(atDate, destTz),
+      time: formatTimeInZone(atDate, destTz),
+      today: dateValueInZone(new Date(), destTz),
+    });
 
     // The sun moves ~11° over a 45-min walk: each segment is scored at its
     // estimated arrival time.
@@ -156,6 +164,9 @@ export function createSearchSession(ctx: SearchContext) {
     state.searchShown = true;
     // The demo button is for the empty app only.
     hideOnboardingButton(true);
+    // Folded before the fit, which frames the route in the room it frees.
+    // Not the demo: its note points at the fields.
+    if (!demo) showFormSummary();
     renderAt(tDate, { fit: true });
     // From the first frame, not once the weather lands.
     if (route && !single) selectRoute(route);

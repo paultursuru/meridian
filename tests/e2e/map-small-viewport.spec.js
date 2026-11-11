@@ -25,8 +25,9 @@ const PARIS_END = '48.8606,2.3376';
 // A small phone in portrait with the soft keyboard open. Firefox for Android
 // (the browser on the Sentry event) resizes the layout viewport when the
 // keyboard opens, so 100vh shrinks and #map measures ~204px — under the 230px
-// the fitBounds call asks for.
-const SQUEEZED = { width: 360, height: 420 };
+// the fitBounds call asks for. The form folds into one line before the fit,
+// which gives the map back ~120px: 320px tall keeps it under the padding.
+const SQUEEZED = { width: 360, height: 320 };
 const ROOMY = { width: 412, height: 915 };
 
 async function mockUpstreams(page, { coordinates, distance = 2200 } = {}) {

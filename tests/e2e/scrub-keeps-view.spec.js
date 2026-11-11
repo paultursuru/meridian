@@ -124,6 +124,8 @@ test('a new search still frames its route', async ({ page }) => {
   await open(page);
   const zoomed = await zoomIn(page);
 
+  // Folded under its summary line once the route is drawn.
+  await page.click('#form-summary');
   await page.click('#depart-toggle');
   await page.fill('#inp-time', '15:00');
   await page.click('#depart-confirm');
