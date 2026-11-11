@@ -90,6 +90,21 @@ test('the empty app offers the demo, above the map attribution', async ({ page }
   expect(b.y + b.height).toBeLessThanOrEqual(a.y);
 });
 
+test('the intro bubble links to the demo too, and says so in the event', async ({ page }) => {
+  await openApp(page);
+  const link = page.locator('#app-description-demo');
+  await expect(link).toBeVisible();
+  // A plain link to the demo before any script, like the corner button.
+  expect(await link.getAttribute('href')).toBe(await page.locator('#onboarding-btn').getAttribute('href'));
+  expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(24);
+
+  await link.click();
+  await expect(page.locator('#results')).toHaveClass(/on/, { timeout: 20_000 });
+  await expect(page.locator('#inp-start')).toHaveValue('Lausanne-Gare');
+  await expect(page.locator('#app-description')).toHaveClass(/hidden/);
+  expect(await events(page, 'onboarding')).toEqual([{ via: 'bubble' }]);
+});
+
 test('a shared link shows results, not the demo button', async ({ page }) => {
   await openApp(page, SHARED_URL);
   await expect(page.locator('#results')).toHaveClass(/on/, { timeout: 20_000 });

@@ -74,6 +74,18 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #app-description-arrow svg { display: block; width: 100%; height: 100%; }
 #app-description-content { flex: 1; min-width: 0; }
 #app-description-content p { margin: 0; white-space: pre-line; }
+#app-description-demo {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 3px 0;
+  min-height: 24px;
+  color: #f0f2a0;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#app-description-demo:hover { color: #e4e698; }
+#app-description-demo:focus-visible { outline: 2px solid #f0f2a0; outline-offset: 2px; border-radius: 3px; }
 #app-description-close {
   position: absolute;
   top: 6px;

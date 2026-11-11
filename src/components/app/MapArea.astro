@@ -20,6 +20,7 @@ const onboardingHref = `${langPath(lang)}?${onboardingQuery({ from: t.onboarding
     <div id="app-description-arrow" set:html={arrowIcon} />
     <div id="app-description-content">
       <p set:html={t.app_description}></p>
+      <a id="app-description-demo" href={onboardingHref}>{t.app_description_demo}<span aria-hidden="true"> →</span></a>
     </div>
     <button id="app-description-close" aria-label={t.aria_close}>×</button>
   </div>
