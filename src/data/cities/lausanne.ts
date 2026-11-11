@@ -24,7 +24,7 @@ export const lausanne: CityPage = {
         { text: 'une rue du centre de Lausanne reçoit en moyenne 1 h 30 de soleil direct', strong: true },
         { text: ', d\'après les hauteurs de bâtiments swisstopo et le relief de la ville. MeridianWay trouve le chemin à pied qui en garde le plus.' },
       ],
-      defaultMode: 'shade',
+      defaultMode: 'sun',
       glance: {
         heading: 'Le soleil à Lausanne le 21 décembre',
         shade: {

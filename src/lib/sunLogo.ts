@@ -1,7 +1,7 @@
 // Geometry of the animated logo on the city pages. The M stands on its
 // baseline; its shadow (the W of the icon) is the same glyph flipped below the
 // baseline, then scaled and sheared by a sun that swings over the letter when
-// the "À l'ombre / Au soleil" toggle flips.
+// the city page's shade/sun toggle flips.
 
 // Bricolage Grotesque Medium "M" at font-size 230, text-anchor middle on
 // x = 200, baseline y = 200. Ink metrics measured once in Chromium: SVG getBBox
