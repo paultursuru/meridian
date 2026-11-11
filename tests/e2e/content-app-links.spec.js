@@ -61,10 +61,10 @@ test('the route link is a filled button in both moods, like the 404 one', async 
   await page.goto('/lausanne/');
   const btn = page.locator('.route-link');
   expect((await btn.boundingBox()).height).toBeGreaterThanOrEqual(44);
-  await expect.poll(() => bg('.route-link')).toBe('rgb(240, 242, 160)');
-  // On the cream page, the toggle's amber rather than a pale yellow.
-  await page.click('.opt-sun');
+  // The page opens on the sun side: on the cream page, the toggle's amber.
   await expect.poll(() => bg('.route-link')).toBe('rgb(179, 125, 0)');
+  await page.click('.opt-shade');
+  await expect.poll(() => bg('.route-link')).toBe('rgb(240, 242, 160)');
 
   await page.goto('/nowhere-at-all/');
   await expect.poll(() => bg('.open-app-btn')).toBe('rgb(240, 242, 160)');
