@@ -1,22 +1,27 @@
 ---
-// Shell for the single-language content pages (city pages, "Comment ça
-// marche ?"): head, a nav back to the app, and the shared footer. The page puts its own structured data in the "head" slot.
+// Shell for every page outside the app: the French-only content pages (city
+// pages, "Comment ça marche ?", 404) and the translated about and privacy
+// pages. Head, a nav back to the app, and the shared footer. A page can put
+// its own structured data in the "head" slot.
 import '../styles/main.css';
 import MarkdownAlternate from '../components/MarkdownAlternate.astro';
-import { translations, langUrl, langPath, type Lang } from '../lib/i18n';
+import { translations, LANGS, langUrl, langPath, type Lang } from '../lib/i18n';
 import Footer from '../components/Footer.astro';
 
 interface Props {
   lang: Lang;
   title: string;
-  description: string;
+  description?: string;
   path: string; // e.g. 'lausanne/'
   bodyClass?: string;
-  // The 404 page: kept out of the index, no canonical or hreflang.
+  // Kept out of the index, with no canonical or hreflang: the 404, privacy.
   noindex?: boolean;
+  // The page exists at `path` in every language: hreflang to each, and a
+  // language switcher in the nav.
+  translated?: boolean;
 }
 
-const { lang, title, description, path, bodyClass = '', noindex = false } = Astro.props;
+const { lang, title, description, path, bodyClass = '', noindex = false, translated = false } = Astro.props;
 const t = translations[lang];
 const url = langUrl(lang, path);
 ---
@@ -31,20 +36,22 @@ const url = langUrl(lang, path);
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
   <meta name="theme-color" content="#0e120a" />
-  <meta name="description" content={description} />
+  {description && <meta name="description" content={description} />}
   {noindex
     ? <meta name="robots" content="noindex" />
     : <>
         <link rel="canonical" href={url} />
         <MarkdownAlternate />
-        <link rel="alternate" hreflang={lang} href={url} />
-        <link rel="alternate" hreflang="x-default" href={url} />
+        {translated
+          ? LANGS.map(l => <link rel="alternate" hreflang={l} href={langUrl(l, path)} />)
+          : <link rel="alternate" hreflang={lang} href={url} />}
+        <link rel="alternate" hreflang="x-default" href={langUrl(translated ? 'fr' : lang, path)} />
       </>}
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="MeridianWay" />
   <meta property="og:url" content={url} />
   <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
+  {description && <meta property="og:description" content={description} />}
   <meta property="og:image" content="https://meridian-way.ch/meridian-way-og-img.jpg" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
@@ -59,6 +66,14 @@ const url = langUrl(lang, path);
 <div class="content-wrap">
   <nav class="content-nav">
     <a class="wordmark" href={langPath(lang)} data-app-link="logo"><span class="meri">Meridian</span><span class="way">Way</span></a>
+    {translated && (
+      <div class="content-lang">
+        {LANGS.map(l => (
+          <a class:list={['lang-link', { active: l === lang }]} href={langPath(l, path)} hreflang={l}
+            aria-current={l === lang ? 'page' : undefined}>{l.toUpperCase()}</a>
+        ))}
+      </div>
+    )}
     <a class="open-app" href={langPath(lang)} data-app-link="nav">{t.about_back.replace('← ', '')}</a>
   </nav>
 
@@ -105,6 +120,20 @@ const url = langUrl(lang, path);
   .content-nav .wordmark .meri { color: var(--logo-m); }
   .content-nav .wordmark .way { color: var(--shadec); font-style: italic; }
   .content-nav .open-app { color: var(--fg); font-size: 0.9rem; }
+  .content-nav { flex-wrap: wrap; gap: 0.75rem 1rem; }
+  .content-lang { display: flex; gap: 0.4rem; margin-left: auto; }
+  .content-lang .lang-link {
+    min-height: 24px;
+    padding: 3px 9px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+  }
+  .content-lang .lang-link.active { background: var(--sunc); border-color: var(--sunc); color: var(--bg); }
+  .content-lang .lang-link:hover:not(.active) { color: var(--fg); border-color: var(--muted); }
   .content-page main h1 { font-size: 2rem; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 0.75rem; }
   .content-page main h2 { font-size: 1.25rem; letter-spacing: -0.3px; margin: 2.5rem 0 1rem; }
   .content-page main p { margin-bottom: 0.9rem; }
@@ -140,6 +169,8 @@ const url = langUrl(lang, path);
   .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @media (max-width: 640px) {
     .content-page main h1 { font-size: 1.6rem; }
+    /* Under the logo and the app link, on a line of its own */
+    .content-lang { order: 3; flex-basis: 100%; margin-left: 0; }
   }
 </style>
 
