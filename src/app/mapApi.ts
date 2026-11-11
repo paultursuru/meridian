@@ -1,6 +1,6 @@
 import { setActiveTab } from '../lib/ui.js';
 import { withRoute } from '../lib/share.js';
-import { TZ_CENTERS } from '../lib/tzCenters.js';
+import { browserInitialView } from '../lib/initialView.js';
 import { urlHasSearch } from './state';
 
 // main.ts loads map.js with a dynamic import so Leaflet + MapLibre keep their
@@ -29,12 +29,11 @@ export function mapFailed(reason: unknown) {
 }
 
 // Where a lookup is anchored when the other field is empty: the map's
-// centre, or, before the map has loaded, the timezone guess it opens on
-// (see initInitialMapCenter).
+// centre, or, before the map has loaded, the guess it opens on.
 export function viewCenter(): { lat: number; lng: number } | null {
   if (mapLoaded()) return map.mapCenter();
-  const guess = TZ_CENTERS[Intl.DateTimeFormat().resolvedOptions().timeZone];
-  return guess ? { lat: guess[0], lng: guess[1] } : null;
+  const guess = browserInitialView();
+  return guess ? { lat: guess.center[0], lng: guess.center[1] } : null;
 }
 
 // Every change of route goes through here, so the link always opens on the
