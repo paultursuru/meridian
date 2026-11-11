@@ -256,6 +256,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   z-index: 999;
   flex-shrink: 0;
 }
+/* Focused by script only, when Back takes away the button that had focus. */
+#search-panel:focus { outline: none; }
+
 /* The folded form (formSummary.ts): the search on screen, start over end
    with the map's pin colours, and the time over "Modifier". A tap opens the
    form again. Phones only, see the mobile block. */

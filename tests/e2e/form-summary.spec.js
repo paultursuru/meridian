@@ -13,9 +13,14 @@ const DESKTOP = { width: 1280, height: 800 };
 
 async function mockUpstreams(page) {
   const line = (lat, lon) => [[6.6323, 46.5197, 400], [lon, lat, 400], [6.64, 46.525, 400]];
-  await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({
+  await page.route('https://nominatim.openstreetmap.org/reverse**', route => route.fulfill({
     json: { display_name: 'Lausanne, Suisse', address: { country_code: 'ch' } },
   }));
+  await page.route('https://nominatim.openstreetmap.org/search**', route => {
+    const q = new URL(route.request().url()).searchParams.get('q') || '';
+    const [lat, lon] = (/ouchy/i.test(q) ? END : START).split(',');
+    return route.fulfill({ json: [{ lat, lon, display_name: q, address: { country_code: 'ch' } }] });
+  });
   await page.route('https://api.open-meteo.com/**', route => route.fulfill({
     json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } },
   }));
@@ -28,6 +33,10 @@ async function mockUpstreams(page) {
   await page.route('**/api/overpass**', route => route.fulfill({ json: { elements: [] } }));
   await page.route('**/api/buildings**', route => route.fulfill({ json: { buildings: [] } }));
   await page.route('https://tiles.stadiamaps.com/**', route => route.fulfill({ json: { version: 8, sources: {}, layers: [] } }));
+  await page.route('https://photon.komoot.io/**', route => route.fulfill({ json: { features: [{
+    geometry: { type: 'Point', coordinates: [6.6264, 46.5076] },
+    properties: { name: 'Ouchy', city: 'Lausanne', countrycode: 'CH', country: 'Suisse' },
+  }] } }));
 }
 
 async function openLink(page, viewport, dt = '2026-07-28T14:00') {
@@ -38,6 +47,21 @@ async function openLink(page, viewport, dt = '2026-07-28T14:00') {
 }
 
 const mapTop = page => page.locator('#map').evaluate(el => el.getBoundingClientRect().top);
+
+// A search typed into the empty app: unlike a shared link, it pushes its own
+// history entry, so Back undoes it in place.
+async function searchFromEmptyApp(page) {
+  await page.setViewportSize(MOBILE);
+  await mockUpstreams(page);
+  await page.goto('/');
+  await page.fill('#inp-start', 'Gare de Lausanne');
+  await page.keyboard.press('Escape');
+  await page.fill('#inp-end', 'Ouchy');
+  await page.keyboard.press('Escape');
+  await page.press('#inp-end', 'Enter');
+  await expect(page.locator('#form-summary')).toBeVisible({ timeout: 20_000 });
+  await expect(page).toHaveURL(/[?&]from=/);
+}
 
 test('a result folds the form into one line, which gives the map the room', async ({ page }) => {
   await page.setViewportSize(MOBILE);
@@ -129,16 +153,66 @@ test('a point picked on the map opens the form, to search again from it', async 
 });
 
 test('Back to the empty app brings the open form back, without the line', async ({ page }) => {
-  await page.setViewportSize(MOBILE);
-  await mockUpstreams(page);
-  await page.goto('/');
-  await page.goto(`${LINK}&dt=2026-07-28T14:00`);
-  await expect(page.locator('#form-summary')).toBeVisible({ timeout: 20_000 });
+  await searchFromEmptyApp(page);
+  // From the opened form too: the arrow goes with the line.
+  await page.click('#form-summary');
 
   await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.locator('#form-summary')).toBeHidden();
   await expect(page.locator('#form-fold')).toBeHidden();
   await expect(page.locator('#inp-start')).toBeVisible();
+});
+
+test('Escape folds the reopened form, once what is open in it has closed', async ({ page }) => {
+  await openLink(page, MOBILE);
+  await page.locator('#form-summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#form-fold')).toBeFocused();
+
+  // The date popover closes first, and gives focus back to its button.
+  await page.locator('#depart-toggle').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#inp-date')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#depart-popover')).not.toHaveClass(/open/);
+  await expect(page.locator('#depart-toggle')).toBeFocused();
+  await expect(page.locator('#inp-start')).toBeVisible();
+
+  // Then a suggestion list.
+  await page.locator('#inp-end').fill('Ouchy');
+  await expect(page.locator('.ac-dropdown:visible .ac-item')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ac-dropdown:visible')).toHaveCount(0);
+  await expect(page.locator('#inp-start')).toBeVisible();
+
+  // Then the form, onto its line.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#inp-start')).toBeHidden();
+  await expect(page.locator('#form-summary')).toBeFocused();
+});
+
+test('Escape leaves the empty app\'s form alone', async ({ page }) => {
+  await page.setViewportSize(MOBILE);
+  await mockUpstreams(page);
+  await page.goto('/');
+  await page.locator('#search-btn').focus();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#inp-start')).toBeVisible();
+  await expect(page.locator('#form-summary')).toBeHidden();
+});
+
+test('Back with focus on the line puts it on the form, not on a field', async ({ page }) => {
+  await searchFromEmptyApp(page);
+  await expect(page.locator('#form-summary')).toBeFocused();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('#inp-start')).toBeVisible();
+  // No field focused, so no keyboard comes up; Tab goes on to the first one.
+  await expect(page.locator('#search-panel')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#inp-start')).toBeFocused();
 });
 
 test('the demo keeps the form open: its note points at the fields', async ({ page }) => {
