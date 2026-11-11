@@ -53,3 +53,19 @@ for (const path of ['/', '/en/', '/de/', '/it/', '/rm/']) {
     await expect(page.locator('#header h1 a')).toHaveAttribute('href', path);
   });
 }
+
+test('the route link is a filled button in both moods, like the 404 one', async ({ page }) => {
+  await stubUpstreams(page);
+  const bg = (sel) => page.locator(sel).evaluate(el => getComputedStyle(el).backgroundColor);
+
+  await page.goto('/lausanne/');
+  const btn = page.locator('.route-link');
+  expect((await btn.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  await expect.poll(() => bg('.route-link')).toBe('rgb(240, 242, 160)');
+  // On the cream page, the toggle's amber rather than a pale yellow.
+  await page.click('.opt-sun');
+  await expect.poll(() => bg('.route-link')).toBe('rgb(179, 125, 0)');
+
+  await page.goto('/nowhere-at-all/');
+  await expect.poll(() => bg('.open-app-btn')).toBe('rgb(240, 242, 160)');
+});
