@@ -335,8 +335,8 @@ export function bottomOverlayPx() {
 }
 
 // How far down into the map the stack under the depart button reaches: the
-// date popover and the demo's note, both open over the demo's results. Every
-// other search closes the popover first, so this is 0 for their fits.
+// demo's note, over the demo's results. Every search closes the date popover
+// first, so outside the demo this is 0 for their fits.
 export function topOverlayPx() {
   const stack = document.getElementById('depart-overlays');
   const map = document.getElementById('map');

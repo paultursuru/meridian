@@ -4,7 +4,7 @@ import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx } from './
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
-import { TZ_CENTERS } from './tzCenters.js';
+import { browserInitialView } from './initialView.js';
 import { track } from './analytics.js';
 import { STADIA_STYLE, FALLBACK_STYLE, RASTER_TILES, RASTER_ATTRIBUTION, refusal, tuneFallback }
   from './basemap.js';
@@ -254,8 +254,7 @@ const OnboardingControl = L.Control.extend({
 // The timezone guess is synchronous, so the first tiles drawn are the ones
 // that stay. Applied after the fact, it cost a whole view's tiles.
 function firstView() {
-  const tz = TZ_CENTERS[Intl.DateTimeFormat().resolvedOptions().timeZone];
-  return tz ? { center: [tz[0], tz[1]], zoom: 10 } : { center: [46.5197, 6.6323], zoom: 14 };
+  return browserInitialView() ?? { center: [46.5197, 6.6323], zoom: 14 };
 }
 
 export function initMap() {

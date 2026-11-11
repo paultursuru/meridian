@@ -9,7 +9,7 @@ import { el, input, button } from './dom';
 import { state, urlHasSearch } from './state';
 import { field, applyPlace, resetFields } from './fields';
 import { setDepartureNow, closeDepartPopover } from './departure';
-import { hideAppDescription, showOnboardingNote, hideOnboardingButton } from './intro';
+import { hideAppDescription, showOnboardingNote, hideOnboardingButton, type DemoEntry } from './intro';
 import { resetSunInfo } from './sunInfo';
 import { isAboutOpen, closeAbout } from './aboutDrawer';
 import { handleSearch, setSearchBusy } from './search';
@@ -42,8 +42,8 @@ export async function restoreFromUrl(): Promise<boolean> {
 
 // Run like a typed search, so Back returns to the empty app. Already Swiss:
 // no reverse geocode.
-export function startOnboarding() {
-  track('onboarding', { via: 'button' });
+export function startOnboarding(via: DemoEntry = 'button') {
+  track('onboarding', { via });
   input('inp-date').value = ONBOARDING.date;
   input('inp-time').value = ONBOARDING.time;
   applyPlace('start', { ...ONBOARDING.start, label: tr('onboarding_from') }, { pan: false });

@@ -93,7 +93,8 @@ function viewboxCorners(url) {
 }
 
 test.describe('anchored on Zurich', () => {
-  test.use({ timezoneId: 'Europe/Zurich' });
+  // In the Swiss timezone the browser's language picks the city: German, Zurich.
+  test.use({ timezoneId: 'Europe/Zurich', locale: 'de-CH' });
 
   test('the typed path carries a viewbox around the map, and lands on the local match', async ({ page }) => {
     const seen = await mockUpstreams(page, {
