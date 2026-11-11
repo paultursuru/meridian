@@ -110,3 +110,24 @@ test('the search event still marks the night search as single', async ({ page })
     () => window.__events.find(([n]) => n === 'search')?.[1],
   )).toMatchObject({ night: true, single: true });
 });
+
+test('the night badge and the button name the same sunrise', async ({ page }) => {
+  await search(page, NIGHT);
+  await expect(page.locator('#night-note')).toHaveClass(/on/, { timeout: 20_000 });
+
+  // At 23:00 the searched day's sunrise is past: both must name the next one.
+  const button = await page.locator('#night-sunrise-btn').textContent();
+  const time = button.match(/\d\d:\d\d/)[0];
+  await expect(page.locator('#map-sun-info-human')).toHaveText(`Nuit · lever ${time}`);
+});
+
+test('just after the official sunrise it is day, all in shade, with the low-sun note', async ({ page }) => {
+  // Official sunrise 06:30 here; at 06:32 the sun's centre is still below 0°.
+  await search(page, '2026-08-13T06:32');
+  await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
+
+  await expect(page.locator('#night-note')).not.toHaveClass(/on/);
+  await expect(page.locator('#grazing-sun-note')).toHaveClass(/on/);
+  await expect(page.locator('#map-sun-info')).toHaveClass(/\bday\b/);
+  await expect(page.locator('#scrubber-min')).toHaveText('lever 06:30');
+});

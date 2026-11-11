@@ -117,7 +117,7 @@ export function createSearchSession(ctx: SearchContext) {
   // render frames the route: later ones keep the user's zoom and pan.
   function renderAt(atDate: Date, { fit = false } = {}) {
     const sunNow = getSun(atDate, midLat, midLng);
-    updateSunInfo(sunNow, sunTimes, destTz, atDate);
+    updateSunInfo(sunNow, { lat: midLat, lng: midLng }, destTz, atDate);
     // Swiss routes only. Wins over the grazing-sun note: both say "trust
     // this less", the eclipse says why.
     const eclipse = switzerland && !night

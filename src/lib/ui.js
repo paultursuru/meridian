@@ -260,7 +260,7 @@ function toggleDrawer(via) {
 // single = only one unique route survived dedup: hide the sunny/shady tabs
 // (they would show the same route twice), show an honest note instead, and
 // render the route's stats — sun/shade split included — in the sunny pane.
-// night = sun below the horizon: also single (shortest route), but with a
+// night = before sunrise or after sunset (sun.js#isNight): also single (shortest route), but with a
 // night note and without the meaningless sun/shade ratio rows (via CSS on
 // the .night class).
 // heightFailed = the buildings fetch threw (review #2 §1.1): dims the ratio

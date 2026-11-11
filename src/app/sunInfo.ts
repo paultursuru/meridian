@@ -1,4 +1,4 @@
-import { compassDir } from '../lib/sun.js';
+import { compassDir, getSunTimes, isNight, nextSunriseAfter } from '../lib/sun.js';
 import { formatTimeInZone } from '../lib/timezone.js';
 import { tr, type TranslationKey } from '../lib/i18n.js';
 import { el, button } from './dom';
@@ -14,15 +14,26 @@ export function initSunInfo() {
   });
 }
 
-export function updateSunInfo(sun: { azDeg: number; altDeg: number }, times: { sunrise: Date; sunset: Date }, timeZone: string, atDate: Date) {
+export function updateSunInfo(
+  sun: { azDeg: number; altDeg: number },
+  where: { lat: number; lng: number },
+  timeZone: string,
+  atDate: Date,
+) {
+  const night = isNight(atDate, where.lat, where.lng);
   const badge = el('map-sun-info');
-  badge.classList.toggle('day',   sun.altDeg > 0);
-  badge.classList.toggle('night', sun.altDeg <= 0);
+  badge.classList.toggle('day',   !night);
+  badge.classList.toggle('night', night);
   badge.classList.add('on');
 
-  const human = sun.altDeg <= 0
-    ? tr('night_position', { time: formatTimeInZone(times.sunrise, timeZone) })
-    : tr('sun_position', { dir: tr(('dir_' + compassDir(sun.azDeg)) as TranslationKey), time: formatTimeInZone(times.sunset, timeZone) });
+  // At night, the sunrise the night note's button jumps to: by evening the
+  // searched day's own sunrise is already past.
+  const human = night
+    ? tr('night_position', { time: formatTimeInZone(nextSunriseAfter(atDate, where.lat, where.lng), timeZone) })
+    : tr('sun_position', {
+      dir: tr(('dir_' + compassDir(sun.azDeg)) as TranslationKey),
+      time: formatTimeInZone(getSunTimes(atDate, where.lat, where.lng).sunset, timeZone),
+    });
   const technical = tr('status_sun', { alt: sun.altDeg.toFixed(1), az: sun.azDeg.toFixed(0) });
   // Built per call: the destination's zone can only go in the constructor.
   // No year: every date shown is within the searched day.

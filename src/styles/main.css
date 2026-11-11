@@ -948,7 +948,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #eclipse-note.on { display: block; }
 
-/* ── Grazing-sun note (sun up but under GRAZING_SUN_DEG) ── */
+/* ── Grazing-sun note (day, sun under GRAZING_SUN_DEG) ── */
 #grazing-sun-note {
   display: none;
   padding: 9px 16px 11px;
