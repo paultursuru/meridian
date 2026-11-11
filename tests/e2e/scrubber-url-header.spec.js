@@ -91,3 +91,23 @@ test('the rail shows its sunrise and sunset bounds at both ends', async ({ page 
   expect(lo.y).toBeGreaterThanOrEqual(track.y + track.height - 1);
   expect(lo.x + lo.width).toBeLessThan(hi.x);
 });
+
+test('scrubbing fills the departure popover, and searching from it keeps the scrubbed time', async ({ page }) => {
+  await mockUpstreams(page);
+  await page.goto(SEARCH_URL);
+  await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
+
+  await page.locator('#scrubber-range').evaluate(el => {
+    el.value = '1050'; // 17:30
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  await page.locator('#depart-toggle').click();
+  await expect(page.locator('#inp-date')).toHaveValue('2026-07-28');
+  await expect(page.locator('#inp-time')).toHaveValue('17:30');
+
+  await page.locator('#depart-confirm').click();
+  await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
+  await expect(page.locator('#scrubber-time')).toHaveText('17:30');
+  await expect(page).toHaveURL(/dt=2026-07-28T17%3A30/);
+});

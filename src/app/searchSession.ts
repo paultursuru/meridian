@@ -14,7 +14,7 @@ import { fmtHm } from '../lib/helpers.js';
 import { tr } from '../lib/i18n.js';
 import { track } from '../lib/analytics.js';
 import { map, selectRoute, reselectActiveRoute, activeRoute } from './mapApi';
-import { el } from './dom';
+import { el, input } from './dom';
 import { state, urlHasSearch } from './state';
 import { updateSunInfo, updateMapWeather } from './sunInfo';
 import { hideOnboardingButton } from './intro';
@@ -213,6 +213,10 @@ export function createSearchSession(ctx: SearchContext) {
       }
       // So the vegetation pass re-renders where the user scrubbed to.
       currentInstant = new Date(tDate.getTime() + (minutes - initialMinutes) * 60_000);
+      // The departure popover shows the instant on screen, and searching
+      // from it again keeps that instant.
+      input('inp-date').value = dateValueInZone(currentInstant, destTz);
+      input('inp-time').value = formatTimeInZone(currentInstant, destTz);
       renderAt(currentInstant);
       setScrubberLabel(fmtHm(minutes));
       reselectActiveRoute();
