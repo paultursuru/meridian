@@ -197,6 +197,21 @@ describe('suggest (Photon autocomplete)', () => {
     ]);
   });
 
+  it('drops a suggestion that reads the same as a better-ranked one', async () => {
+    // What Photon returns for "Lausanne-Gare": the bus stop, then its platform.
+    const stop = (lng, lat, city = 'Lausanne') => ({
+      geometry: { coordinates: [lng, lat] },
+      properties: { name: 'Lausanne-Gare', street: 'Avenue de la Gare', city, countrycode: 'CH' },
+    });
+    mockFeatures([stop(6.63144, 46.51718), stop(6.63131, 46.51711), stop(6.6, 46.5, 'Renens')]);
+    const places = await suggest('Lausanne-Gare');
+    expect(places.map(p => `${p.line1} / ${p.line2}`)).toEqual([
+      'Lausanne-Gare, Av. de la Gare / Lausanne',
+      'Lausanne-Gare, Av. de la Gare / Renens',
+    ]);
+    expect(places[0].lng).toBe(6.63144);
+  });
+
   it('leaves non-Swiss suggestions in "number street" style', async () => {
     mockFeatures([{
       geometry: { coordinates: [2.29, 48.85] },

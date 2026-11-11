@@ -178,6 +178,18 @@ export async function reverseGeocode(lat, lng) {
   return { short, countryCode: d.address?.country_code };
 }
 
+// Two OSM objects for one place, such as a bus stop and its platform, read
+// the same in the dropdown: keep the first, Photon's better-ranked one.
+function dedupeSuggestions(places) {
+  const seen = new Set();
+  return places.filter(p => {
+    const key = `${p.line1}\n${p.line2}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 // Returns up to 5 suggestions for the autocomplete dropdown.
 // Uses Photon (komoot.io) which is built for autocomplete — unlike Nominatim which forbids it.
 // near: optional { lat, lng } to bias results by proximity (no hard filter).
@@ -188,7 +200,7 @@ export async function suggest(q, { near } = {}) {
   try {
     const r = await fetch(url);
     const d = await r.json();
-    return (d.features || []).map(formatPhotonFeature);
+    return dedupeSuggestions((d.features || []).map(formatPhotonFeature));
   } catch {
     return [];
   }
