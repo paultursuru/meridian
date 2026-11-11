@@ -1,0 +1,66 @@
+---
+// The one footer: the app's about drawer, the about and privacy pages, and
+// the content pages. Human pages first; llms.txt sits apart, below them.
+import { translations, langPath, type Lang } from '../lib/i18n';
+import { cityLinks } from '../data/cities/links';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = translations[lang];
+
+const links = [
+  { href: langPath(lang, 'about'), label: t.aria_about },
+  { href: langPath(lang, 'privacy'), label: t.about_privacy },
+  // These pages exist in French only.
+  ...(lang === 'fr' ? [{ href: '/comment-ca-marche/', label: 'Comment ça marche ?' }, ...cityLinks] : []),
+];
+
+// The page you're on is named, not linked to itself.
+const bare = (path: string) => path.replace(/\/+$/, '') || '/';
+const here = bare(Astro.url.pathname);
+---
+<footer class="site-footer">
+  <ul>
+    {links.map(l => (
+      <li>{bare(l.href) === here
+        ? <span aria-current="page">{l.label}</span>
+        : <a href={l.href}>{l.label}</a>}</li>
+    ))}
+  </ul>
+  <p class="site-footer-machine"><a href="/llms.txt">llms.txt</a></p>
+</footer>
+
+<style>
+  /* Spacing between items, no separator characters: a dash written between
+     links ended up alone at the end of a line on a phone. Each label wraps
+     whole. --muted and --fg come from the content pages, with the app's
+     colours as the fallback. */
+  .site-footer {
+    font-size: 0.85rem;
+    color: var(--muted, rgba(216,219,200,0.62));
+  }
+  .site-footer ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .site-footer li { margin: 0; white-space: nowrap; }
+  .site-footer a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: currentColor;
+    text-underline-offset: 3px;
+  }
+  .site-footer a:hover { color: var(--fg, #d8dbc8); }
+  .site-footer [aria-current="page"] { color: var(--fg, #d8dbc8); }
+  .site-footer-machine { margin: 0.6rem 0 0; font-size: 0.75rem; }
+  @media (hover: none) {
+    .site-footer a:active { opacity: 0.6; }
+  }
+</style>

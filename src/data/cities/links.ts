@@ -1,4 +1,4 @@
-// Links to the city pages from the French footers and the app's about drawer.
+// Links to the city pages from the French footer (Footer.astro).
 // The label follows the page's `season`, so switching it updates every link.
 import { lausanne } from './lausanne';
 import type { Season } from './types';

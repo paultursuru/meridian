@@ -1353,22 +1353,16 @@ p.opensource-badge {
   border-top: 1px solid rgba(240,242,160,0.1);
 }
 
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 24px;
+#about-footer {
+  padding: 12px 20px 16px;
+  border-top: 1px solid rgba(240,242,160,0.1);
 }
-.footer-link {
-  color: rgba(216,219,200,0.6);
-  text-decoration: none;
-  font-size: 0.82rem;
-  /* Long labels (Romansh) wrap as whole links, not mid-label. */
-  white-space: nowrap;
+/* Under the about, privacy and content pages (Footer.astro) */
+.page-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line, rgba(240,242,160,0.13));
 }
-.footer-link:hover { color: #f0f2a0; }
 
 /* ── Mobile ── */
 @media (max-width: 600px) {
@@ -1417,8 +1411,7 @@ p.opensource-badge {
 @media (hover: none) {
   button:active,
   .lang-btn:active,
-  .about-link:active,
-  .footer-link:active { opacity: 0.6; }
+  .about-link:active { opacity: 0.6; }
 }
 
 /* ── Desktop: the results dock as a side panel ── */
