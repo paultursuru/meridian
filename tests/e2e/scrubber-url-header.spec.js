@@ -70,3 +70,44 @@ test('scrubbing updates the sun-info readout and the share URL, not just the map
   await expect(page).toHaveURL(new RegExp(`dt=2026-07-28T${hh}%3A${mm}`));
   expect(page.url()).not.toBe(urlBefore);
 });
+
+test('the rail shows its sunrise and sunset bounds at both ends', async ({ page }) => {
+  await mockUpstreams(page);
+  await page.goto(SEARCH_URL);
+  await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
+
+  const range = page.locator('#scrubber-range');
+  const hm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  const min = Number(await range.getAttribute('min'));
+  const max = Number(await range.getAttribute('max'));
+  await expect(page.locator('#scrubber-min')).toHaveText(`sunrise ${hm(min)}`);
+  await expect(page.locator('#scrubber-max')).toHaveText(`sunset ${hm(max)}`);
+  // Read with the slider, so a screen reader hears the range it spans.
+  await expect(range).toHaveAttribute('aria-describedby', 'scrubber-bounds');
+
+  // Under the rail, the earlier time on the left.
+  const box = (sel) => page.locator(sel).boundingBox();
+  const [track, lo, hi] = await Promise.all([box('#scrubber-track'), box('#scrubber-min'), box('#scrubber-max')]);
+  expect(lo.y).toBeGreaterThanOrEqual(track.y + track.height - 1);
+  expect(lo.x + lo.width).toBeLessThan(hi.x);
+});
+
+test('scrubbing fills the departure popover, and searching from it keeps the scrubbed time', async ({ page }) => {
+  await mockUpstreams(page);
+  await page.goto(SEARCH_URL);
+  await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
+
+  await page.locator('#scrubber-range').evaluate(el => {
+    el.value = '1050'; // 17:30
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  await page.locator('#depart-toggle').click();
+  await expect(page.locator('#inp-date')).toHaveValue('2026-07-28');
+  await expect(page.locator('#inp-time')).toHaveValue('17:30');
+
+  await page.locator('#depart-confirm').click();
+  await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
+  await expect(page.locator('#scrubber-time')).toHaveText('17:30');
+  await expect(page).toHaveURL(/dt=2026-07-28T17%3A30/);
+});

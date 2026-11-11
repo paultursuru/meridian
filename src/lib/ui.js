@@ -260,7 +260,7 @@ function toggleDrawer(via) {
 // single = only one unique route survived dedup: hide the sunny/shady tabs
 // (they would show the same route twice), show an honest note instead, and
 // render the route's stats — sun/shade split included — in the sunny pane.
-// night = sun below the horizon: also single (shortest route), but with a
+// night = before sunrise or after sunset (sun.js#isNight): also single (shortest route), but with a
 // night note and without the meaningless sun/shade ratio rows (via CSS on
 // the .night class).
 // heightFailed = the buildings fetch threw (review #2 §1.1): dims the ratio
@@ -519,6 +519,8 @@ export function showScrubber(bounds, onScrub) {
   range.min   = String(bounds.min);
   range.max   = String(bounds.max);
   range.value = String(bounds.value);
+  document.getElementById('scrubber-min').textContent = tr('scrubber_sunrise', { time: fmtHm(bounds.min) });
+  document.getElementById('scrubber-max').textContent = tr('scrubber_sunset', { time: fmtHm(bounds.max) });
   setScrubberLabel(bounds.label);
   setScrubberMark(bounds);
   document.getElementById('time-scrubber').classList.add('on');

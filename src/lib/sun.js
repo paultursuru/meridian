@@ -15,23 +15,31 @@ export function getSunTimes(date, lat, lng) {
   return { sunrise, sunset };
 }
 
-// The next sunrise after `date`, on a whole minute with the sun above the
-// horizon: where the night note's button jumps to.
+// The app reads and writes whole minutes: the minute that holds the official
+// sunrise or sunset counts as day, and shows as that minute.
+const floorMinute = (date) => new Date(Math.floor(date.getTime() / 60_000) * 60_000);
+
+// Night is before the official sunrise or after the official sunset, the
+// times weather apps publish (SunCalc: upper limb at -0.833°). Just after
+// sunrise the sun's centre is still below 0°: day, with every street in shade.
+export function isNight(date, lat, lng) {
+  // SunCalc anchors to the nearest solar transit, so these are the sunrise
+  // and sunset around `date`, whichever side of midnight it falls.
+  const { sunrise, sunset } = getSunTimes(date, lat, lng);
+  // Polar night or day: no sunrise to compare with.
+  if (isNaN(sunrise) || isNaN(sunset)) return getSun(date, lat, lng).altDeg <= 0;
+  const t = floorMinute(date);
+  return t < floorMinute(sunrise) || t > floorMinute(sunset);
+}
+
+// The next official sunrise after `date`, on its minute: the first minute
+// isNight calls day, where the night note's button jumps to.
 export function nextSunriseAfter(date, lat, lng) {
-  // SunCalc anchors to the nearest solar transit: a 23:00 search gets that
-  // morning's sunrise back, so roll to the next day.
-  const { sunrise } = getSunTimes(date, lat, lng);
-  let next = sunrise > date
+  // A 23:00 search gets that morning's sunrise back: roll to the next day.
+  const sunrise = floorMinute(getSunTimes(date, lat, lng).sunrise);
+  return sunrise > date
     ? sunrise
-    : getSunTimes(new Date(date.getTime() + 86_400_000), lat, lng).sunrise;
-  // SunCalc's sunrise is the upper limb at -0.833°, still night by our
-  // altitude check: step a minute at a time (capped for polar cases).
-  for (let i = 0; i < 60 && getSun(next, lat, lng).altDeg <= 0; i++) {
-    next = new Date(next.getTime() + 60_000);
-  }
-  // The time input holds whole minutes and formatTimeInZone floors: round up,
-  // later is still daylight.
-  return new Date(Math.ceil(next.getTime() / 60_000) * 60_000);
+    : floorMinute(getSunTimes(new Date(date.getTime() + 86_400_000), lat, lng).sunrise);
 }
 
 // Below this altitude the sun is grazing and the shade model stops being
@@ -52,11 +60,11 @@ export function nextSunriseAfter(date, lat, lng) {
 // See miscs/bienalombre-teardown-onepager.md and the review's section 7.3.
 export const GRAZING_SUN_DEG = 5;
 
-// True while the sun is up but too low for the buildings-only model to be
-// relied on. False at night (altDeg <= 0), which already has its own note and
-// its own explanation.
+// True while the sun is too low for the buildings-only model to be relied on.
+// Callers rule out night first (isNight), which has its own note. Below 0° is
+// grazing too: the first minutes after the official sunrise, all in shade.
 export function isGrazingSun(altDeg) {
-  return altDeg > 0 && altDeg < GRAZING_SUN_DEG;
+  return altDeg < GRAZING_SUN_DEG;
 }
 
 // Partial solar eclipse of 2026-08-12, seen from Switzerland in the last hour

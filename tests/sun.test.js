@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import SunCalc from 'suncalc';
-import { getSun, nextSunriseAfter, makeSunSampler, isGrazingSun, GRAZING_SUN_DEG, isEclipseWindow, ECLIPSE_2026 } from '../src/lib/sun.js';
+import { getSun, isNight, nextSunriseAfter, makeSunSampler, isGrazingSun, GRAZING_SUN_DEG, isEclipseWindow, ECLIPSE_2026 } from '../src/lib/sun.js';
 
 // Lausanne — a fixed location for deterministic results.
 const LAT = 46.52, LNG = 6.63;
@@ -44,23 +44,44 @@ describe('nextSunriseAfter', () => {
     expect(sunrise.toISOString().slice(0, 10)).toBe('2026-06-21');
   });
 
-  it('lands on a whole minute with the sun up, a few minutes after SunCalc', () => {
+  it('lands on the minute of the official sunrise, the first one that is day', () => {
     const night = new Date('2026-03-10T01:00:00Z');
     const sunrise = nextSunriseAfter(night, LAT, LNG);
-    const minutesAfter = (sunrise - SunCalc.getTimes(sunrise, LAT, LNG).sunrise) / 60_000;
+    const official = SunCalc.getTimes(sunrise, LAT, LNG).sunrise;
     expect(sunrise.getTime() % 60_000).toBe(0);
-    expect(getSun(sunrise, LAT, LNG).altDeg).toBeGreaterThan(0);
-    expect(minutesAfter).toBeGreaterThan(0);
-    expect(minutesAfter).toBeLessThan(10);
+    expect(official - sunrise).toBeGreaterThanOrEqual(0);
+    expect(official - sunrise).toBeLessThan(60_000);
+    expect(isNight(sunrise, LAT, LNG)).toBe(false);
+    expect(isNight(new Date(sunrise.getTime() - 60_000), LAT, LNG)).toBe(true);
+  });
+});
+
+describe('isNight', () => {
+  // 2026-11-10 in Lausanne: official sunrise 07:29:03, sunset 17:08:23 (CET).
+  const at = (hm) => new Date(`2026-11-10T${hm}:00+01:00`);
+
+  it('is night before the official sunrise and after the official sunset', () => {
+    expect(isNight(at('04:00'), LAT, LNG)).toBe(true);
+    expect(isNight(at('07:28'), LAT, LNG)).toBe(true);
+    expect(isNight(at('17:09'), LAT, LNG)).toBe(true);
+    expect(isNight(at('23:00'), LAT, LNG)).toBe(true);
   });
 
-  it('gives up an hour after SunCalc when the sun barely clears the horizon', () => {
-    // Tromsø, first sunrise after the polar night: the centre never reaches 0°.
-    const [lat, lng] = [69.65, 18.96];
-    const date = new Date('2026-01-15T00:00:00Z');
-    const sunrise = nextSunriseAfter(date, lat, lng);
-    expect((sunrise - SunCalc.getTimes(date, lat, lng).sunrise) / 60_000).toBeLessThanOrEqual(61);
-    expect(getSun(sunrise, lat, lng).altDeg).toBeLessThanOrEqual(0);
+  it('counts the minutes of the official sunrise and sunset as day', () => {
+    expect(isNight(at('07:29'), LAT, LNG)).toBe(false);
+    expect(isNight(at('12:00'), LAT, LNG)).toBe(false);
+    expect(isNight(at('17:08'), LAT, LNG)).toBe(false);
+  });
+
+  it('is day while the sun has risen but its centre is still below the horizon', () => {
+    expect(getSun(at('07:31'), LAT, LNG).altDeg).toBeLessThan(0);
+    expect(isNight(at('07:31'), LAT, LNG)).toBe(false);
+  });
+
+  it('falls back to the altitude in the polar night and the polar day', () => {
+    const [lat, lng] = [69.65, 18.96]; // Tromsø
+    expect(isNight(new Date('2026-12-21T11:00:00Z'), lat, lng)).toBe(true);
+    expect(isNight(new Date('2026-06-21T23:00:00Z'), lat, lng)).toBe(false);
   });
 });
 
@@ -86,10 +107,9 @@ describe('makeSunSampler', () => {
 });
 
 describe('isGrazingSun (review 7.3)', () => {
-  it('is false at night, where the night note already explains things', () => {
-    expect(isGrazingSun(-0.1)).toBe(false);
-    expect(isGrazingSun(-20)).toBe(false);
-    expect(isGrazingSun(0)).toBe(false);
+  it('is true just below the horizon: the first minutes after the official sunrise', () => {
+    expect(isGrazingSun(-0.6)).toBe(true);
+    expect(isGrazingSun(0)).toBe(true);
   });
 
   it('is true while the sun is up but under the threshold', () => {

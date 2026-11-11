@@ -818,11 +818,28 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: #f0f2a0;
   min-width: 40px;
   text-align: center;
+  /* The bounds row's height: centres the time on the track, not on track + bounds. */
+  margin-bottom: calc(0.75rem * 1.2);
+}
+#scrubber-rail {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 #scrubber-track {
   position: relative;
-  flex: 1;
   display: flex;
+}
+/* The rail runs from sunrise to sunset: say so at both ends. */
+#scrubber-bounds {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: rgba(216,219,200,0.6);
 }
 #scrubber-range {
   flex: 1;
@@ -931,7 +948,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #eclipse-note.on { display: block; }
 
-/* ── Grazing-sun note (sun up but under GRAZING_SUN_DEG) ── */
+/* ── Grazing-sun note (day, sun under GRAZING_SUN_DEG) ── */
 #grazing-sun-note {
   display: none;
   padding: 9px 16px 11px;

@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/astro';
-import { getSun, nextSunriseAfter } from '../lib/sun.js';
+import { getSun, isNight, nextSunriseAfter } from '../lib/sun.js';
 import { geocode } from '../lib/geocode.js';
 import { buildRoutes } from '../lib/routing.js';
 import { routesBbox, fetchBuildings } from '../lib/buildings.js';
@@ -146,7 +146,7 @@ export async function handleSearch(
 
     const sun = getSun(tDate, midLat, midLng);
     // Night: no weather, no shadows, just the shortest route.
-    const night = sun.altDeg <= 0;
+    const night = isNight(tDate, midLat, midLng);
     // Started now, awaited late. The whole day, hourly, so the scrubber can
     // re-sample it. Null beyond the forecast horizon or on error.
     const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
