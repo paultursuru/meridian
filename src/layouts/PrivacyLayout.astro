@@ -1,16 +1,15 @@
 ---
-import '../styles/main.css';
-import MarkdownAlternate from '../components/MarkdownAlternate.astro';
-import { LANGS, langUrl, type Lang } from '../lib/i18n';
+// The privacy page, in each language, on the same shell as the content pages.
+// Kept out of the index on purpose.
+import ContentLayout from './ContentLayout.astro';
 import PrivacyContent from '../components/PrivacyContent.astro';
-import Footer from '../components/Footer.astro';
+import type { Lang } from '../lib/i18n';
 
 interface Props {
   lang: Lang;
 }
 
 const { lang } = Astro.props;
-const pageUrl = (l: Lang) => langUrl(l, 'privacy/');
 
 const titles: Record<Lang, string> = {
   fr: 'Confidentialité — MeridianWay',
@@ -19,122 +18,13 @@ const titles: Record<Lang, string> = {
   en: 'Privacy — MeridianWay',
   rm: 'Protecziun da datas — MeridianWay',
 };
-
-const backLabels: Record<Lang, string> = {
-  fr: '← Ouvrir l\'application',
-  de: '← Anwendung öffnen',
-  it: '← Apri l\'applicazione',
-  en: '← Open the app',
-  rm: '← Avri l’app',
-};
-
 ---
-<!DOCTYPE html>
-<html lang={lang}>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{titles[lang]}</title>
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/site.webmanifest" />
-  <meta name="theme-color" content="#0e120a" />
-  <meta name="robots" content="noindex" />
-  <link rel="canonical" href={pageUrl(lang)} />
-  <MarkdownAlternate />
-  {LANGS.map(l => <link rel="alternate" hreflang={l} href={pageUrl(l)} />)}
-  <link rel="alternate" hreflang="x-default" href={pageUrl('fr')} />
-  <script is:inline defer src="https://cloud.umami.is/script.js" data-website-id="3ed0ad98-8924-4e14-aa5b-6afe5d3dc7ac" data-domains="meridian-way.ch" data-auto-pageview="false" data-performance="false" data-before-send="umamiBeforeSend"></script>
-</head>
-<body class="privacy-page">
+<ContentLayout lang={lang} title={titles[lang]} path="privacy/" noindex translated bodyClass="privacy-page">
+  <PrivacyContent lang={lang} />
+</ContentLayout>
 
-<div id="about-page-wrap">
-  <nav id="about-page-nav">
-    <a href={langUrl(lang)} class="back-link">{backLabels[lang]}</a>
-    <div id="about-page-lang">
-      {LANGS.map(l => (
-        <a class:list={['lang-link', { active: lang === l }]} href={pageUrl(l)}>{l.toUpperCase()}</a>
-      ))}
-    </div>
-  </nav>
-
-  <main id="about-page-content">
-    <PrivacyContent lang={lang} />
-  </main>
-
-  <div class="page-footer">
-    <Footer lang={lang} />
-  </div>
-</div>
-
-<style>
-  body.privacy-page {
-    background: #0e120a;
-    color: #d8dbc8;
-    min-height: 100vh;
-    height: max-content;
-    display: flex;
-    justify-content: center;
-    padding: 2rem 1rem;
-    overflow: auto;
-  }
-  #about-page-wrap {
-    width: 100%;
-    max-width: 680px;
-  }
-  #about-page-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(240,242,160,0.13);
-  }
-  .back-link {
-    color: #f0f2a0;
-    text-decoration: none;
-    font-size: 0.9rem;
-  }
-  .back-link:hover { text-decoration: underline; }
-  #about-page-lang {
-    display: flex;
-    gap: 0.5rem;
-  }
-  .lang-link {
-    color: rgba(216,219,200,0.6);
-    text-decoration: none;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border: 1.5px solid rgba(240,242,160,0.2);
-    border-radius: 6px;
-    transition: all 0.15s;
-  }
-  .lang-link.active { background: #f0f2a0; border-color: #f0f2a0; color: #0e120a; }
-  .lang-link:hover:not(.active) { border-color: rgba(240,242,160,0.5); color: #f0f2a0; }
-  #about-page-links {
-    display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(240,242,160,0.13);
-  }
-  .about-link {
-    color: rgba(216,219,200,0.6);
-    text-decoration: none;
-    font-size: 0.82rem;
-  }
-  .about-link:hover { color: #f0f2a0; }
-</style>
-
-<!-- Bundle par Astro (pas is:inline) : la CSP interdit les scripts inline. -->
+<!-- Bundled by Astro (not is:inline): the CSP forbids inline scripts. -->
 <script>
-  import { trackPageview } from '../lib/analytics.js';
   import { initAnalyticsOptOut } from '../lib/analyticsOptOut.js';
   initAnalyticsOptOut();
-  trackPageview();
 </script>
-
-</body>
-</html>

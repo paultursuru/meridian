@@ -32,7 +32,7 @@ const { lang } = Astro.props;
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Adresse saisie ; coordonnées GPS si vous utilisez la géolocalisation</td><td>Géocodage et géocodage inverse</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Point central de l'itinéraire</td><td>Météo : nébulosité et température</td></tr>
         <tr><td><strong>Relais MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordonnées de départ et d'arrivée ; zone de l'itinéraire</td><td>Relais vers OpenRouteService et Overpass, hauteurs des bâtiments suisses ; réponses gardées en cache 7 à 30 jours, sans lien avec qui les a demandées</td></tr>
-        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, via le relais</span></td><td>Coordonnées de départ et d'arrivée</td><td>Calcul des itinéraires</td></tr>
+        <tr><td><strong>OpenRoute<wbr />Service</strong><br /><span class="svc">HeiGIT, DE, via le relais</span></td><td>Coordonnées de départ et d'arrivée</td><td>Calcul des itinéraires</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">serveurs OSM, via le relais</span></td><td>Zone géographique de l'itinéraire</td><td>Données bâtiments et arbres</td></tr>
         <tr><td><strong>Umami</strong></td><td>Adresse de la page, site de provenance, localisation approximative (pays, région) déduite de l'adresse IP, qui n'est pas conservée ; navigateur, système, taille d'écran, langue ; actions dans l'app (recherche lancée, partage…). Sans cookie</td><td>Statistiques d'utilisation agrégées, dont les zones où des itinéraires sont recherchés ; désactivables (voir plus bas)</td></tr>
         <tr><td><strong>Sentry</strong><br /><span class="svc">serveurs EU, Allemagne</span></td><td>Erreurs techniques, adresse de la page sans ses paramètres, type de navigateur ; sans données d'identité</td><td>Détection et correction de bugs</td></tr>
@@ -87,7 +87,7 @@ const { lang } = Astro.props;
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Eingegebene Adresse; GPS-Koordinaten, wenn Sie die Standortbestimmung nutzen</td><td>Geo- und Reverse-Geocoding</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Mittelpunkt der Route</td><td>Wetter: Bewölkung und Temperatur</td></tr>
         <tr><td><strong>MeridianWay-Relais</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Start- und Zielkoordinaten; Bereich der Route</td><td>Weiterleitung an OpenRouteService und Overpass, Schweizer Gebäudehöhen; Antworten werden 7 bis 30 Tage zwischengespeichert, ohne Bezug zur anfragenden Person</td></tr>
-        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, über das Relais</span></td><td>Start- und Zielkoordinaten</td><td>Routenberechnung</td></tr>
+        <tr><td><strong>OpenRoute<wbr />Service</strong><br /><span class="svc">HeiGIT, DE, über das Relais</span></td><td>Start- und Zielkoordinaten</td><td>Routenberechnung</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">OSM-Server, über das Relais</span></td><td>Geografischer Bereich der Route</td><td>Gebäude- und Baumdaten</td></tr>
         <tr><td><strong>Umami</strong></td><td>Seitenadresse, verweisende Website, ungefährer Standort (Land, Region) aus der IP-Adresse, die nicht gespeichert wird; Browser, System, Bildschirmgrösse, Sprache; Aktionen in der App (Suche gestartet, Teilen …). Ohne Cookies</td><td>Aggregierte Nutzungsstatistiken, auch zu den Gebieten, in denen Routen gesucht werden; abschaltbar (siehe unten)</td></tr>
         <tr><td><strong>Sentry</strong><br /><span class="svc">EU-Server, Deutschland</span></td><td>Technische Fehler, Seitenadresse ohne Parameter, Browsertyp; ohne Identitätsdaten</td><td>Fehlererkennung und -behebung</td></tr>
@@ -142,7 +142,7 @@ const { lang } = Astro.props;
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Indirizzo inserito; coordinate GPS se usi la geolocalizzazione</td><td>Geocodifica e geocodifica inversa</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Punto centrale dell'itinerario</td><td>Meteo: nuvolosità e temperatura</td></tr>
         <tr><td><strong>Relay MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordinate di partenza e arrivo; area dell'itinerario</td><td>Inoltro a OpenRouteService e Overpass, altezze degli edifici svizzeri; risposte conservate in cache da 7 a 30 giorni, senza legame con chi le ha richieste</td></tr>
-        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, tramite il relay</span></td><td>Coordinate di partenza e arrivo</td><td>Calcolo degli itinerari</td></tr>
+        <tr><td><strong>OpenRoute<wbr />Service</strong><br /><span class="svc">HeiGIT, DE, tramite il relay</span></td><td>Coordinate di partenza e arrivo</td><td>Calcolo degli itinerari</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">server OSM, tramite il relay</span></td><td>Area geografica dell'itinerario</td><td>Dati edifici e alberi</td></tr>
         <tr><td><strong>Umami</strong></td><td>Indirizzo della pagina, sito di provenienza, posizione approssimativa (paese, regione) ricavata dall'indirizzo IP, che non viene conservato; browser, sistema, dimensioni dello schermo, lingua; azioni nell'app (ricerca avviata, condivisione…). Senza cookie</td><td>Statistiche d'uso aggregate, comprese le zone in cui si cercano itinerari; disattivabili (vedi sotto)</td></tr>
         <tr><td><strong>Sentry</strong><br /><span class="svc">server EU, Germania</span></td><td>Errori tecnici, indirizzo della pagina senza parametri, tipo di browser; senza dati di identità</td><td>Rilevamento e correzione dei bug</td></tr>
@@ -197,7 +197,7 @@ const { lang } = Astro.props;
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Address entered; GPS coordinates if you use geolocation</td><td>Geocoding and reverse geocoding</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Midpoint of the route</td><td>Weather: cloud cover and temperature</td></tr>
         <tr><td><strong>MeridianWay relays</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Start and end coordinates; area of the route</td><td>Relay to OpenRouteService and Overpass, Swiss building heights; responses cached for 7 to 30 days, with no link to who requested them</td></tr>
-        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, via the relay</span></td><td>Start and end coordinates</td><td>Route calculation</td></tr>
+        <tr><td><strong>OpenRoute<wbr />Service</strong><br /><span class="svc">HeiGIT, DE, via the relay</span></td><td>Start and end coordinates</td><td>Route calculation</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">OSM servers, via the relay</span></td><td>Geographic area of the route</td><td>Building and tree data</td></tr>
         <tr><td><strong>Umami</strong></td><td>Page address, referring site, approximate location (country, region) derived from the IP address, which is not stored; browser, system, screen size, language; actions in the app (search started, share…). No cookies</td><td>Aggregated usage statistics, including the areas where routes are searched; you can turn them off (see below)</td></tr>
         <tr><td><strong>Sentry</strong><br /><span class="svc">EU servers, Germany</span></td><td>Technical errors, page address without its parameters, browser type; no identity data</td><td>Bug detection and fixing</td></tr>
@@ -252,7 +252,7 @@ const { lang } = Astro.props;
         <tr><td><strong>Nominatim</strong><br /><span class="svc">OSM Foundation, UK</span></td><td>Adressa endatada; coordinatas GPS sche Vus utilisais la geolocaziun</td><td>Geocodaziun e geocodaziun inversa</td></tr>
         <tr><td><strong>Open-Meteo</strong></td><td>Punct central da la ruta</td><td>Aura: nivels e temperatura</td></tr>
         <tr><td><strong>Relais MeridianWay</strong><br /><span class="svc">Cloudflare Workers</span></td><td>Coordinatas da partenza e d’arriv; zona da la ruta</td><td>Transmissiun a OpenRouteService ed Overpass, autezzas dals edifizis svizzers; respostas arcunadas 7 fin 30 dis en il cache, senza colliaziun cun la persuna che las ha dumandadas</td></tr>
-        <tr><td><strong>OpenRouteService</strong><br /><span class="svc">HeiGIT, DE, tras il relais</span></td><td>Coordinatas da partenza e d’arriv</td><td>Calculaziun da la ruta</td></tr>
+        <tr><td><strong>OpenRoute<wbr />Service</strong><br /><span class="svc">HeiGIT, DE, tras il relais</span></td><td>Coordinatas da partenza e d’arriv</td><td>Calculaziun da la ruta</td></tr>
         <tr><td><strong>Overpass API</strong><br /><span class="svc">servers OSM, tras il relais</span></td><td>Zona geografica da la ruta</td><td>Datas d’edifizis e da plantas</td></tr>
         <tr><td><strong>Umami</strong></td><td>Adressa da la pagina, website da derivanza, lieu approximativ (pajais, regiun) deducì da l’adressa IP, che na vegn betg arcunada; navigatur, sistem, grondezza dal visur, lingua; acziuns en l’app (tschertga cumenzada, parter…). Senza cookies</td><td>Statisticas d’utilisaziun agregadas, er davart las zonas nua che rutas vegnan tschertgadas; Vus las pudais deactivar (guardai sutvart)</td></tr>
         <tr><td><strong>Sentry</strong><br /><span class="svc">servers UE, Germania</span></td><td>Sbagls tecnics, adressa da la pagina senza parameters, tip dal navigatur; senza datas d’identitad</td><td>Chattar e reparar sbagls</td></tr>
@@ -285,38 +285,16 @@ const { lang } = Astro.props;
 )}
 
 <style>
-  .privacy-pane h1 {
-    font-size: 1.5rem;
-    color: #f0f2a0;
-    margin-bottom: 0.25rem;
-  }
-  .privacy-pane h2 {
-    font-size: 1rem;
-    color: #f0f2a0;
-    margin-top: 1.75rem;
-    margin-bottom: 0.5rem;
-  }
+  /* Titles, text and links take the content pages' styles (ContentLayout). */
+  .privacy-pane h1 { margin-bottom: 0.25rem; }
   .privacy-date {
-    color: rgba(216,219,200,0.5);
+    color: var(--muted);
     font-size: 0.82rem;
     margin-bottom: 1.5rem;
-  }
-  .privacy-pane p {
-    line-height: 1.6;
-    color: #d8dbc8;
-    margin-bottom: 0.75rem;
   }
   .privacy-pane ul {
     margin: 0 0 0.75rem 1.25rem;
     padding: 0;
-  }
-  .privacy-pane li {
-    line-height: 1.6;
-    color: #d8dbc8;
-    margin-bottom: 0.35rem;
-  }
-  .privacy-pane a {
-    color: #f0f2a0;
   }
   .privacy-optout {
     margin: 1rem 0 1.25rem;
@@ -346,7 +324,9 @@ const { lang } = Astro.props;
     hyphens: auto;
     overflow-wrap: anywhere;
   }
-  td:first-child { overflow-wrap: normal; }
+  /* Service names and their notes never break: "Meri-dianWay" read as a typo.
+     The column takes the width of its longest word instead. */
+  td:first-child { overflow-wrap: normal; hyphens: manual; }
   .svc {
     color: rgba(216,219,200,0.6);
     font-size: 0.75rem;
