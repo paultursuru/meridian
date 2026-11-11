@@ -80,6 +80,22 @@ function swapEndpoints() {
     .style.transform = `rotate(${swapAngle}deg)`;
 }
 
+export const fieldStates = () => ({ start: ac.start.getState(), end: ac.end.getState() });
+
+// Puts back what fieldStates took, pins included. No pan: the map stays on
+// the trip the user was looking at. `resolved`: where the search found each
+// end, for a typed one still reading as it did then.
+export function restoreFields(states: ReturnType<typeof fieldStates>, resolved: Record<Role, Place> | null) {
+  for (const role of ROLES) {
+    ac[role].setState(states[role]);
+    const found = resolved?.[role];
+    if (!ac[role].getPlace() && found && states[role].value === found.label) ac[role].setPlace(found);
+    const place = ac[role].getPlace();
+    if (place && mapLoaded()) map.setPreviewPin(role, place, { pan: false });
+  }
+  syncInputState();
+}
+
 export function resetFields() {
   ac.start.clear();
   ac.end.clear();
@@ -89,14 +105,26 @@ export function resetFields() {
   syncInputState();
 }
 
-export function initFields({ onSubmit, onFocus }: { onSubmit: () => void; onFocus: () => void }) {
-  ac.start = initAutocomplete(input('inp-start'), { onSelect: (p: { lat: number; lng: number }) => { if (mapLoaded()) map.setPreviewPin('start', p); syncInputState(); }, getAnchor: () => searchAnchor('end') });
-  ac.end   = initAutocomplete(input('inp-end'),   { onSelect: (p: { lat: number; lng: number }) => { if (mapLoaded()) map.setPreviewPin('end',   p); syncInputState(); }, getAnchor: () => searchAnchor('start') });
+// onPlaceChange runs before a field takes a new point, while the old routes
+// may still be on screen (leaveSearch).
+type PlaceChange = (opts: { keepOther: boolean }) => void;
+
+export function initFields(
+  { onSubmit, onFocus, onPlaceChange }: { onSubmit: () => void; onFocus: () => void; onPlaceChange: PlaceChange },
+) {
+  const onSelect = (role: Role) => (p: { lat: number; lng: number }) => {
+    onPlaceChange({ keepOther: true });
+    if (mapLoaded()) map.setPreviewPin(role, p);
+    syncInputState();
+  };
+  ac.start = initAutocomplete(input('inp-start'), { onSelect: onSelect('start'), getAnchor: () => searchAnchor('end') });
+  ac.end   = initAutocomplete(input('inp-end'),   { onSelect: onSelect('end'),   getAnchor: () => searchAnchor('start') });
   ROLES.forEach(role => input(`inp-${role}`).addEventListener('input', syncInputState));
   syncInputState();
 
   window.addEventListener('map-point-picked', (e: Event) => {
     const { role, lat, lng } = (e as CustomEvent<{ role: Role; lat: number; lng: number }>).detail;
+    onPlaceChange({ keepOther: false });
     fillFromMap(role, lat, lng);
   });
   ROLES.forEach(role => button(`clear-${role}`).addEventListener('click', () => clearField(role)));

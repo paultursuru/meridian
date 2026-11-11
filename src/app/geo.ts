@@ -16,7 +16,9 @@ function handleGeoError(err: unknown, source: 'field' | 'locate') {
   track('geo_error', { code, source });
 }
 
-async function fillFromGeo(role: Role) {
+type PlaceChange = (opts: { keepOther: boolean }) => void;
+
+async function fillFromGeo(role: Role, onPlaceChange: PlaceChange) {
   const btn = button(`geo-${role}`);
   btn.disabled = true;
   btn.classList.add('loading');
@@ -25,6 +27,7 @@ async function fillFromGeo(role: Role) {
     const pos = await getPosition(10000);
     const { short: label, countryCode } = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
     const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    onPlaceChange({ keepOther: true });
     applyPlace(role, { lat, lng, label, countryCode });
     saveLastPosition(lat, lng);
     setStatus(null);
@@ -37,9 +40,9 @@ async function fillFromGeo(role: Role) {
   }
 }
 
-export function initGeoButtons() {
-  button('geo-start').addEventListener('click', () => fillFromGeo('start'));
-  button('geo-end').addEventListener('click',   () => fillFromGeo('end'));
+export function initGeoButtons({ onPlaceChange }: { onPlaceChange: PlaceChange }) {
+  button('geo-start').addEventListener('click', () => fillFromGeo('start', onPlaceChange));
+  button('geo-end').addEventListener('click',   () => fillFromGeo('end', onPlaceChange));
 }
 
 // Standalone only, so a permission prompt is expected. Silent on failure:

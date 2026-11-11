@@ -76,9 +76,4 @@ export function initFormSummary() {
     if (el('depart-popover').classList.contains('open')) return;
     setFolded(true);
   });
-  // A point picked on the map changes a field: the form opens on it, with
-  // the button that searches again.
-  window.addEventListener('map-point-picked', () => {
-    if (panel().classList.contains('folded')) setFolded(false);
-  });
 }

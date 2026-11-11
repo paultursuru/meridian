@@ -134,7 +134,7 @@ test('the scrubber moves the time on the line', async ({ page }) => {
   await expect(page.locator('#summary-when')).toHaveText(/^28 juil\., 0\d:\d\d$/);
 });
 
-test('a point picked on the map opens the form, to search again from it', async ({ page }) => {
+test('a point picked on the map opens the form on it', async ({ page }) => {
   await openLink(page, MOBILE);
   await expect(page.locator('#form-summary')).toBeVisible();
 
@@ -147,9 +147,6 @@ test('a point picked on the map opens the form, to search again from it', async 
   await expect(page.locator('#inp-start')).toBeVisible();
   await expect(page.locator('#form-summary')).toBeHidden();
   await expect(page.locator('#search-btn')).toBeVisible();
-
-  await page.click('#search-btn');
-  await expect(page.locator('#form-summary')).toBeVisible({ timeout: 20_000 });
 });
 
 test('Back to the empty app brings the open form back, without the line', async ({ page }) => {

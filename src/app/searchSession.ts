@@ -162,6 +162,7 @@ export function createSearchSession(ctx: SearchContext) {
       state.searchEntryPushed = true;
     }
     state.searchShown = true;
+    state.searchEnds = { start: { ...startC, label: startQ }, end: { ...endC, label: endQ } };
     // The demo button is for the empty app only.
     hideOnboardingButton(true);
     // Folded before the fit, which frames the route in the room it frees.
