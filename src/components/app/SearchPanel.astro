@@ -16,7 +16,7 @@ const t = translations[lang];
 // first and starts hidden, and a hidden gradient paints nothing elsewhere.
 const noteArrowIcon = arrowIcon.replaceAll('meridianArrowGradient', 'meridianArrowGradientNote');
 ---
-<div id="search-panel">
+<div id="search-panel" role="search" tabindex="-1">
   <!-- On a phone with a result on screen, the form folds into this summary
        (formSummary.ts), and #form-fold, under the form, folds it back. -->
   <button id="form-summary" type="button" aria-expanded="false">

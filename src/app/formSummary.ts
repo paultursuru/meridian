@@ -52,15 +52,30 @@ export function showFormSummary() {
   setFolded(true);
 }
 
-// Back to the empty app: the form open, no summary.
+// Back to the empty app: the form open, no summary. Focus on either button
+// goes with it: it lands on the form itself, not on a field, which would
+// bring the phone's keyboard up.
 export function hideFormSummary() {
+  const active = document.activeElement;
+  const lost = active === summary() || active === foldBtn();
   relayout(() => panel().classList.remove('has-summary', 'folded'));
+  if (lost) panel().focus({ preventScroll: true });
 }
 
 export function initFormSummary() {
   document.addEventListener('focusin', (e) => { focusLastInPanel = panel().contains(e.target as Node); });
   summary().addEventListener('click', () => setFolded(false));
   foldBtn().addEventListener('click', () => setFolded(true));
+  // Escape folds the reopened form, once nothing in it is open. A suggestion
+  // list marks the key as used; the date popover closes on the document's
+  // listener, which runs after this one.
+  panel().addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    const p = panel().classList;
+    if (!p.contains('has-summary') || p.contains('folded')) return;
+    if (el('depart-popover').classList.contains('open')) return;
+    setFolded(true);
+  });
   // A point picked on the map changes a field: the form opens on it, with
   // the button that searches again.
   window.addEventListener('map-point-picked', () => {

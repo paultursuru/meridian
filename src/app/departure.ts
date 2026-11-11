@@ -41,5 +41,11 @@ export function initDeparture({ onSearch }: { onSearch: () => void }) {
     if (popover().contains(target) || toggle().contains(target)) return;
     closeDepartPopover();
   });
-  document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape') closeDepartPopover(); });
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Escape' || !popover().classList.contains('open')) return;
+    // Focus in the popover would go down with it: back to the button.
+    const inside = popover().contains(document.activeElement);
+    closeDepartPopover();
+    if (inside) toggle().focus();
+  });
 }
