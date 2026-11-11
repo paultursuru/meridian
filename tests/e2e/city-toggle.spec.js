@@ -53,3 +53,15 @@ test('Tab reaches both options in reading order', async ({ page }) => {
   await page.keyboard.press('Tab');
   await expect(sun(page)).toBeFocused();
 });
+
+test('the side not highlighted keeps its text at full colour, only its frame recedes', async ({ page }) => {
+  const style = (side, sel, prop) => page.locator(`.glance-card[data-side=${side}] ${sel}`.trim()).first()
+    .evaluate((el, p) => getComputedStyle(el)[p], prop);
+  for (const [click, on, off] of [[null, 'shade', 'sun'], [sun, 'sun', 'shade']]) {
+    if (click) await click(page).click();
+    // Polled: the page fades between moods.
+    const same = async (sel, prop) => (await style(off, sel, prop)) === (await style(on, sel, prop));
+    for (const sel of ['h3', '.glance-value']) await expect.poll(() => same(sel, 'color')).toBe(true);
+    await expect.poll(() => same('', 'borderTopColor')).toBe(false);
+  }
+});

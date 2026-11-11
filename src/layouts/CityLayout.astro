@@ -239,14 +239,13 @@ const sunFirst = c.defaultMode === 'sun';
   .city-page .muted { color: var(--muted); }
 
   .glance { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  /* The other column recedes without fading its text, which has to stay readable:
-     muted text, and only the dot and bars lose opacity. Its fill is the page colour
-     rather than transparent, which would jump to its end colour and only fade in,
-     ahead of the page. */
+  /* The other column recedes through its frame, fill, dot and bars, never its
+     text: greyed text read as a disabled card. Its fill is the page colour
+     rather than transparent, which would jump to its end colour and only fade
+     in, ahead of the page. */
   .glance-card {
     --c: var(--shadec);
     --mark-op: 0.5;
-    color: var(--muted);
     background: var(--bg);
     border: 1.5px solid var(--line);
     border-radius: 12px;
@@ -254,7 +253,7 @@ const sunFirst = c.defaultMode === 'sun';
   }
   .glance-card[data-side=sun] { --c: var(--sunc); }
   body.city-page:not(.sun) .glance-card[data-side=shade],
-  body.city-page.sun .glance-card[data-side=sun] { --mark-op: 1; color: var(--fg); background: var(--card); border-color: var(--c); }
+  body.city-page.sun .glance-card[data-side=sun] { --mark-op: 1; background: var(--card); border-color: var(--c); }
   .glance-card h3 { display: flex; align-items: center; gap: 8px; }
   .glance-card h3::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--c); opacity: var(--mark-op); }
   .city-page .glance-card ul { list-style: none; margin: 0; display: grid; gap: 0.8rem; }
