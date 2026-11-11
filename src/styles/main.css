@@ -256,6 +256,108 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   z-index: 999;
   flex-shrink: 0;
 }
+/* The folded form (formSummary.ts): the search on screen, start over end
+   with the map's pin colours, and the time over "Modifier". A tap opens the
+   form again. Phones only, see the mobile block. */
+#form-summary {
+  display: none;
+  flex: 1 1 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "route when" "route action";
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 3px;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1.5px solid rgba(240,242,160,0.2);
+  border-radius: 8px;
+  background: #161b12;
+  color: #d8dbc8;
+  font-family: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+}
+#form-summary:focus-visible {
+  outline: 2px solid rgba(240,242,160,0.7);
+  outline-offset: 2px;
+}
+/* The two pins, as on the map, joined by a line from one to the other. */
+.summary-route {
+  grid-area: route;
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 22px;
+}
+.summary-route::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: #fff;
+}
+/* The pins hang off .summary-route, not the names: the names clip what
+   overflows them. 20px lines put each pin's centre 10px from its edge. */
+.summary-place {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 20px;
+}
+.summary-place::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+#summary-start::before { top: 4px; background: #22c55e; }
+#summary-end::before { bottom: 4px; background: #ef4444; }
+.summary-when {
+  grid-area: when;
+  text-align: right;
+  color: rgba(216,219,200,0.8);
+  font-variant-numeric: tabular-nums;
+}
+.summary-action {
+  grid-area: action;
+  text-align: right;
+  color: #f0f2a0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+/* Folds the form back: the last thing in it, under the main button, like the
+   results drawer's handle. Shown only with a result on screen. */
+#form-fold {
+  display: none;
+  flex: 1 1 100%;
+  height: 24px;
+  margin: -4px 0 -4px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: rgba(240,242,160,0.8);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+#form-fold svg { width: 18px; height: 18px; transform: rotate(90deg); }
+#form-fold:hover { color: #f0f2a0; background: rgba(240,242,160,0.08); }
+#form-fold:focus-visible {
+  outline: 2px solid rgba(240,242,160,0.7);
+  outline-offset: 0;
+}
 .route-inputs {
   flex: 1 1 100%;
   position: relative;
@@ -1372,6 +1474,13 @@ p.opensource-badge {
   }
   .depart-row { width: 100%; }
   .split-btn { width: 100%; }
+  /* A result on screen: the form folds into its summary line, and opens
+     again in its place, with the arrow that folds it. */
+  #search-panel.folded { padding-top: 8px; }
+  #search-panel.folded #form-summary { display: grid; }
+  #search-panel.folded .route-inputs,
+  #search-panel.folded .depart-row { display: none; }
+  #search-panel.has-summary:not(.folded) #form-fold { display: flex; }
   /* 44px: the touch target size for the main action. #depart-toggle
      stretches with it. */
   #search-btn { flex: 1; min-height: 44px; }

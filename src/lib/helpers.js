@@ -76,3 +76,27 @@ export function deltaPhrases(sunny, shady, tr) {
     shady: deltaPhrase('shady', gap, shadyMin, sunnyMin, tr),
   };
 }
+
+// A place's name for the folded form's one-line summary: what comes before
+// the first comma. A point picked on the map keeps both coordinates until its
+// address lands.
+const COORDS = /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/;
+
+export function placeShortName(value) {
+  const v = value.trim();
+  return COORDS.test(v) ? v : v.split(',')[0].trim();
+}
+
+// Romansh falls back to Swiss German where the browser has no Romansh data.
+const DATE_LOCALES = { fr: ['fr'], de: ['de-CH'], it: ['it'], en: ['en'], rm: ['rm', 'de-CH'] };
+
+// The departure in that summary: the time alone today, with the day otherwise
+// (a shared link, a later departure).
+export function summaryWhen(dateValue, timeValue, todayValue, lang = 'fr') {
+  if (!dateValue || dateValue === todayValue) return timeValue;
+  const [y, mo, d] = dateValue.split('-').map(Number);
+  const [h, mi] = (timeValue || '12:00').split(':').map(Number);
+  return new Intl.DateTimeFormat(DATE_LOCALES[lang] ?? ['fr'], {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC',
+  }).format(new Date(Date.UTC(y, mo - 1, d, h, mi)));
+}

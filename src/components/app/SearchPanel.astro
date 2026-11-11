@@ -3,6 +3,7 @@ import { translations, type Lang } from '../../lib/i18n';
 import PlaceInput from './PlaceInput.astro';
 import arrowIcon from '../../icons/arrow.svg?raw';
 import calendarClockIcon from '../../icons/calendar-clock.svg?raw';
+import chevronIcon from '../../icons/chevron-left.svg?raw';
 
 interface Props {
   lang: Lang;
@@ -16,6 +17,17 @@ const t = translations[lang];
 const noteArrowIcon = arrowIcon.replaceAll('meridianArrowGradient', 'meridianArrowGradientNote');
 ---
 <div id="search-panel">
+  <!-- On a phone with a result on screen, the form folds into this summary
+       (formSummary.ts), and #form-fold, under the form, folds it back. -->
+  <button id="form-summary" type="button" aria-expanded="false">
+    <span class="summary-route">
+      <span id="summary-start" class="summary-place"></span>
+      <span class="sr-only"> {t.summary_to} </span>
+      <span id="summary-end" class="summary-place"></span>
+    </span>
+    <span id="summary-when" class="summary-when"></span>
+    <span id="summary-action" class="summary-action">{t.summary_edit}</span>
+  </button>
   <div class="route-inputs">
     <PlaceInput lang={lang} role="start" />
     <button id="swap-btn" type="button" title={t.swap_btn_title} aria-label={t.swap_btn_title}><span class="swap-ico">⇅</span></button>
@@ -49,4 +61,5 @@ const noteArrowIcon = arrowIcon.replaceAll('meridianArrowGradient', 'meridianArr
       </div>
     </div>
   </div>
+  <button id="form-fold" type="button" aria-expanded="true" title={t.summary_fold} aria-label={t.summary_fold} set:html={chevronIcon} />
 </div>

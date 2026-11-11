@@ -453,6 +453,15 @@ export function setPreviewPin(role, coords, { pan = true } = {}) {
   if (pan) _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
+// The chrome above the map changed height (the search form folding), which
+// Leaflet, watching only the window, would miss. `prevTop` is where the map's
+// top edge was: the view shifts by as much, so what was on screen stays put.
+export function mapTopMoved(prevTop) {
+  const dy = _map.getContainer().getBoundingClientRect().top - prevTop;
+  _map.invalidateSize({ pan: false });
+  if (dy) _map.panBy([0, dy], { animate: false });
+}
+
 // Recenters only — no marker. Used for the passive, permission-free initial
 // view (timezone guess, or a silently-already-granted precise position —
 // see review 3.2/4.1): neither is the result of an explicit action in this

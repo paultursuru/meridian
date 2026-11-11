@@ -10,6 +10,7 @@ import { initFields, pinFilledFields, anyFieldFilled } from './fields';
 import { initDeparture, setDepartureNow } from './departure';
 import { initGeoButtons, initLocateMe, prefillFromRelaunch, initInitialMapCenter } from './geo';
 import { initShareButton } from './shareButton';
+import { initFormSummary } from './formSummary';
 import { initAboutDrawer } from './aboutDrawer';
 import { initSearch, handleSearch } from './search';
 import { initNavigation, restoreFromUrl, startOnboarding, leaveOnboarding } from './navigation';
@@ -54,6 +55,7 @@ initFields({ onSubmit: () => handleSearch(), onFocus: leaveOnboarding });
 initGeoButtons();
 initDeparture({ onSearch: () => handleSearch() });
 initShareButton();
+initFormSummary();
 // Before the restore: a shared link waits on two reverse geocodes, and these
 // must answer meanwhile.
 initLocateMe();
