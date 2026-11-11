@@ -7,7 +7,7 @@ import { track } from '../lib/analytics.js';
 import { map, mapLoaded } from './mapApi';
 import { el, input, button } from './dom';
 import { state, urlHasSearch } from './state';
-import { field, applyPlace, resetFields } from './fields';
+import { field, applyPlace, resetFields, fieldStates, restoreFields } from './fields';
 import { setDepartureNow, closeDepartPopover } from './departure';
 import { hideAppDescription, showOnboardingNote, hideOnboardingButton, type DemoEntry } from './intro';
 import { resetSunInfo } from './sunInfo';
@@ -78,17 +78,40 @@ export function resetSearch() {
   resetSunInfo();
 }
 
-// Typing leaves the demo for the empty app. Landed on as a link, there is
-// none underneath: the entry becomes one.
-export function leaveOnboarding() {
-  if (!state.onboarding) return;
-  resetSearch();
+// Off the search's history entry, so Back then leaves the app. Landed on as
+// a link, there is none underneath: the entry becomes the empty app's.
+function dropSearchEntry() {
   if (state.searchEntryPushed) {
     state.skipNextPop = true;
     history.back();
   } else {
     history.replaceState(null, '', location.pathname);
   }
+}
+
+// Typing leaves the demo for the empty app.
+export function leaveOnboarding() {
+  if (!state.onboarding) return;
+  resetSearch();
+  dropSearchEntry();
+}
+
+// A point changed with routes on screen: they stop matching the fields, so
+// the search goes, as the demo does. A point from the map starts a new trip,
+// and the other field goes too. A suggestion or a locate button corrects one
+// end: the other stays, pinned, and so does the time.
+export function leaveSearch({ keepOther }: { keepOther: boolean }) {
+  if (!state.searchShown) return;
+  const kept = keepOther
+    ? { fields: fieldStates(), date: input('inp-date').value, time: input('inp-time').value }
+    : null;
+  const resolved = state.searchEnds;
+  resetSearch();
+  dropSearchEntry();
+  if (!kept) return;
+  restoreFields(kept.fields, resolved);
+  input('inp-date').value = kept.date;
+  input('inp-time').value = kept.time;
 }
 
 // Back peels one layer per press: the about panel, then the search. The

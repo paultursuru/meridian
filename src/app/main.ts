@@ -13,7 +13,7 @@ import { initShareButton } from './shareButton';
 import { initFormSummary } from './formSummary';
 import { initAboutDrawer } from './aboutDrawer';
 import { initSearch, handleSearch } from './search';
-import { initNavigation, restoreFromUrl, startOnboarding, leaveOnboarding } from './navigation';
+import { initNavigation, restoreFromUrl, startOnboarding, leaveOnboarding, leaveSearch } from './navigation';
 
 // Auto page views are off on the tag (see analytics.js): this one is ours.
 trackPageview();
@@ -51,8 +51,8 @@ initSearch();
 initSunInfo();
 initIntro({ onStartDemo: startOnboarding });
 setDepartureNow();
-initFields({ onSubmit: () => handleSearch(), onFocus: leaveOnboarding });
-initGeoButtons();
+initFields({ onSubmit: () => handleSearch(), onFocus: leaveOnboarding, onPlaceChange: leaveSearch });
+initGeoButtons({ onPlaceChange: leaveSearch });
 initDeparture({ onSearch: () => handleSearch() });
 initShareButton();
 initFormSummary();

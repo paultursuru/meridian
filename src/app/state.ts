@@ -1,4 +1,5 @@
 import { parseShareQuery } from '../lib/share.js';
+import type { Place } from './dom';
 
 // Flags shared by the search, the demo and the history handling.
 export const state = {
@@ -15,6 +16,9 @@ export const state = {
   skipNextPop: false,
   // A link is being restored: a popstate meanwhile must not start another.
   restoring: false,
+  // The two ends of the search on screen, as the search resolved them: a
+  // typed address was geocoded, and its field holds only the text.
+  searchEnds: null as { start: Place; end: Place } | null,
 };
 
 // A complete search in the URL marks a search's history entry.
