@@ -15,7 +15,7 @@ import { map, mapLoaded, mapReady } from './mapApi';
 import { el, input, button } from './dom';
 import { state } from './state';
 import { field, searchAnchor } from './fields';
-import { openDepartPopover, closeDepartPopover } from './departure';
+import { closeDepartPopover } from './departure';
 import { hideAppDescription, showOnboardingNote } from './intro';
 import { createSearchSession, type ShadeData } from './searchSession';
 
@@ -117,9 +117,8 @@ export async function handleSearch(
   setSearchBusy(true);
   closeDepartPopover();
   hideAppDescription();
+  // The note gives the demo's date: no popover on top of it.
   showOnboardingNote(demo);
-  // The demo is at a set date: its note points up at the popover showing it.
-  if (demo) openDepartPopover({ focus: false });
   el('results').classList.remove('on');
   hideScrubber();
 

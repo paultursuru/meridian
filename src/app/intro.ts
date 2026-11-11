@@ -26,8 +26,6 @@ export function initIntro({ onStartDemo }: { onStartDemo: (via: DemoEntry) => vo
     // A modified click opens the link in a new tab, as any link would.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    // Or the outside-click handler closes the popover the demo just opened.
-    e.stopPropagation();
     onStartDemo(via);
   };
   el('onboarding-btn').addEventListener('click', startFrom('button'));

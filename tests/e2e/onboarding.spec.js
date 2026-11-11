@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 // The "what do I do?" button on the empty app opens a demo: a real search from
-// Lausanne station to the Olympic Museum at a fixed summer afternoon, with the
-// date popover open to show that date and a note under it to explain the
-// result. The demo is a share link plus onboarding=1, so it can also be landed
+// Lausanne station to the Olympic Museum at a fixed summer afternoon, with a
+// note under the button that gives that date and explains the result. The demo is a share link plus onboarding=1, so it can also be landed
 // on. Back from it returns to the empty app; touching a field leaves it the
 // same way, without leaving a history entry behind to spend a Back on.
 
@@ -111,13 +110,15 @@ test('a shared link shows results, not the demo button', async ({ page }) => {
   await expect(page.locator('#onboarding-btn')).toBeHidden();
 });
 
-test('the button opens the demo: a real search, its date shown, its note, a URL that reopens it', async ({ page }) => {
+test('the button opens the demo: a real search, its note with its date, a URL that reopens it', async ({ page }) => {
   await openApp(page);
   await openDemo(page);
 
   await expect(page.locator('#inp-start')).toHaveValue('Lausanne-Gare');
   await expect(page.locator('#inp-end')).toHaveValue('Musée Olympique, Lausanne');
-  await expect(page.locator('#depart-popover')).toBeVisible();
+  // The note says the date: the popover stays shut, one layer fewer on a phone.
+  await expect(page.locator('#depart-popover')).toBeHidden();
+  await expect(page.locator('#onboarding-note')).toContainText('15/07');
   await expect(page.locator('#inp-date')).toHaveValue('2026-07-15');
   await expect(page.locator('#inp-time')).toHaveValue('15:00');
   await expect(page.locator('#onboarding-note')).toBeVisible();
@@ -133,7 +134,7 @@ test('the button opens the demo: a real search, its date shown, its note, a URL 
   expect((await events(page, 'search'))[0].onboarding).toBe(true);
 });
 
-test('the demo is fitted below the popover and its note', async ({ page }) => {
+test('the demo is fitted below its note', async ({ page }) => {
   await openApp(page);
   await openDemo(page);
   await page.waitForTimeout(500);
@@ -144,15 +145,19 @@ test('the demo is fitted below the popover and its note', async ({ page }) => {
   }
 });
 
-test('closing the popover keeps the note, moved up under the button', async ({ page }) => {
+test('the popover opened during the demo pushes the note down, and closing it brings it back', async ({ page }) => {
   await openApp(page);
   await openDemo(page);
   const before = await page.locator('#onboarding-note').boundingBox();
 
+  await page.click('#depart-toggle');
+  await expect(page.locator('#depart-popover')).toBeVisible();
+  expect((await page.locator('#onboarding-note').boundingBox()).y).toBeGreaterThan(before.y);
+
   await page.keyboard.press('Escape');
   await expect(page.locator('#depart-popover')).toBeHidden();
   await expect(page.locator('#onboarding-note')).toBeVisible();
-  expect((await page.locator('#onboarding-note').boundingBox()).y).toBeLessThan(before.y);
+  expect((await page.locator('#onboarding-note').boundingBox()).y).toBe(before.y);
 });
 
 test('Back from the demo returns to the empty app, and the next Back leaves', async ({ page }) => {
@@ -186,7 +191,7 @@ test('a link with onboarding=1 opens the demo, and a field leaves it in place', 
   await page.goto(href);
   await expect(page.locator('#results')).toHaveClass(/on/, { timeout: 20_000 });
   await expect(page.locator('#onboarding-note')).toBeVisible();
-  await expect(page.locator('#depart-popover')).toBeVisible();
+  await expect(page.locator('#depart-popover')).toBeHidden();
   expect(await events(page, 'onboarding')).toEqual([{ via: 'link' }]);
 
   // Landed on, so there is no empty app underneath: the entry becomes one.
