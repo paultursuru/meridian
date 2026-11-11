@@ -107,7 +107,7 @@ const sunFirst = c.defaultMode === 'sun';
           <p>{frTypo(r.summary)}</p>
           <div class="route-row" data-side="sun"><span>{r.sunny.label}</span><span class="vh"> : </span><span class="meta">{frTypo(`${r.sunny.minutes} min, ${r.sunny.km} km`)}</span></div>
           <div class="route-row" data-side="shade"><span>{r.other.label}</span><span class="vh"> : </span><span class="meta">{frTypo(`${r.other.minutes} min, ${r.other.km} km`)}</span></div>
-          <a class="route-link" href={appLink(r)} data-app-link="route">Voir ce trajet dans MeridianWay</a>
+          <a class="route-link open-app-btn" href={appLink(r)} data-app-link="route">Voir ce trajet dans MeridianWay</a>
         </li>
       ))}
     </ul>
@@ -172,6 +172,10 @@ const sunFirst = c.defaultMode === 'sun';
     --sun-op: 1;
     --logo-m: #e2ac00;
     --logo-w: #cdc9af;
+    /* The pale yellow button would vanish on the cream page: the toggle's amber,
+       3.4:1 against the card and 5.3:1 for its text */
+    --btn-bg: var(--sunc);
+    --btn-hover: #c48a00;
   }
   body.city-page, body.city-page *, body.city-page *::before {
     transition: background-color var(--theme-dur) ease, color var(--theme-dur) ease, border-color var(--theme-dur) ease,
@@ -266,7 +270,7 @@ const sunFirst = c.defaultMode === 'sun';
   .route-row[data-side=shade]::before { background: var(--shadec); }
   .route-row > span:first-of-type { flex: 1; }
   .route-row .meta { color: var(--muted); font-size: 0.9rem; }
-  .city-page .route-link { display: inline-block; margin-top: 0.75rem; }
+  .city-page .route-link { margin-top: 0.75rem; }
 
   .city-page .spots { list-style: none; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
   .spots li { border-left: 3px solid var(--sunc); padding: 0.2rem 0 0.2rem 0.75rem; margin: 0; }

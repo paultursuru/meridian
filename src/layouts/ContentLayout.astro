@@ -116,6 +116,19 @@ const url = langUrl(lang, path);
   .content-page main h2 { font-size: 1.25rem; letter-spacing: -0.3px; margin: 2.5rem 0 1rem; }
   .content-page main p { margin-bottom: 0.9rem; }
   .content-page main a { color: var(--fg); }
+  /* The page's one filled call to open the app. A page can recolour it
+     through --btn-bg and --btn-hover. */
+  .content-page main a.open-app-btn {
+    display: inline-block;
+    padding: 0.7rem 1.4rem;
+    min-height: 44px;
+    background: var(--btn-bg, #f0f2a0);
+    color: #0e120a;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .content-page main a.open-app-btn:hover { background: var(--btn-hover, #e4e698); }
   .content-page main ul, .content-page main ol { margin: 0 0 1rem 1.25rem; }
   .content-page main li { margin-bottom: 0.4rem; }
   .content-page main code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; }
