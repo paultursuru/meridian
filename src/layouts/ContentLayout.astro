@@ -117,12 +117,13 @@ const url = langUrl(lang, path);
   .content-page main p { margin-bottom: 0.9rem; }
   .content-page main a { color: var(--fg); }
   /* The page's one filled call to open the app. A page can recolour it
-     through --btn-bg and --btn-hover. */
+     through --btn-bg, --btn-hover and --btn-border. */
   .content-page main a.open-app-btn {
     display: inline-block;
     padding: 0.7rem 1.4rem;
     min-height: 44px;
     background: var(--btn-bg, #f0f2a0);
+    border: 1.5px solid var(--btn-border, transparent);
     color: #0e120a;
     border-radius: 8px;
     font-weight: 700;
