@@ -67,3 +67,12 @@ test('the side not highlighted keeps its text at full colour, only its frame rec
     await expect.poll(() => same('', 'borderTopColor')).toBe(false);
   }
 });
+
+test('the thumb looks the same on both sides: a fill, no visible edge', async ({ page }) => {
+  const thumb = prop => page.locator('#sun-toggle .thumb').evaluate((el, p) => getComputedStyle(el)[p], prop);
+  await expect.poll(() => thumb('backgroundColor')).toBe('rgb(255, 201, 60)');
+  expect(await thumb('borderTopColor')).toBe('rgba(0, 0, 0, 0)');
+  await shade(page).click();
+  await expect.poll(() => thumb('backgroundColor')).toBe('rgb(232, 200, 240)');
+  expect(await thumb('borderTopColor')).toBe('rgba(0, 0, 0, 0)');
+});

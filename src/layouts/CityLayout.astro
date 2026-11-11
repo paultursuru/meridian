@@ -176,10 +176,12 @@ const sunFirst = c.defaultMode === 'sun';
     --sun-op: 1;
     --logo-m: #e2ac00;
     --logo-w: #cdc9af;
-    /* The pale yellow button would vanish on the cream page: the toggle's amber,
-       3.4:1 against the card and 5.3:1 for its text */
-    --btn-bg: var(--sunc);
-    --btn-hover: #c48a00;
+    /* The sun's own yellow for the toggle and the button: 11:1 for dark text,
+       where the amber read dull at 5:1. The button alone gets an amber edge,
+       since this yellow stands out from the cream card at only 1.5:1. */
+    --btn-bg: var(--sun-core);
+    --btn-hover: #ffd466;
+    --btn-border: var(--sunc);
   }
   body.city-page, body.city-page *, body.city-page *::before {
     transition: background-color var(--theme-dur) ease, color var(--theme-dur) ease, border-color var(--theme-dur) ease,
@@ -237,7 +239,7 @@ const sunFirst = c.defaultMode === 'sun';
     background: var(--shadec);
     transition: transform calc(var(--theme-dur) * 0.6) cubic-bezier(.65,0,.35,1), background-color var(--theme-dur) ease;
   }
-  body.city-page.sun #sun-toggle .thumb { transform: translateX(100%); background: var(--sunc); }
+  body.city-page.sun #sun-toggle .thumb { transform: translateX(100%); background: var(--sun-core); }
   body.city-page:not(.sun) #sun-toggle .opt-shade { color: var(--bg); }
   body.city-page.sun #sun-toggle .opt-sun { color: #1a1c10; }
 
