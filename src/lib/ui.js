@@ -519,6 +519,8 @@ export function showScrubber(bounds, onScrub) {
   range.min   = String(bounds.min);
   range.max   = String(bounds.max);
   range.value = String(bounds.value);
+  document.getElementById('scrubber-min').textContent = tr('scrubber_sunrise', { time: fmtHm(bounds.min) });
+  document.getElementById('scrubber-max').textContent = tr('scrubber_sunset', { time: fmtHm(bounds.max) });
   setScrubberLabel(bounds.label);
   setScrubberMark(bounds);
   document.getElementById('time-scrubber').classList.add('on');

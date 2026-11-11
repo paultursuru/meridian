@@ -11,8 +11,14 @@ const t = translations[lang];
 ---
 <div id="time-scrubber">
   <span id="scrubber-time"></span>
-  <div id="scrubber-track">
-    <button id="scrubber-mark" type="button"><Fragment set:html={eclipseIcon} /></button>
-    <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} />
+  <div id="scrubber-rail">
+    <div id="scrubber-track">
+      <button id="scrubber-mark" type="button"><Fragment set:html={eclipseIcon} /></button>
+      <input type="range" id="scrubber-range" min="0" max="1439" step="1" aria-label={t.aria_scrubber} aria-describedby="scrubber-bounds" />
+    </div>
+    <div id="scrubber-bounds">
+      <span id="scrubber-min"></span>
+      <span id="scrubber-max"></span>
+    </div>
   </div>
 </div>
