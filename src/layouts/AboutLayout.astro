@@ -1,10 +1,10 @@
 ---
 import '../styles/main.css';
 import MarkdownAlternate from '../components/MarkdownAlternate.astro';
-import { translations, LANGS, langPath, langUrl, type Lang } from '../lib/i18n';
+import { translations, LANGS, langUrl, type Lang } from '../lib/i18n';
 import AboutContent from '../components/AboutContent.astro';
 import githubIcon from '../icons/github.svg?raw';
-import { cityLinks } from '../data/cities/links';
+import Footer from '../components/Footer.astro';
 
 interface Props {
   lang: Lang;
@@ -65,16 +65,11 @@ const pageUrl = (l: Lang) => langUrl(l, 'about/');
         GitHub
       </a>
     </div>
-    <div class="footer-links">
-      <a href={langPath(lang, 'about')} class="footer-link">{t.aria_about}</a>
-      <span class="footer-link">-</span>
-      <a href={langPath(lang, 'privacy')} class="footer-link">{t.about_privacy}</a>
-      {lang === 'fr' && <><span class="footer-link">-</span>{' '}<a href="/comment-ca-marche/" class="footer-link">Comment ça marche ?</a></>}
-      {lang === 'fr' && cityLinks.map(c => <><span class="footer-link">-</span>{' '}<a href={c.href} class="footer-link">{c.label}</a></>)}
-      <span class="footer-link">-</span>
-      <a href="/llms.txt" class="footer-link">llms.txt</a>
-    </div>
   </main>
+
+  <div class="page-footer">
+    <Footer lang={lang} />
+  </div>
 </div>
 
 <style>

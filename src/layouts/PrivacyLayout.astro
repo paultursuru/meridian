@@ -1,16 +1,15 @@
 ---
 import '../styles/main.css';
 import MarkdownAlternate from '../components/MarkdownAlternate.astro';
-import { translations, LANGS, langPath, langUrl, type Lang } from '../lib/i18n';
+import { LANGS, langUrl, type Lang } from '../lib/i18n';
 import PrivacyContent from '../components/PrivacyContent.astro';
-import { cityLinks } from '../data/cities/links';
+import Footer from '../components/Footer.astro';
 
 interface Props {
   lang: Lang;
 }
 
 const { lang } = Astro.props;
-const t = translations[lang];
 const pageUrl = (l: Lang) => langUrl(l, 'privacy/');
 
 const titles: Record<Lang, string> = {
@@ -64,14 +63,8 @@ const backLabels: Record<Lang, string> = {
     <PrivacyContent lang={lang} />
   </main>
 
-  <div class="footer-links">
-    <a href={langPath(lang, 'about')} class="footer-link">{t.aria_about}</a>
-    <span class="footer-link">-</span>
-    <a href={langPath(lang, 'privacy')} class="footer-link">{t.about_privacy}</a>
-    {lang === 'fr' && <><span class="footer-link">-</span>{' '}<a href="/comment-ca-marche/" class="footer-link">Comment ça marche ?</a></>}
-    {lang === 'fr' && cityLinks.map(c => <><span class="footer-link">-</span>{' '}<a href={c.href} class="footer-link">{c.label}</a></>)}
-    <span class="footer-link">-</span>
-    <a href="/llms.txt" class="footer-link">llms.txt</a>
+  <div class="page-footer">
+    <Footer lang={lang} />
   </div>
 </div>
 

@@ -1,11 +1,10 @@
 ---
 // Shell for the single-language content pages (city pages, "Comment ça
-// marche ?"): head, a nav back to the app, and the same footer as the about
-// page. The page puts its own structured data in the "head" slot.
+// marche ?"): head, a nav back to the app, and the shared footer. The page puts its own structured data in the "head" slot.
 import '../styles/main.css';
 import MarkdownAlternate from '../components/MarkdownAlternate.astro';
 import { translations, langUrl, langPath, type Lang } from '../lib/i18n';
-import { cityLinks } from '../data/cities/links';
+import Footer from '../components/Footer.astro';
 
 interface Props {
   lang: Lang;
@@ -67,15 +66,9 @@ const url = langUrl(lang, path);
     <slot />
   </main>
 
-  <footer class="content-footer">
-    <a href={langPath(lang, 'about')}>{t.aria_about}</a>
-    <span>-</span>
-    <a href={langPath(lang, 'privacy')}>{t.about_privacy}</a>
-    {lang === 'fr' && <><span>-</span>{' '}<a href="/comment-ca-marche/">Comment ça marche ?</a></>}
-    {lang === 'fr' && cityLinks.map(c => <><span>-</span>{' '}<a href={c.href}>{c.label}</a></>)}
-    <span>-</span>
-    <a href="/llms.txt">llms.txt</a>
-  </footer>
+  <div class="page-footer">
+    <Footer lang={lang} />
+  </div>
 </div>
 
 <style is:global>
@@ -143,17 +136,6 @@ const url = langUrl(lang, path);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
-  .content-footer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-  .content-footer a { color: var(--muted); }
   /* Separators for the markdown copy and screen readers, hidden on screen */
   .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @media (max-width: 640px) {
