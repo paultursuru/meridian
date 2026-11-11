@@ -74,6 +74,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #app-description-arrow svg { display: block; width: 100%; height: 100%; }
 #app-description-content { flex: 1; min-width: 0; }
 #app-description-content p { margin: 0; white-space: pre-line; }
+#app-description-content p + p { margin-top: 4px; }
 #app-description-demo {
   display: inline-block;
   margin-top: 4px;

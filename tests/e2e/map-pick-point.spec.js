@@ -36,6 +36,13 @@ async function clickMap(page, dx = 420, dy = 260) {
   await page.mouse.click(box.x + dx, box.y + dy);
 }
 
+test('the intro bubble says the map can be clicked', async ({ page }) => {
+  await mockGeo(page);
+  await page.goto('/en/');
+  await expect(page.locator('#app-description-pick')).toHaveText('Or pick the start and end right on the map.');
+  await expect(page.locator('#app-description-pick')).toBeVisible();
+});
+
 test('picking a start from the map fills the field and drops a pin', async ({ page }) => {
   await mockGeo(page);
   await ready(page);
