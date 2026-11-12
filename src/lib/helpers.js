@@ -50,25 +50,34 @@ export function fmtHm(minutes) {
   return String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
 }
 
-// The trade-off sentence for one tab. `gain` is the points this route gains on
-// its own axis (sun for the sunny tab, shade for the shady one), `minutes` and
-// `otherMin` the two durations. A gain reads "X shorter / same / longer for Y
-// more"; a loss or a tie keeps the signed-time form.
+// The trade-off sentence for one tab. `gain` is the minutes of sun this route
+// gains on its own goal (more sun for the sunny tab, less for the shady one),
+// `minutes` and `otherMin` the two durations. A gain reads "X shorter / same /
+// longer for Y min", the same sun reads "X shorter / same / longer for the
+// same sun", a loss keeps the signed-time form.
 export function deltaPhrase(axis, gain, minutes, otherMin, tr) {
   const diff = minutes - otherMin;
-  const pct = String(Math.abs(gain));
-  if (gain > 0) {
-    const kind = diff < 0 ? 'faster' : diff > 0 ? 'slower' : 'same';
-    return tr(`delta_${axis}_${kind}`, { min: String(Math.abs(diff)), pct });
-  }
+  const kind = diff < 0 ? 'faster' : diff > 0 ? 'slower' : 'same';
+  const min = String(Math.abs(diff));
+  const sun = String(Math.abs(gain));
+  if (gain > 0) return tr(`delta_${axis}_${kind}`, { min, sun });
+  if (gain === 0) return tr(`delta_even_${kind}`, { min });
   const sign = diff > 0 ? '+' : diff < 0 ? '−' : '±';
-  return tr(`delta_${axis}_less`, { time: `${sign}${Math.abs(diff)} min`, pct });
+  return tr(`delta_${axis}_less`, { time: `${sign}${min} min`, sun });
 }
 
-// Both tabs' sentences. Sun and shade add up to 100, so the sunny route's
-// lead in sun is also the shady route's lead in shade: one gap, same sign.
+// Minutes in the sun on a route. The score is a share of the distance, and
+// the scorer walks the route at one average pace, so it is also a share of
+// the duration.
+const sunMinutes = (rt) => rt.sunScore * rt.duration / 60;
+
+// Both tabs' sentences, in minutes of sun rather than percentage points: the
+// two routes rarely take the same time, and a share of a longer walk is more
+// sun. Shade minutes would mislead on the shady tab: the shorter route has
+// fewer of them even when it is the shadier one. So both tabs count sun, and
+// the sunny route's extra sun is the shady route's sun avoided: one gap.
 export function deltaPhrases(sunny, shady, tr) {
-  const gap = Math.round(sunny.sunScore * 100) - Math.round(shady.sunScore * 100);
+  const gap = Math.round(sunMinutes(sunny) - sunMinutes(shady));
   const sunnyMin = Math.round(sunny.duration / 60);
   const shadyMin = Math.round(shady.duration / 60);
   return {
