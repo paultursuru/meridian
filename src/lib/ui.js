@@ -153,12 +153,9 @@ export function renderTab(id, rt) {
   }
 }
 
-// Review #2 §4.1: state the trade-off instead of making the user switch tabs
-// and do the subtraction themselves. Sun and shade are complementary, so the
-// two routes' sun-percentage gap is *the* delta for both axes — no separate
-// shade math needed. Each tab states what choosing it costs/saves in time
-// against what it gains on its own axis (shade for the shady tab, sun for
-// the sunny one).
+// State the trade-off instead of making the user switch tabs and do the
+// subtraction themselves: each tab says what choosing it costs or saves in
+// time against the minutes of sun it adds (sunny tab) or avoids (shady tab).
 function renderDeltas(sunny, shady) {
   const phrases = deltaPhrases(sunny, shady, tr);
   document.getElementById('sunny-delta').textContent = phrases.sunny;

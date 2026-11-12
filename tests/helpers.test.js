@@ -106,34 +106,61 @@ describe('localDateValue', () => {
 
 describe('deltaPhrase', () => {
   const tr = (k, v) => `${k}|${JSON.stringify(v)}`;
-  it('picks faster / same / slower when the route gains on its axis', () => {
-    expect(deltaPhrase('sunny', 5, 10, 15, tr)).toBe('delta_sunny_faster|{"min":"5","pct":"5"}');
-    expect(deltaPhrase('shady', 26, 12, 12, tr)).toBe('delta_shady_same|{"min":"0","pct":"26"}');
-    expect(deltaPhrase('sunny', 5, 20, 15, tr)).toBe('delta_sunny_slower|{"min":"5","pct":"5"}');
+  it('picks faster / same / slower when the route gains on its goal', () => {
+    expect(deltaPhrase('sunny', 5, 10, 15, tr)).toBe('delta_sunny_faster|{"min":"5","sun":"5"}');
+    expect(deltaPhrase('shady', 4, 12, 12, tr)).toBe('delta_shady_same|{"min":"0","sun":"4"}');
+    expect(deltaPhrase('sunny', 4, 20, 15, tr)).toBe('delta_sunny_slower|{"min":"5","sun":"4"}');
   });
-  it('keeps the signed-time form for a loss or a tie', () => {
-    expect(deltaPhrase('sunny', -3, 10, 15, tr)).toBe('delta_sunny_less|{"time":"−5 min","pct":"3"}');
-    expect(deltaPhrase('sunny', 0, 15, 15, tr)).toBe('delta_sunny_less|{"time":"±0 min","pct":"0"}');
+  it('says the same sun when the gap rounds to zero', () => {
+    expect(deltaPhrase('shady', 0, 26, 24, tr)).toBe('delta_even_slower|{"min":"2"}');
+    expect(deltaPhrase('sunny', 0, 24, 26, tr)).toBe('delta_even_faster|{"min":"2"}');
+    expect(deltaPhrase('sunny', 0, 15, 15, tr)).toBe('delta_even_same|{"min":"0"}');
+  });
+  it('keeps the signed-time form for a loss', () => {
+    expect(deltaPhrase('sunny', -3, 10, 15, tr)).toBe('delta_sunny_less|{"time":"−5 min","sun":"3"}');
+    expect(deltaPhrase('shady', -1, 20, 12, tr)).toBe('delta_shady_less|{"time":"+8 min","sun":"1"}');
   });
 });
 
 describe('deltaPhrases', () => {
   const tr = (k, v) => `${k}|${JSON.stringify(v)}`;
-  it('gives each tab the lead of its own route: more sun for one, more shade for the other', () => {
-    // The demo: 71 % sun against 45 % sun, so 55 % shade against 29 %.
+  it('counts minutes of sun, not percentage points', () => {
+    // Gare to Riponne, Lausanne, 21 December at 12:30: 34 % of 20 min against
+    // 17 % of 15 min is 6.8 min of sun against 2.6, a gap of 4 min where the
+    // percentages said 17 points.
+    const sunny = { sunScore: 0.34, duration: 20 * 60 };
+    const shady = { sunScore: 0.17, duration: 15 * 60 };
+    expect(deltaPhrases(sunny, shady, tr)).toEqual({
+      sunny: 'delta_sunny_slower|{"min":"5","sun":"4"}',
+      shady: 'delta_shady_faster|{"min":"5","sun":"4"}',
+    });
+  });
+  it('gives both tabs the same gap at the same duration', () => {
+    // The demo: 71 % sun against 45 % over 19 min each.
     const sunny = { sunScore: 0.71, duration: 1140 };
     const shady = { sunScore: 0.45, duration: 1140 };
     expect(deltaPhrases(sunny, shady, tr)).toEqual({
-      sunny: 'delta_sunny_same|{"min":"0","pct":"26"}',
-      shady: 'delta_shady_same|{"min":"0","pct":"26"}',
+      sunny: 'delta_sunny_same|{"min":"0","sun":"5"}',
+      shady: 'delta_shady_same|{"min":"0","sun":"5"}',
     });
   });
-  it('states the time against the other route, from each side', () => {
-    const sunny = { sunScore: 0.8, duration: 20 * 60 };
-    const shady = { sunScore: 0.3, duration: 15 * 60 };
+  it('says the same sun when a longer shady route avoids none', () => {
+    // Flon to Ouchy at 12:30: 37 % of 24 min against 34 % of 26 min, 8.9 min
+    // of sun against 8.8.
+    const sunny = { sunScore: 0.37, duration: 24 * 60 };
+    const shady = { sunScore: 0.34, duration: 26 * 60 };
     expect(deltaPhrases(sunny, shady, tr)).toEqual({
-      sunny: 'delta_sunny_slower|{"min":"5","pct":"50"}',
-      shady: 'delta_shady_faster|{"min":"5","pct":"50"}',
+      sunny: 'delta_even_faster|{"min":"2"}',
+      shady: 'delta_even_slower|{"min":"2"}',
+    });
+  });
+  it('turns the sentence around when the sunnier share is the fewer minutes', () => {
+    // 40 % of 10 min is 4 min of sun, 30 % of 20 min is 6.
+    const sunny = { sunScore: 0.4, duration: 10 * 60 };
+    const shady = { sunScore: 0.3, duration: 20 * 60 };
+    expect(deltaPhrases(sunny, shady, tr)).toEqual({
+      sunny: 'delta_sunny_less|{"time":"−10 min","sun":"2"}',
+      shady: 'delta_shady_less|{"time":"+10 min","sun":"2"}',
     });
   });
 });

@@ -53,7 +53,7 @@ export const lausanne: CityPage = {
             from: { label: 'Gare de Lausanne', lat: 46.51699, lng: 6.62917 },
             to: { label: 'Place de la Riponne', lat: 46.52419, lng: 6.63319 },
             when: { monthDay: '12-21', time: '12:30', label: 'le 21 décembre à 12 h 30' },
-            summary: 'Le chemin au soleil garde deux fois plus de soleil que le plus court, pour 5 minutes de marche en plus.',
+            summary: 'Le chemin au soleil garde près de trois fois plus de soleil que le plus court : 4 minutes de soleil gagnées pour 5 minutes de marche en plus.',
             sunny: { label: 'Chemin au soleil', minutes: 20, km: '1,4' },
             other: { label: 'Chemin le plus court', minutes: 15, km: '1,0' },
           },
@@ -102,7 +102,7 @@ export const lausanne: CityPage = {
         },
         {
           q: 'Comment trouver un itinéraire au soleil à Lausanne ?',
-          a: 'MeridianWay compare plusieurs chemins à pied selon la position du soleil et les ombres des bâtiments (données swisstopo) : entre la gare et la Riponne à 12 h 30 en décembre, le chemin au soleil en garde deux fois plus que le plus court, pour 5 minutes de marche en plus.',
+          a: 'MeridianWay compare plusieurs chemins à pied selon la position du soleil et les ombres des bâtiments (données swisstopo) : entre la gare et la Riponne à 12 h 30 en décembre, le chemin au soleil garde près de trois fois plus de soleil que le plus court : 4 minutes de soleil gagnées pour 5 minutes de marche en plus.',
         },
         {
           q: 'Quel marché de Bô Noël est le plus au soleil ?',
