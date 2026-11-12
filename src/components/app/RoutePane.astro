@@ -16,8 +16,8 @@ const dot = kind === 'sunny' ? 'sun' : 'shade';
   <button class="pane-title" type="button" data-tab={kind}><span class:list={['side-dot', dot]} aria-hidden="true"></span>{title}</button>
   <div class="ratio-wrap">
     <div class="ratio-nums">
-      <span class="ratio-shade-num"><span class="side-dot shade" aria-hidden="true"></span>{t.label_shade} <strong id={`${kind}-shade-pct`}></strong></span>
-      <span class="ratio-sun-num"><strong id={`${kind}-sun-pct`}></strong> <span class="side-dot sun" aria-hidden="true"></span>{t.label_sun}</span>
+      <span class:list={['ratio-shade-num', { lead: kind === 'shady' }]}><span class="side-dot shade" aria-hidden="true"></span>{t.label_shade} <strong id={`${kind}-shade-pct`}></strong></span>
+      <span class:list={['ratio-sun-num', { lead: kind === 'sunny' }]}><strong id={`${kind}-sun-pct`}></strong> <span class="side-dot sun" aria-hidden="true"></span>{t.label_sun}</span>
     </div>
     <div class="ratio-track">
       <div class="ratio-seg ratio-seg-shade" id={`${kind}-shade-fill`} style="width:0%"></div>
