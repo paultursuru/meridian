@@ -12,6 +12,12 @@ import markDon from 'astro-mark-don';
 export default defineConfig({
   site: 'https://meridian-way.ch',
   vite: {
+    // Found only once a page runs (dynamic imports, the Sentry client): a cold
+    // dev server optimised them on the first page and reloaded it twice, which
+    // took the page from under whichever e2e spec ran first in CI.
+    optimizeDeps: {
+      include: ['@sentry/astro', 'tz-lookup', 'suncalc', 'leaflet', '@maplibre/maplibre-gl-leaflet'],
+    },
     server: {
       // The same relays nginx.conf runs in production. `astro preview`
       // inherits them too.
