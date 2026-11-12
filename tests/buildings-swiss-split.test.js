@@ -69,6 +69,27 @@ describe('fetchBuildings (switzerland) — client-side bbox splitting', () => {
     expect(buildings.some(b => b.centroid.lat === 46.51)).toBe(true);
   });
 
+  it("still asks when only a split within the Worker's own 45-tile cap fits", async () => {
+    const calls = mockFetch(() => jsonResponse([]));
+    // 12 x 14 tiles: every split leaves a piece over 40, the 2x2 one tops out at 42.
+    const bbox = [46.50, 6.50, 46.6199, 6.6399];
+    const { status } = await fetchBuildings(bbox, { switzerland: true });
+    expect(status).toBe('ok');
+    const tileCounts = calls.map(tileCountFromUrl);
+    expect(tileCounts).toHaveLength(4);
+    expect(Math.max(...tileCounts)).toBeGreaterThan(40);
+    for (const c of tileCounts) expect(c).toBeLessThanOrEqual(45);
+  });
+
+  it('calls a bbox past four pieces too long, without asking the Worker', async () => {
+    const calls = mockFetch(() => jsonResponse({ error: 'bbox too large' }, false, 400));
+    // Lausanne -> Yverdon, 35 km: 224 tiles, 56 in the best of the 4-piece splits.
+    const bbox = [46.515, 6.62, 46.78, 6.69];
+    const res = await fetchBuildings(bbox, { switzerland: true });
+    expect(res).toEqual({ buildings: [], status: 'failed', source: 'swisstopo', cause: 'too_long' });
+    expect(calls).toEqual([]);
+  });
+
   it("reports 'failed' if any one piece's request fails, same as an unsplit fetch", async () => {
     let call = 0;
     mockFetch(() => (call++ === 1 ? jsonResponse('', false, 504) : jsonResponse([])));
