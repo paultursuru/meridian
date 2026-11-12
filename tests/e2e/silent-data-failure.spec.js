@@ -18,9 +18,9 @@ async function mockUpstreams(page, { buildingsStatus = 200 } = {}) {
   // and makes querySourceFeatures come back empty, which is the real "tiles
   // can't answer" case the Overpass fallback exists for.
   await page.route('https://tiles.stadiamaps.com/data/**', route => route.abort());
-  await page.route('https://tiles.stadiamaps.com/styles/**', route => route.fulfill({ status: 429, body: '' }));
   // And the fallback's: when Stadia refuses the style (a 429 under a busy run),
   // the app reads its buildings from OpenFreeMap instead.
+  await page.route('https://tiles.openfreemap.org/planet**', route => route.abort());
   await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({
     json: { display_name: 'Paris, France', address: { country_code: 'fr' } },
   }));
