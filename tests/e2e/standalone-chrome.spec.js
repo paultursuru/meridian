@@ -235,18 +235,23 @@ test.describe('safe-area insets, simulated', () => {
     // problem rather than a peek problem, and a separate declaration.
     const bottom = await page.evaluate(() => {
       const el = document.getElementById('results');
-      // Only the part under the tabs scrolls.
+      // Only the part under the tabs scrolls, and nothing in it draws past
+      // that part's own bottom edge: the edge is what must clear the indicator.
       const body = document.getElementById('drawer-body');
       body.scrollTop = body.scrollHeight;
       const last = [...body.children].reverse().find(c => c.getBoundingClientRect().height > 0);
       return {
         padding: parseFloat(getComputedStyle(el).paddingBottom),
-        // Scrolled to the end, a fraction of a pixel can stay below the fold.
-        content: Math.round(last.getBoundingClientRect().bottom),
+        edge: Math.round(body.getBoundingClientRect().bottom),
+        content: last.getBoundingClientRect().bottom,
         window: window.innerHeight,
       };
     });
     expect(bottom.padding).toBe(34);
-    expect(bottom.content).toBeLessThanOrEqual(bottom.window - 34);
+    expect(bottom.edge).toBeLessThanOrEqual(bottom.window - 34);
+    // And the last line scrolls up to that edge. The scroll offset is in whole
+    // pixels and the layout is not: up to a pixel can stay clipped under it
+    // (811 against 810 on the Linux runner).
+    expect(bottom.content).toBeLessThanOrEqual(bottom.edge + 1);
   });
 });
