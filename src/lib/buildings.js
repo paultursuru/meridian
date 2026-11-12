@@ -180,6 +180,7 @@ function dedupeSwissBuildings(buildings) {
 // here, client-side, and fire them in parallel: each gets its own
 // subrequest budget, and parallel requests are faster than one large one.
 const MAX_TILES_PER_REQUEST = 40; // safety margin under the Worker's 45
+const WORKER_MAX_CELLS = 45; // swissbuildings-lookup's MAX_CELLS
 
 function estimateTileCount(bbox) {
   const [s, w, n, e] = bbox;
@@ -239,19 +240,17 @@ function quadrants(bbox, latPieces, lngPieces) {
 // route's bbox is usually long and thin); falls back to a balanced 2x2 grid
 // if splitting one axis alone isn't enough. Capped at 4 total pieces per the
 // doc's "split large bboxes client-side into 2-4 sub-bboxes" — this targets
-// a "long-ish 10 km walk", not an unbounded route length. Genuinely longer
-// routes can still exceed the Worker's MAX_CELLS guard even after this; that
-// surfaces as the existing 'failed'/data-unavailable state (review #2 §1.1),
-// not a crash.
+// a "long-ish 10 km walk", not an unbounded route length. When no split keeps
+// the margin, the first one within the Worker's own cap still goes; null past
+// that, since the Worker would refuse the oversized pieces and the caller can
+// say the route is too long instead of asking.
 function splitBbox(bbox) {
   const [s, w, n, e] = bbox;
   const longerIsLat = (n - s) >= (e - w);
   const candidates = longerIsLat ? [[2, 1], [3, 1], [4, 1], [2, 2]] : [[1, 2], [1, 3], [1, 4], [2, 2]];
-  for (const [latN, lngN] of candidates) {
-    const pieces = quadrants(bbox, latN, lngN);
-    if (pieces.every(p => estimateTileCount(p) <= MAX_TILES_PER_REQUEST)) return pieces;
-  }
-  return quadrants(bbox, 2, 2);
+  const splits = candidates.map(([latN, lngN]) => quadrants(bbox, latN, lngN));
+  const fits = (max) => (pieces) => pieces.every(p => estimateTileCount(p) <= max);
+  return splits.find(fits(MAX_TILES_PER_REQUEST)) ?? splits.find(fits(WORKER_MAX_CELLS)) ?? null;
 }
 
 // A lookup that never answers would hold the search on its buildings status
@@ -272,8 +271,7 @@ async function fetchSwissBuildingsTile(bbox) {
   return r.json();
 }
 
-async function fetchSwissBuildings(bbox) {
-  const pieces = estimateTileCount(bbox) > MAX_TILES_PER_REQUEST ? splitBbox(bbox) : [bbox];
+async function fetchSwissBuildings(bbox, pieces) {
   const raw = (await Promise.all(pieces.map(fetchSwissBuildingsTile))).flat();
   return dedupeSwissBuildings(raw).filter(b => insideBbox(b, bbox));
 }
@@ -285,8 +283,11 @@ async function fetchSwissBuildings(bbox) {
 // parseBuildings() produces below, so nothing downstream changes.
 export async function fetchBuildings(bbox, { switzerland = false } = {}) {
   if (switzerland) {
+    const pieces = estimateTileCount(bbox) > MAX_TILES_PER_REQUEST ? splitBbox(bbox) : [bbox];
+    // Same verdict as the tile grid abroad: trying again changes nothing.
+    if (!pieces) return { buildings: [], status: 'failed', source: 'swisstopo', cause: 'too_long' };
     try {
-      const buildings = await fetchSwissBuildings(bbox);
+      const buildings = await fetchSwissBuildings(bbox, pieces);
       return { buildings, status: 'ok', source: 'swisstopo' };
     } catch (err) {
       console.warn('swissbuildings-lookup failed, shadows disabled for this query', err);
