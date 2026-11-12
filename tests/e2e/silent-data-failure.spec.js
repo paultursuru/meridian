@@ -21,7 +21,6 @@ async function mockUpstreams(page, { buildingsStatus = 200 } = {}) {
   await page.route('https://tiles.stadiamaps.com/styles/**', route => route.fulfill({ status: 429, body: '' }));
   // And the fallback's: when Stadia refuses the style (a 429 under a busy run),
   // the app reads its buildings from OpenFreeMap instead.
-  await page.route('https://tiles.openfreemap.org/planet**', route => route.abort());
   await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({
     json: { display_name: 'Paris, France', address: { country_code: 'fr' } },
   }));
