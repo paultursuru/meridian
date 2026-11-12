@@ -11,6 +11,10 @@ import markDon from 'astro-mark-don';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://meridian-way.ch',
+  // Off here rather than in each machine's `astro preferences`: in CI it sat
+  // over the page, took clicks meant for the app and added off-screen Tab
+  // stops to the focus specs.
+  devToolbar: { enabled: false },
   vite: {
     // Found only once a page runs (dynamic imports, the Sentry client): a cold
     // dev server optimised them on the first page and reloaded it twice, which
