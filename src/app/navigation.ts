@@ -11,6 +11,7 @@ import { field, applyPlace, resetFields, fieldStates, restoreFields } from './fi
 import { setDepartureNow, closeDepartPopover } from './departure';
 import { hideAppDescription, showOnboardingNote, hideOnboardingButton, type DemoEntry } from './intro';
 import { resetSunInfo } from './sunInfo';
+import { resetHourBadges } from './hourBadges';
 import { hideFormSummary } from './formSummary';
 import { isAboutOpen, closeAbout } from './aboutDrawer';
 import { handleSearch, setSearchBusy } from './search';
@@ -76,6 +77,7 @@ export function resetSearch() {
   // Rather than waiting on the upstreams of a search that no longer counts.
   setSearchBusy(false);
   resetSunInfo();
+  resetHourBadges();
 }
 
 // Off the search's history entry, so Back then leaves the app. Landed on as

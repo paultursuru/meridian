@@ -17,6 +17,7 @@ import { map, selectRoute, reselectActiveRoute, activeRoute } from './mapApi';
 import { el, input } from './dom';
 import { state, urlHasSearch } from './state';
 import { updateSunInfo, updateMapWeather } from './sunInfo';
+import { syncHourBadges } from './hourBadges';
 import { hideOnboardingButton } from './intro';
 import { showFormSummary, updateFormSummary } from './formSummary';
 
@@ -90,17 +91,16 @@ export function createSearchSession(ctx: SearchContext) {
     showQualityNote(note);
   }
 
-  // At the rendered instant. Empty until the weather lands.
+  // At the rendered instant. Empty until the weather lands. Runs after every
+  // other note of the hour is set (renderAt) and whenever the forecast lands,
+  // so the badges over the scrubber follow from here.
   function updateWeatherInfo(atDate: Date) {
     const w = weatherAt(hourlyWeather, atDate);
-    const weatherEl = el('weather-note');
-    if (w && w.cloudCover >= OVERCAST_PCT) {
-      weatherEl.textContent = tr('weather_overcast', { pct: String(Math.round(w.cloudCover)) });
-      weatherEl.classList.add('on');
-    } else {
-      weatherEl.classList.remove('on');
-    }
+    const overcast = !!w && w.cloudCover >= OVERCAST_PCT;
+    if (overcast) el('weather-note-text').textContent = tr('weather_overcast', { pct: String(Math.round(w.cloudCover)) });
+    el('weather-note').classList.toggle('on', overcast);
     updateMapWeather(w);
+    syncHourBadges(w?.cloudCover ?? null);
   }
 
   const shareUrl = (atDate: Date) => location.pathname + '?' + buildShareQuery({

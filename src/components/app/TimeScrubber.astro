@@ -1,6 +1,8 @@
 ---
 import { translations, type Lang } from '../../lib/i18n';
 import eclipseIcon from '../../icons/eclipse-marker.svg?raw';
+import cloudIcon from '../../icons/cloud.svg?raw';
+import lowSunIcon from '../../icons/low-sun.svg?raw';
 
 interface Props {
   lang: Lang;
@@ -10,6 +12,14 @@ const { lang } = Astro.props;
 const t = translations[lang];
 ---
 <div id="time-scrubber">
+  <!-- Mobile: what changes how to read this hour, kept out of the folded
+       drawer so the shade/sun bar stays in view. The drawer holds the full
+       sentences; these only point at them. -->
+  <div id="hour-badges">
+    <button id="badge-weather" class="hour-badge" type="button" data-note="weather-note" aria-expanded="false" aria-controls="hour-bubble" hidden set:html={cloudIcon} />
+    <button id="badge-grazing" class="hour-badge sun" type="button" data-note="grazing-sun-note" aria-label={t.badge_grazing} aria-expanded="false" aria-controls="hour-bubble" hidden set:html={lowSunIcon} />
+    <p id="hour-bubble" hidden></p>
+  </div>
   <span id="scrubber-time"></span>
   <div id="scrubber-rail">
     <div id="scrubber-track">

@@ -316,6 +316,10 @@ const SCRUBBER_HEIGHT = 34;
 // panel width to fall back on if the CSS variable can't be read.
 // Kept in sync with --side-panel-w in main.css.
 const SIDE_PANEL_MAP_PAD = 40;
+// The badges over the mobile scrubber (hourBadges.ts): 40 px and their gap.
+// Kept clear even before the forecast lands and shows one, so the route is
+// framed once.
+const HOUR_BADGES_ROW = 48;
 const SIDE_PANEL_FALLBACK_W = 380;
 
 // How much of the map's bottom edge is covered by chrome: the drawer's peek
@@ -328,7 +332,7 @@ export function bottomOverlayPx() {
   // docks inside the panel), so this is plain breathing room.
   if (sidePanel()) return SIDE_PANEL_MAP_PAD;
   const drawer = document.getElementById('results');
-  return (drawer ? drawerPeekPx(drawer) : 168) + SCRUBBER_GAP + SCRUBBER_HEIGHT;
+  return (drawer ? drawerPeekPx(drawer) : 168) + SCRUBBER_GAP + SCRUBBER_HEIGHT + HOUR_BADGES_ROW;
 }
 
 // How far down into the map the stack under the depart button reaches: the
