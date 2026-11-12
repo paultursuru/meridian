@@ -46,10 +46,15 @@ export function updateSunInfo(
   el('map-sun-info-datetime').textContent = datetime;
 }
 
+// Written twice: the sun badge's details on the side panel, the drawer's
+// notes on mobile, where the badge stays short. CSS shows one of the two.
 export function updateMapWeather(weather: { cloudCover: number; temperature: number | null } | null) {
-  el('map-sun-info-weather').textContent = weather && weather.temperature != null
+  const text = weather && weather.temperature != null
     ? tr('map_weather', { temp: String(Math.round(weather.temperature)), cloud: String(Math.round(weather.cloudCover)) })
     : '';
+  el('map-sun-info-weather').textContent = text;
+  el('hour-weather').textContent = text;
+  el('hour-weather').classList.toggle('on', !!text);
 }
 
 export function resetSunInfo() {
@@ -57,4 +62,6 @@ export function resetSunInfo() {
   badge.classList.remove('on', 'day', 'night', 'expanded');
   badge.setAttribute('aria-expanded', 'false');
   el('map-sun-info-weather').textContent = '';
+  el('hour-weather').textContent = '';
+  el('hour-weather').classList.remove('on');
 }

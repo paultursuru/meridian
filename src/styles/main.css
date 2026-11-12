@@ -183,6 +183,9 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   opacity: 0.8;
 }
 #map-sun-info-weather:empty { display: none; }
+@media (max-width: 899px) {
+  #map-sun-info-weather { display: none; }
+}
 @media (max-width: 600px) {
   #map-sun-info {
     top: 8px;
@@ -1043,8 +1046,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 #panel-toggle { display: none; }
 
 /* ── Single-route note (replaces the tabs when only one unique route exists) ── */
-#single-route-note,
-#similar-routes-note {
+#single-route-note {
   display: none;
   padding: 9px 16px 11px;
   border-bottom: 1.5px solid rgba(240,242,160,0.1);
@@ -1052,8 +1054,7 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   color: rgba(216,219,200,0.55);
   text-align: center;
 }
-#single-route-note.on,
-#similar-routes-note.on { display: block; }
+#single-route-note.on { display: block; }
 
 /* ── Eclipse note (2026-08-12 window, Swiss routes only; see sun.js) ── */
 #eclipse-note {
@@ -1066,27 +1067,90 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
 }
 #eclipse-note.on { display: block; }
 
-/* ── Grazing-sun note (day, sun under GRAZING_SUN_DEG) ── */
-#grazing-sun-note {
+/* ── Notes of the hour (overcast sky, very low sun, alike routes), under the
+   routes. On mobile the badges over the scrubber point here; the side panel
+   lays them out one by one (display: contents, further down). ── */
+#hour-notes {
   display: none;
-  padding: 9px 16px 11px;
-  border-bottom: 1.5px solid rgba(240,242,160,0.1);
-  font-size: 0.82rem;
-  color: rgba(216,219,200,0.55);
-  text-align: center;
+  padding: 12px 16px 6px;
+  border-top: 1.5px solid rgba(240,242,160,0.1);
 }
-#grazing-sun-note.on { display: block; }
+#hour-notes:has(.on) { display: block; }
+#hour-notes-title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #d8dbc8;
+}
+#hour-weather {
+  display: none;
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(216,219,200,0.75);
+}
+#hour-weather.on { display: block; }
+.hour-note {
+  display: none;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(216,219,200,0.75);
+}
+.hour-note.on { display: flex; }
+.hour-note svg { flex: none; width: 16px; height: 16px; margin-top: 1px; }
+#grazing-sun-note svg { color: #f0f2a0; }
+/* The lines without an icon start where the others' text does. */
+#hour-weather,
+#similar-routes-note { padding-left: 26px; }
 
-/* ── Weather note (overcast forecast, at the bottom of the drawer) ── */
-#weather-note {
-  display: none;
-  padding: 9px 16px 11px;
-  border-bottom: 1.5px solid rgba(240,242,160,0.1);
-  font-size: 0.82rem;
-  color: rgba(216,219,200,0.55);
-  text-align: center;
+/* ── Badges over the mobile scrubber, one per note of the hour ── */
+#hour-badges {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: flex;
+  gap: 8px;
 }
-#weather-note.on { display: block; }
+.hour-badge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: #0e120a;
+  border: 1.5px solid rgba(240,242,160,0.2);
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  color: #d8dbc8;
+  cursor: pointer;
+}
+.hour-badge[hidden] { display: none; }
+.hour-badge.sun { color: #f0f2a0; }
+.hour-badge[aria-expanded="true"] { border-color: rgba(240,242,160,0.6); }
+/* 44 px to the finger, 40 px to the eye. */
+.hour-badge::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; }
+/* Inside the dark disc: the map around it is light. */
+.hour-badge:focus-visible { outline: 2px solid #f0f2a0; outline-offset: -5px; }
+#hour-bubble {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: min(280px, calc(100vw - 24px));
+  margin: 0;
+  padding: 8px 12px;
+  background: #0e120a;
+  border: 1.5px solid rgba(240,242,160,0.2);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  color: #d8dbc8;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+#hour-bubble[hidden] { display: none; }
 
 /* ── Quality note (OSM height-data coverage hint, review 3.5; data-failure warning, review #2 §1.1) ── */
 #quality-note {
@@ -1520,8 +1584,11 @@ p.opensource-badge {
 }
 
 /* ── Touch press feedback ── */
+/* Not on the buttons that open and close something: opening is their feedback,
+   and a browser that holds :active after the tap (Firefox's touch simulation)
+   left the sun badge faded once closed. */
 @media (hover: none) {
-  button:active,
+  button:not([aria-expanded]):active,
   .lang-btn:active,
   .about-link:active { opacity: 0.6; }
 }
@@ -1590,12 +1657,25 @@ p.opensource-badge {
   #tab-sunny.active .pane-title { color: #f0f2a0; }
   #tab-shady.active .pane-title { color: #e8c8f0; }
 
+  /* The notes of the hour become the panel's own items: the overcast sky
+     heads it (it changes how to read both routes), the rest sit under the
+     cards. The badges and the block's title are for the mobile drawer, and
+     the weather line stays in the sun badge, which has the room here. */
+  #hour-notes,
+  #hour-notes:has(.on) { display: contents; }
+  #hour-notes-title,
+  #hour-notes #hour-weather,
+  #hour-badges { display: none; }
+  #drawer-handle { order: -2; }
+  #weather-note { order: -1; }
   #night-note,
   #eclipse-note,
   #grazing-sun-note,
   #single-route-note,
   #similar-routes-note { order: 2; }
   #quality-note { order: 4; }
+  .hour-note { margin: 0; }
+  #similar-routes-note { padding-left: 16px; }
   #night-note,
   #eclipse-note,
   #grazing-sun-note,
