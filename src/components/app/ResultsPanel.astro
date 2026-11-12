@@ -31,19 +31,23 @@ const t = translations[lang];
     <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady"><span class="side-dot shade" aria-hidden="true"></span>{t.tab_shady}</button>
     <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny"><span class="side-dot sun" aria-hidden="true"></span>{t.tab_sunny}</button>
   </div>
-  <RoutePane lang={lang} kind="sunny" active />
-  <RoutePane lang={lang} kind="shady" />
-  <!-- Under the routes, so the folded drawer keeps its shade/sun bar: on
-       mobile the badges over the scrubber point here. The side panel lays
-       these out on its own (display: contents), weather first. -->
-  <div id="hour-notes">
-    <h2 id="hour-notes-title">{t.hour_notes_title}</h2>
-    <p id="hour-weather"></p>
-    <div id="weather-note" class="hour-note"><Fragment set:html={cloudIcon} /><span id="weather-note-text"></span></div>
-    <div id="grazing-sun-note" class="hour-note"><Fragment set:html={lowSunIcon} /><span>{t.grazing_sun_note}</span></div>
-    <div id="similar-routes-note" class="hour-note"><span>{t.similar_routes_note}</span></div>
+  <!-- Expanded on mobile, only this part scrolls: the tabs and Share stay in
+       view above it. The side panel scrolls as a whole (display: contents). -->
+  <div id="drawer-body">
+    <RoutePane lang={lang} kind="sunny" active />
+    <RoutePane lang={lang} kind="shady" />
+    <!-- Under the routes, so the folded drawer keeps its shade/sun bar: on
+         mobile the badges over the scrubber point here. The side panel lays
+         these out on its own (display: contents), weather first. -->
+    <div id="hour-notes">
+      <h2 id="hour-notes-title">{t.hour_notes_title}</h2>
+      <p id="hour-weather"></p>
+      <div id="weather-note" class="hour-note"><Fragment set:html={cloudIcon} /><span id="weather-note-text"></span></div>
+      <div id="grazing-sun-note" class="hour-note"><Fragment set:html={lowSunIcon} /><span>{t.grazing_sun_note}</span></div>
+      <div id="similar-routes-note" class="hour-note"><span>{t.similar_routes_note}</span></div>
+    </div>
+    <div id="quality-note"></div>
   </div>
-  <div id="quality-note"></div>
 </div>
 
 <!-- Desktop only: folds the side panel away. A sibling of #results, which

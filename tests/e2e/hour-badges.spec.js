@@ -99,3 +99,35 @@ test('the badges and their bubble pass the WCAG rules', async ({ page }) => {
   // A rule that crashes lands in "incomplete", and the line above would pass without it.
   expect(incomplete.filter(rule => rule.error).map(rule => rule.id)).toEqual([]);
 });
+
+test('expanded, only the part under the tabs scrolls, and the badges step aside', async ({ page }) => {
+  // A short screen, so the routes and notes need more room than the drawer has.
+  await page.setViewportSize({ width: 375, height: 667 });
+  await mockUpstreams(page);
+  await page.goto(`/?from=${START}&to=${END}&dt=2026-08-13T20:30`);
+  await expect(page.locator('#grazing-sun-note')).toHaveClass(/on/, { timeout: 20_000 });
+  await page.click('#drawer-handle');
+  await expect(page.locator('#results')).toHaveClass(/expanded/);
+  await page.waitForTimeout(500);
+
+  await expect(page.locator('#hour-badges')).toBeHidden();
+  const body = page.locator('#drawer-body');
+  const sizes = await body.evaluate(el => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+  expect(sizes.scroll).toBeGreaterThan(sizes.client);
+
+  const tabsBefore = await page.locator('#tabs').boundingBox();
+  await body.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await expect(page.locator('#hour-notes-title')).toBeInViewport();
+  expect(await page.locator('#tabs').boundingBox()).toEqual(tabsBefore);
+  await expect(page.locator('#share-btn')).toBeInViewport();
+  // Under the folded form, with the scrubber still clear of it.
+  const scrubber = await page.locator('#time-scrubber').boundingBox();
+  const mapTop = await page.locator('#map').evaluate(el => el.getBoundingClientRect().top);
+  expect(scrubber.y).toBeGreaterThanOrEqual(mapTop);
+
+  // Folded again, it shows the top of the route, not where it was scrolled.
+  await page.click('#drawer-handle');
+  await expect(page.locator('#results')).not.toHaveClass(/expanded/);
+  expect(await body.evaluate(el => el.scrollTop)).toBe(0);
+  await expect(page.locator('#badge-weather')).toBeVisible();
+});

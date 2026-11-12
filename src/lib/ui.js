@@ -246,6 +246,9 @@ export function collapseDrawer() {
   const drawer = document.getElementById('results');
   if (!drawer || !drawer.classList.contains('expanded')) return;
   drawer.classList.remove('expanded');
+  // Folded, it shows the top of the route again, not wherever it was scrolled.
+  const body = document.getElementById('drawer-body');
+  if (body) body.scrollTop = 0;
   updateScrubberPosition();
 }
 

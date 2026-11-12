@@ -904,8 +904,13 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   border-top: 1px solid rgba(240,242,160,0.13);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
   z-index: 2000;
-  max-height: 82vh;
-  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  /* Expanded, half the screen at most: the map is still the point. And on a
+     screen too low for that, it stops under the folded form with room for the
+     scrubber above it (48 px and its gaps). */
+  max-height: 50vh;
+  max-height: min(50dvh, calc(100dvh - var(--map-top, 96px) - 64px));
   overflow: hidden;
   transform: translateY(100%);
   /* Off screen, its controls would still take Tab stops. Hidden once the slide
@@ -914,8 +919,15 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), visibility 0s linear 0.32s;
 }
 #results.on       { transform: translateY(calc(100% - var(--drawer-peek))); visibility: visible; transition-delay: 0s; }
-#results.expanded { transform: translateY(0); overflow-y: auto; overscroll-behavior: contain; }
+#results.expanded { transform: translateY(0); }
 #results.night.on { transform: translateY(0); }
+#results > :not(#drawer-body) { flex: none; }
+/* The tabs and Share stay put, the routes and notes under them scroll. */
+#drawer-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+#results.expanded #drawer-body,
+#results.night #drawer-body { overflow-y: auto; overscroll-behavior: contain; }
+/* Expanded, the notes are on screen: their badges would only repeat them. */
+body:has(#results.expanded) #hour-badges { display: none; }
 
 /* ── Time scrubber (floats just above the results drawer, follows it up when expanded) ── */
 #time-scrubber {
@@ -1661,8 +1673,10 @@ p.opensource-badge {
      heads it (it changes how to read both routes), the rest sit under the
      cards. The badges and the block's title are for the mobile drawer, and
      the weather line stays in the sun badge, which has the room here. */
+  #drawer-body,
   #hour-notes,
   #hour-notes:has(.on) { display: contents; }
+  #drawer-body > * { flex: 0 0 auto; }
   #hour-notes-title,
   #hour-notes #hour-weather,
   #hour-badges { display: none; }

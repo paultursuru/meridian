@@ -83,9 +83,12 @@ async function settledGap(page) {
 // side panel with the scrubber inside it (main.css), where there is no top
 // edge to be pushed under and no handle to expand. That layout has its own
 // spec, desktop-side-panel.spec.js. 880 is the widest the sheet ever gets.
+// Tall screens: the expanded drawer stops at half the screen, and at its cap a
+// new note scrolls inside it instead of growing it, which leaves the scrubber
+// nothing to follow.
 for (const viewport of [
-  { name: 'wide', width: 880, height: 800 },
-  { name: 'mobile', width: 390, height: 844 },
+  { name: 'wide', width: 880, height: 1100 },
+  { name: 'mobile', width: 390, height: 1300 },
 ]) {
   test(`the expanded drawer never covers the scrubber when a note appears mid-scrub (${viewport.name})`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });

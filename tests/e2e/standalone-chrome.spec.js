@@ -137,8 +137,9 @@ test.describe('the installed-app declarations', () => {
     expect(highlight).toBe('rgba(0, 0, 0, 0)');
     // The replacement, which is the half that is easy to forget: :hover never
     // fires on touch, so removing the highlight on its own leaves a tap with
-    // no acknowledgement at all.
-    expect(await declarationsFor(page, 'button:active')).toContain('opacity');
+    // no acknowledgement at all. Buttons that open something are left out:
+    // opening is their acknowledgement.
+    expect(await declarationsFor(page, 'button:not([aria-expanded]):active')).toContain('opacity');
   });
 });
 
@@ -234,11 +235,14 @@ test.describe('safe-area insets, simulated', () => {
     // problem rather than a peek problem, and a separate declaration.
     const bottom = await page.evaluate(() => {
       const el = document.getElementById('results');
-      el.scrollTop = el.scrollHeight;
-      const last = [...el.children].reverse().find(c => c.getBoundingClientRect().height > 0);
+      // Only the part under the tabs scrolls.
+      const body = document.getElementById('drawer-body');
+      body.scrollTop = body.scrollHeight;
+      const last = [...body.children].reverse().find(c => c.getBoundingClientRect().height > 0);
       return {
         padding: parseFloat(getComputedStyle(el).paddingBottom),
-        content: last.getBoundingClientRect().bottom,
+        // Scrolled to the end, a fraction of a pixel can stay below the fold.
+        content: Math.round(last.getBoundingClientRect().bottom),
         window: window.innerHeight,
       };
     });
