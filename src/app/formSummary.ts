@@ -1,6 +1,5 @@
 import { getLang } from '../lib/i18n.js';
 import { placeShortName, summaryWhen } from '../lib/helpers.js';
-import { map, mapLoaded } from './mapApi';
 import { el, button } from './dom';
 
 // On a phone, once a result is on screen, the form folds into a two-line
@@ -18,21 +17,14 @@ const shown = (b: HTMLElement) => b.offsetParent !== null;
 // and the date popover closes: focus drops to <body> before the fold.
 let focusLastInPanel = false;
 
-// The map's top edge moves with the form. Leaflet only watches the window:
-// it is told here, and keeps what was on screen where it was.
-function relayout(change: () => void) {
-  const before = el('map').getBoundingClientRect().top;
-  change();
-  if (mapLoaded()) map.mapTopMoved(before);
-}
-
 // Each state hides the button that leads to it, and whatever had focus in
 // the form: focus goes to the button that leads back, which also puts the
-// phone's keyboard away when the form folds.
+// phone's keyboard away when the form folds. The map follows on its own
+// (initLayout).
 function setFolded(folded: boolean) {
   const active = document.activeElement;
   const fromPanel = panel().contains(active) || ((!active || active === document.body) && focusLastInPanel);
-  relayout(() => panel().classList.toggle('folded', folded));
+  panel().classList.toggle('folded', folded);
   const next = folded ? summary() : foldBtn();
   if (fromPanel && shown(next)) next.focus();
 }
@@ -58,7 +50,7 @@ export function showFormSummary() {
 export function hideFormSummary() {
   const active = document.activeElement;
   const lost = active === summary() || active === foldBtn();
-  relayout(() => panel().classList.remove('has-summary', 'folded'));
+  panel().classList.remove('has-summary', 'folded');
   if (lost) panel().focus({ preventScroll: true });
 }
 

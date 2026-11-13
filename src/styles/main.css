@@ -1293,7 +1293,7 @@ body:has(#results.expanded) #hour-badges { display: none; }
 .ratio-delta:empty { display: none; }
 
 @media (max-height: 700px) {
-  #results { --drawer-peek: 142px; }
+  #results { --drawer-peek: calc(142px + var(--safe-bottom)); }
   #drawer-handle { padding: 6px 0 7px; }
   /* No room for the label above the tabs here: icon only. */
   #share-btn { top: 4px; padding: 0 6px; }

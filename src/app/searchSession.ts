@@ -113,6 +113,14 @@ export function createSearchSession(ctx: SearchContext) {
     onboarding: demo,
   });
 
+  const summarize = (atDate: Date) => updateFormSummary({
+    start: startQ,
+    end: endQ,
+    date: dateValueInZone(atDate, destTz),
+    time: formatTimeInZone(atDate, destTz),
+    today: dateValueInZone(new Date(), destTz),
+  });
+
   // Re-scores the fetched routes for one instant and redraws. Only the sun
   // moves, so this is cheap enough for every scrubber tick. Only the first
   // render frames the route: later ones keep the user's zoom and pan.
@@ -126,13 +134,7 @@ export function createSearchSession(ctx: SearchContext) {
     el('eclipse-note').classList.toggle('on', eclipse);
     el('grazing-sun-note').classList.toggle('on', !night && !eclipse && isGrazingSun(sunNow.altDeg));
     updateWeatherInfo(atDate);
-    updateFormSummary({
-      start: startQ,
-      end: endQ,
-      date: dateValueInZone(atDate, destTz),
-      time: formatTimeInZone(atDate, destTz),
-      today: dateValueInZone(new Date(), destTz),
-    });
+    summarize(atDate);
 
     // The sun moves ~11° over a 45-min walk: each segment is scored at its
     // estimated arrival time.
@@ -165,13 +167,19 @@ export function createSearchSession(ctx: SearchContext) {
     state.searchEnds = { start: { ...startC, label: startQ }, end: { ...endC, label: endQ } };
     // The demo button is for the empty app only.
     hideOnboardingButton(true);
-    // Folded before the fit, which frames the route in the room it frees.
-    // Not the demo: its note points at the fields.
-    if (!demo) showFormSummary();
+    // Whatever moves the map's top edge goes before the fit, which frames
+    // the route in the room left. The form folds onto its line, filled
+    // first: it gets focus, and its text sets its height. Not the demo: its
+    // note points at the fields.
+    if (!demo) {
+      summarize(tDate);
+      showFormSummary();
+    }
+    // The install banner, on the first search that gets this far.
+    notifySearchSucceeded();
     renderAt(tDate, { fit: true });
     // From the first frame, not once the weather lands.
     if (route && !single) selectRoute(route);
-    notifySearchSucceeded();
     // Here, not where the sunrise jump is built: buildRoutes can still throw
     // before the note is ever seen.
     if (night) track('sunrise_jump', { stage: 'shown' });

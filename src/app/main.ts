@@ -28,8 +28,9 @@ initSplash();
 import('../lib/map.js').then((api) => {
   api.initMap();
   setMap(api);
-  // After initMap: the desktop side panel docks to #map's laid-out offset.
-  initLayout();
+  // After initMap: the desktop side panel docks to #map's laid-out offset,
+  // and Leaflet measured the map's box there.
+  initLayout(api.mapTopMoved);
   // Whatever the fields got before the map was there.
   pinFilledFields();
 }).catch(mapFailed);

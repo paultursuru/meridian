@@ -92,12 +92,15 @@ export function initTabs(onTabChange) {
   });
 }
 
-// The side panel docks to the map's top edge, which moves with whatever sits
-// above it: the install banner appearing, the search panel wrapping to a second
-// line. #map is the flex:1 item in that column, so it resizes whenever the
-// chrome above it does — one observer on it keeps the variable honest without
-// having to watch each piece separately.
-export function initLayout() {
+let syncLayout = () => {};
+
+// The map's top edge moves with whatever sits above it: the install banner,
+// the search form folding onto its line, that line wrapping. #map is the
+// flex:1 item in that column, so it resizes whenever the chrome above it does:
+// one observer on it covers them all. It keeps --map-top honest for the side
+// panel, which docks there, and calls onTopMoved(prevTop) for Leaflet, which
+// only watches the window.
+export function initLayout(onTopMoved) {
   const map = document.getElementById('map');
   if (!map) return;
   // getBoundingClientRect, not offsetTop: the chrome above the map does not
@@ -105,10 +108,22 @@ export function initLayout() {
   // offsetTop rounds — which left a hairline of map showing above the panel.
   // The panel is position: fixed and the page never scrolls, so the viewport
   // coordinate is the right one to hand it.
-  const sync = () => document.documentElement.style.setProperty('--map-top', `${map.getBoundingClientRect().top}px`);
-  sync();
-  if (typeof ResizeObserver === 'function') new ResizeObserver(sync).observe(map);
-  window.addEventListener('resize', sync);
+  let top = map.getBoundingClientRect().top;
+  syncLayout = () => {
+    const prevTop = top;
+    top = map.getBoundingClientRect().top;
+    document.documentElement.style.setProperty('--map-top', `${top}px`);
+    if (top !== prevTop) onTopMoved(prevTop);
+  };
+  syncLayout();
+  if (typeof ResizeObserver === 'function') new ResizeObserver(syncLayout).observe(map);
+  window.addEventListener('resize', syncLayout);
+}
+
+// The observer reports at the end of the frame. A fit in the same task as the
+// change would frame the route in the map's old box: it calls this first.
+export function syncMapTop() {
+  syncLayout();
 }
 
 export function setActiveTab(type) {
