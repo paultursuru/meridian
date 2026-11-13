@@ -3,9 +3,9 @@ import { el, button } from './dom';
 
 // Round badges over the scrubber, one per drawer note that changes how to
 // read this hour (overcast sky, very low sun). A badge shows while its note
-// is on, and a tap opens the note's sentence in a bubble above it. The note
-// itself stays in the drawer, which is what screen readers hear: the badges
-// are a visual shortcut to it, hidden by CSS on the desktop side panel.
+// is on, and a tap opens the note's sentence in a bubble above it, which a
+// screen reader reads out (#hour-bubble-live). The note itself stays in the
+// drawer; the badges are hidden by CSS on the desktop side panel.
 
 const badges = () => [...document.querySelectorAll<HTMLButtonElement>('.hour-badge')];
 const noteOf = (badge: HTMLButtonElement) => el(badge.dataset.note!);
@@ -56,8 +56,10 @@ export function syncHourBadges(cloudCover: number | null) {
   }
   const weather = button('badge-weather');
   if (cloudCover != null) weather.setAttribute('aria-label', tr('badge_overcast', { pct: String(Math.round(cloudCover)) }));
-  // Scrubbing changes the forecast hour under an open bubble.
-  if (openBadge) el('hour-bubble').textContent = noteText(openBadge);
+  // Scrubbing changes the forecast hour under an open bubble. Only a new
+  // sentence is written: each write is read out.
+  const bubble = el('hour-bubble');
+  if (openBadge && bubble.textContent !== noteText(openBadge)) bubble.textContent = noteText(openBadge);
 }
 
 export function resetHourBadges() {

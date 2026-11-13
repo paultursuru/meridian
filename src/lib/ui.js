@@ -135,6 +135,10 @@ export function setActiveTab(type) {
   document.querySelectorAll('.tab-pane').forEach(p =>
     p.classList.toggle('active', p.id === 'tab-' + type)
   );
+  // The side panel's card titles stand in for the hidden tabs there.
+  document.querySelectorAll('.pane-title').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.tab === type))
+  );
 }
 
 export function renderTab(id, rt) {

@@ -150,17 +150,20 @@ function drawAltRoute(coords, onClick) {
 
 // What says which route is which: a pill in the colour its gradient runs to,
 // with the share the drawer shows for it (same rounding as ui.js renderTab).
+// Named as in the drawer: the two figures don't count the same thing, and
+// the two pastels are hard to tell apart in full sun or without colour.
 // Positioned by placeLabels.
 function drawRouteLabel(type, rt, active, onClick) {
   const sunPct = Math.round(rt.sunScore * 100);
   const pct = type === 'sunny' ? sunPct : 100 - sunPct;
+  const word = tr(type === 'sunny' ? 'label_sun' : 'label_shade');
   const icon = L.divIcon({
     className: 'route-label',
     // No size: the element is a bare anchor, and a size makes Leaflet write
     // width, height and margins inline on it.
     iconSize: null,
     html: `<div class="route-label-pill ${type}${active ? ' active' : ''}" title="${tr('tab_' + type)}">`
-      + `<span class="side-dot ${type === 'sunny' ? 'sun' : 'shade'}" aria-hidden="true"></span>${pct}&nbsp;%</div>`,
+      + `<span class="side-dot ${type === 'sunny' ? 'sun' : 'shade'}" aria-hidden="true"></span>${word} ${pct}&nbsp;%</div>`,
   });
   const [lng, lat] = rt.geometry.coordinates[0];
   const marker = L.marker([lat, lng], { icon, keyboard: false, zIndexOffset: active ? 1000 : 0 });

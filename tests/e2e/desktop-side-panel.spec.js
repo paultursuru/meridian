@@ -114,6 +114,20 @@ test('clicking a card selects that route', async ({ page }) => {
   await page.click(`#tab-${other} .pane-title`);
   await expect(page.locator(`#tab-${other}`)).toHaveClass(/active/);
   await expect(page.locator(`#tab-${sunnyActive ? 'sunny' : 'shady'}`)).not.toHaveClass(/active/);
+  // The tabs that say so on a phone are hidden here: the titles say it.
+  await expect(page.locator(`#tab-${other} .pane-title`)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator(`#tab-${sunnyActive ? 'sunny' : 'shady'} .pane-title`)).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('the card not selected keeps its text as legible as the selected one', async ({ page }) => {
+  await search(page, DESKTOP);
+
+  // Dimming the whole card took its small text under 4.5:1.
+  for (const pane of ['#tab-sunny', '#tab-shady']) {
+    await expect(page.locator(pane)).toHaveCSS('opacity', '1');
+  }
+  const labelColour = sel => page.locator(`${sel} .stat-lbl`).first().evaluate(el => getComputedStyle(el).color);
+  expect(await labelColour('.tab-pane:not(.active)')).toBe(await labelColour('.tab-pane.active'));
 });
 
 test('the overcast note heads the panel, every other note sits under the route cards', async ({ page }) => {
