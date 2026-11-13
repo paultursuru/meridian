@@ -461,6 +461,17 @@ export function setPreviewPin(role, coords, { pan = true } = {}) {
 // was: the view shifts by as much, so what was on screen stays put.
 export function mapTopMoved(prevTop) {
   const dy = _map.getContainer().getBoundingClientRect().top - prevTop;
+  // A zoom animation sets its target view again as it ends, in the new size,
+  // which would undo the shift: it waits for zoomend. Measured now, so two
+  // moves during one animation add up. Leaflet has no public flag for this.
+  if (_map._animatingZoom) {
+    _map.once('zoomend', () => shiftView(dy));
+    return;
+  }
+  shiftView(dy);
+}
+
+function shiftView(dy) {
   _map.invalidateSize({ pan: false });
   if (dy) _map.panBy([0, dy], { animate: false });
 }

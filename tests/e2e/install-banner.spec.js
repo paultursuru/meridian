@@ -95,8 +95,12 @@ test('the banner appears once a search has put routes on screen', async ({ page 
 // the user sees: below the map's top edge, above the scrubber.
 const MOBILE = { width: 390, height: 844 };
 
-// Read once two frames agree: under load the first fit can still be moving.
+// Read once the zoom animation is over and two frames agree. During the
+// animation a pin can already sit where it ends, or wait out a move the map
+// applies at its end. It starts on the frame after the fit, hence that frame.
 async function settledBox(page, selector) {
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r())));
+  await expect(page.locator('#map .leaflet-zoom-anim')).toHaveCount(0);
   for (;;) {
     const a = await page.locator(selector).boundingBox();
     await page.waitForTimeout(100);

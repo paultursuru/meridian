@@ -25,6 +25,17 @@ async function anchorOnceLoaded(page) {
   return { lat: Number(url.searchParams.get('lat')), lng: Number(url.searchParams.get('lon')) };
 }
 
+// The suite runs in Europe/Zurich: this keeps the path CI used to take.
+test.describe('a timezone with no centre of its own', () => {
+  test.use({ timezoneId: 'UTC' });
+
+  test('opens on the fallback, Lausanne', async ({ page }) => {
+    const at = await anchorOnceLoaded(page);
+    expect(at.lat).toBeCloseTo(CITIES['fr-CH'].lat, 2);
+    expect(at.lng).toBeCloseTo(CITIES['fr-CH'].lng, 2);
+  });
+});
+
 for (const [locale, city] of Object.entries(CITIES)) {
   test.describe(`browser in ${locale}`, () => {
     test.use({ timezoneId: 'Europe/Zurich', locale });
