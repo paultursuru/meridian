@@ -7,7 +7,7 @@ import { deciduousLeafFrac } from '../lib/season.js';
 import { dateValueInZone, formatTimeInZone, minutesInZone } from '../lib/timezone.js';
 import { weatherAt, type fetchWeather } from '../lib/weather.js';
 import { preselectTab } from '../lib/preselect.js';
-import { showResults, showQualityNote, showScrubber, hideScrubber, setScrubberLabel } from '../lib/ui.js';
+import { showResults, showQualityNote, showScrubber, hideScrubber, reshowScrubber, setScrubberLabel } from '../lib/ui.js';
 import { buildShareQuery } from '../lib/share.js';
 import { notifySearchSucceeded } from '../lib/pwa.js';
 import { fmtHm } from '../lib/helpers.js';
@@ -18,7 +18,7 @@ import { el, input } from './dom';
 import { state, urlHasSearch } from './state';
 import { updateSunInfo, updateMapWeather } from './sunInfo';
 import { syncHourBadges } from './hourBadges';
-import { hideOnboardingButton } from './intro';
+import { hideOnboardingButton, showOnboardingNote } from './intro';
 import { showFormSummary, updateFormSummary } from './formSummary';
 
 // Cloud cover (%) above which the sunny/shady distinction stops mattering
@@ -81,6 +81,8 @@ export function createSearchSession(ctx: SearchContext) {
   let delta = 0;
   let currentInstant = tDate;
   let msToFirstRender = 0;
+  // The scrubber comes with the weather, and not at night.
+  let scrubberShown = false;
 
   // On the first call vegStatus is still an optimistic 'ok', so only
   // 'partial' can be wrong: applyVegetation re-runs this.
@@ -163,7 +165,7 @@ export function createSearchSession(ctx: SearchContext) {
       history.pushState(null, '', shareUrl(tDate));
       state.searchEntryPushed = true;
     }
-    state.searchShown = true;
+    state.shown = { restore };
     state.searchEnds = { start: { ...startC, label: startQ }, end: { ...endC, label: endQ } };
     // The demo button is for the empty app only.
     hideOnboardingButton(true);
@@ -241,6 +243,19 @@ export function createSearchSession(ctx: SearchContext) {
       setScrubberLabel(fmtHm(minutes));
       reselectActiveRoute();
     });
+    scrubberShown = true;
+  }
+
+  // A newer search hid the drawer and the scrubber while it loaded, then
+  // failed. These routes are still the ones on the map: what goes with them
+  // comes back, and the departure fields return to the instant on screen.
+  function restore() {
+    state.onboarding = demo;
+    showOnboardingNote(demo);
+    el('results').classList.add('on');
+    if (scrubberShown) reshowScrubber();
+    input('inp-date').value = dateValueInZone(currentInstant, destTz);
+    input('inp-time').value = formatTimeInZone(currentInstant, destTz);
   }
 
   function applyVegetation(vegRes: VegetationResult) {

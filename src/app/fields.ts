@@ -130,7 +130,10 @@ export function initFields(
   ROLES.forEach(role => button(`clear-${role}`).addEventListener('click', () => clearField(role)));
   button('swap-btn').addEventListener('click', swapEndpoints);
   // After initAutocomplete: its own Enter handler, bound first, stops this one
-  // when Enter picks a highlighted suggestion.
-  ROLES.forEach(role => input(`inp-${role}`).addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') onSubmit(); }));
+  // when Enter picks a highlighted suggestion. While a search runs, Enter is
+  // as inert as the button it stands for.
+  ROLES.forEach(role => input(`inp-${role}`).addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && !button('search-btn').disabled) onSubmit();
+  }));
   ROLES.forEach(role => input(`inp-${role}`).addEventListener('focus', onFocus));
 }

@@ -13,7 +13,7 @@ import { tr } from '../lib/i18n.js';
 import { track } from '../lib/analytics.js';
 import { map, mapLoaded, mapReady } from './mapApi';
 import { el, input, button } from './dom';
-import { state } from './state';
+import { state, urlHasSearch } from './state';
 import { field, searchAnchor } from './fields';
 import { closeDepartPopover } from './departure';
 import { hideAppDescription, showOnboardingNote } from './intro';
@@ -108,7 +108,9 @@ export async function handleSearch(
   // Past the check: a refused search must not make the running one stale.
   const mySearchGen = ++state.searchGeneration;
   state.onboarding = demo;
-  state.searchEntryPushed = false;
+  // From the empty app, showFirst pushes an entry and sets this. Over a
+  // search, the entry stays that search's: pushed by us, or the link's.
+  if (!urlHasSearch()) state.searchEntryPushed = false;
   // Superseded, or undone by Back: checked after each long await.
   const stale = () => mySearchGen !== state.searchGeneration;
   // Also silences the status writes from inside buildRoutes and the tile pass.
@@ -119,6 +121,8 @@ export async function handleSearch(
   hideAppDescription();
   // The note gives the demo's date: no popover on top of it.
   showOnboardingNote(demo);
+  // A result under this search stops matching the fields. If the search
+  // fails, the result puts them back (catch below).
   el('results').classList.remove('on');
   hideScrubber();
 
@@ -132,6 +136,9 @@ export async function handleSearch(
       field('start').getPlace() ?? geocode(startQ, { role: 'start', near: searchAnchor('end') }),
       field('end').getPlace()   ?? geocode(endQ, { role: 'end', near: searchAnchor('start') }),
     ]);
+    // Each call from here on is one a stale search must not make, the
+    // router's above all: its quota is counted.
+    if (stale()) return;
     const midLat = (startC.lat + endC.lat) / 2;
     const midLng = (startC.lng + endC.lng) / 2;
     // Both ends Swiss, since a route could cross the border. A missing
@@ -141,6 +148,7 @@ export async function handleSearch(
     // The date/time fields are wall-clock time at the route, not the browser.
     step = 'time';
     const destTz = await resolveTimeZone(midLat, midLng);
+    if (stale()) return;
     const tDate = dateV ? zonedTimeToUtc(`${dateV}T${timeV || '12:00'}`, destTz) : new Date();
 
     const sun = getSun(tDate, midLat, midLng);
@@ -149,7 +157,6 @@ export async function handleSearch(
     // Started now, awaited late. The whole day, hourly, so the scrubber can
     // re-sample it. Null beyond the forecast horizon or on error.
     const weatherP = night ? Promise.resolve(null) : fetchWeather(midLat, midLng, tDate);
-    if (night) prepareSunriseJump(tDate, midLat, midLng, destTz);
 
     step = 'route';
     const routes = await buildRoutes(startC, endC, searchStatus);
@@ -179,6 +186,9 @@ export async function handleSearch(
     }
 
     step = 'render';
+    // Not before: a search that fails or goes stale would leave the routes
+    // on screen with its sunrise.
+    if (night) prepareSunriseJump(tDate, midLat, midLng, destTz);
     const session = createSearchSession({
       startC, endC, startQ, endQ, demo, searchStart,
       midLat, midLng, destTz, tDate, sun, night, switzerland,
@@ -206,6 +216,7 @@ export async function handleSearch(
     // Undone or superseded: its failure is nobody's news.
     if (stale()) return;
     setStatus(null);
+    state.shown?.restore();
     const { code, role } = (err ?? {}) as CodedError;
     showToast(searchErrorToast(err));
     console.error(err);
