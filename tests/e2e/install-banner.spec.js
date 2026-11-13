@@ -91,6 +91,69 @@ test('the banner appears once a search has put routes on screen', async ({ page 
   expect(await installEvents(page)).toEqual(['prompted']);
 });
 
+// The banner pushes the map down. Both pins must stay in the strip of map
+// the user sees: below the map's top edge, above the scrubber.
+const MOBILE = { width: 390, height: 844 };
+
+// Read once two frames agree: under load the first fit can still be moving.
+async function settledBox(page, selector) {
+  for (;;) {
+    const a = await page.locator(selector).boundingBox();
+    await page.waitForTimeout(100);
+    const b = await page.locator(selector).boundingBox();
+    if (a && b && Math.round(a.y) === Math.round(b.y)) return b;
+  }
+}
+
+async function expectRouteFramed(page) {
+  const end = await settledBox(page, '.map-pin.end');
+  const start = await settledBox(page, '.map-pin.start');
+  const mapTop = await page.locator('#map').evaluate(el => el.getBoundingClientRect().top);
+  const scrubberTop = await page.locator('#time-scrubber').evaluate(el => el.getBoundingClientRect().top);
+  // Renens is north of EPFL: the end pin is the top one.
+  expect(end.y).toBeGreaterThanOrEqual(mapTop);
+  expect(start.y + start.height).toBeLessThanOrEqual(scrubberTop);
+}
+
+// In French the banner wraps to two lines at this width: 68 px of map lost.
+async function searchOnMobile(page) {
+  await page.setViewportSize(MOBILE);
+  await mockUpstreams(page);
+  await collectEvents(page);
+  await page.goto('/');
+  await waitForApp(page);
+}
+
+async function runSearch(page) {
+  await page.fill('#inp-start', START_Q);
+  await page.keyboard.press('Escape');
+  await page.fill('#inp-end', END_Q);
+  await page.keyboard.press('Escape');
+  await page.click('#search-btn');
+  await expect(page.locator('#sunny-sun-pct')).not.toBeEmpty({ timeout: 30_000 });
+}
+
+test('a banner shown with the first results is framed around', async ({ page }) => {
+  await searchOnMobile(page);
+  await fireInstallable(page);
+  await runSearch(page);
+
+  await expect(page.locator('#install-banner')).toBeVisible();
+  await expectRouteFramed(page);
+});
+
+test('a banner that comes after the results moves the map, not the route', async ({ page }) => {
+  await searchOnMobile(page);
+  await runSearch(page);
+  const before = await settledBox(page, '.map-pin.start');
+
+  await fireInstallable(page);
+  await expect(page.locator('#install-banner')).toBeVisible();
+
+  expect(Math.round((await settledBox(page, '.map-pin.start')).y)).toBe(Math.round(before.y));
+  await expectRouteFramed(page);
+});
+
 test('a second search does not offer the banner again', async ({ page }) => {
   await mockUpstreams(page);
   await collectEvents(page);

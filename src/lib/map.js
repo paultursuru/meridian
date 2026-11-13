@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import leafletCss from 'leaflet/dist/leaflet.css?inline';
-import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx } from './ui.js';
+import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx, syncMapTop } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
@@ -453,9 +453,9 @@ export function setPreviewPin(role, coords, { pan = true } = {}) {
   if (pan) _map.flyTo([coords.lat, coords.lng], Math.max(_map.getZoom(), 16), { duration: 0.6 });
 }
 
-// The chrome above the map changed height (the search form folding), which
-// Leaflet, watching only the window, would miss. `prevTop` is where the map's
-// top edge was: the view shifts by as much, so what was on screen stays put.
+// The chrome above the map changed height (see initLayout), which Leaflet,
+// watching only the window, would miss. `prevTop` is where the map's top edge
+// was: the view shifts by as much, so what was on screen stays put.
 export function mapTopMoved(prevTop) {
   const dy = _map.getContainer().getBoundingClientRect().top - prevTop;
   _map.invalidateSize({ pan: false });
@@ -544,6 +544,8 @@ export function displayRoutes(startC, endC, sunny, shady, { fit = true } = {}) {
 // Infinity zoom without complaining, and the map then dies with "Invalid
 // LatLng object: (NaN, NaN)" at the next resize. See mapFit.js.
 function fitWithChrome(bounds, options = {}) {
+  // The size Leaflet holds can predate a change made earlier in this task.
+  syncMapTop();
   const padding = {
     topLeft: [
       FIT_PADDING.topLeft[0] + leftOverlayPx(),
