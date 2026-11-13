@@ -16,6 +16,12 @@ export default defineConfig({
     // from its own worker context, outside what page.route() can intercept —
     // block it so route mocks actually reach the app's real network calls.
     serviceWorkers: 'block',
+    // The same browser on every machine: CI's UTC and a Mac's own timezone and
+    // language opened the map on different cities, and only one of them made
+    // the first fit an animated zoom. A French-speaking Swiss visitor, the
+    // app's audience. Specs that need another set their own.
+    timezoneId: 'Europe/Zurich',
+    locale: 'fr-CH',
   },
   webServer: {
     command: 'npm run dev -- --port 4321',

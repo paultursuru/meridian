@@ -48,6 +48,20 @@ async function openLink(page, viewport, dt = '2026-07-28T14:00') {
 
 const mapTop = page => page.locator('#map').evaluate(el => el.getBoundingClientRect().top);
 
+// Where the start pin rests. A zoom animation already shows the pin where it
+// ends, so two agreeing reads aren't enough: the animation must be over too.
+// It starts on the frame after the fit, hence the frame waited first.
+async function restingPin(page) {
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => r())));
+  await expect(page.locator('#map .leaflet-zoom-anim')).toHaveCount(0);
+  for (;;) {
+    const a = await page.locator('.map-pin.start').boundingBox();
+    await page.waitForTimeout(100);
+    const b = await page.locator('.map-pin.start').boundingBox();
+    if (a && b && Math.round(a.y) === Math.round(b.y)) return b;
+  }
+}
+
 // A search typed into the empty app: unlike a shared link, it pushes its own
 // history entry, so Back undoes it in place.
 async function searchFromEmptyApp(page) {
@@ -86,15 +100,7 @@ test('a result folds the form into one line, which gives the map the room', asyn
 
 test('the line opens the form, the arrow folds it, and focus follows', async ({ page }) => {
   await openLink(page, MOBILE);
-  // Read once two frames agree: under load the first fit can still be moving.
-  const pin = async () => {
-    for (;;) {
-      const a = await page.locator('.map-pin.start').boundingBox();
-      await page.waitForTimeout(100);
-      const b = await page.locator('.map-pin.start').boundingBox();
-      if (a && b && Math.round(a.y) === Math.round(b.y)) return b;
-    }
-  };
+  const pin = () => restingPin(page);
   const before = await pin();
 
   await page.click('#form-summary');
@@ -108,6 +114,24 @@ test('the line opens the form, the arrow folds it, and focus follows', async ({ 
   await expect(page.locator('#inp-start')).toBeHidden();
   await expect(page.locator('#form-summary')).toBeFocused();
   expect(Math.round((await pin()).y)).toBe(Math.round(before.y));
+});
+
+test.describe('in a timezone the app has no city for', () => {
+  // The map opens on its fallback view, close enough to the route that the
+  // first fit is an animated zoom.
+  test.use({ timezoneId: 'UTC' });
+
+  test('the line opened during the first zoom: what was on screen stays put', async ({ page }) => {
+    await openLink(page, MOBILE);
+    const resting = await restingPin(page);
+
+    await page.goto(`${LINK}&dt=2026-07-28T14:00`);
+    await page.locator('#map .leaflet-zoom-anim').waitFor({ state: 'attached', timeout: 20_000 });
+    await page.evaluate(() => document.getElementById('form-summary').click());
+    await expect(page.locator('#inp-start')).toBeVisible();
+
+    expect(Math.round((await restingPin(page)).y)).toBe(Math.round(resting.y));
+  });
 });
 
 test('a search from the opened form folds it again, onto its own line', async ({ page }) => {
