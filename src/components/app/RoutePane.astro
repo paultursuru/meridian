@@ -13,7 +13,7 @@ const title = kind === 'sunny' ? t.tab_sunny : t.tab_shady;
 const dot = kind === 'sunny' ? 'sun' : 'shade';
 ---
 <div id={`tab-${kind}`} class:list={['tab-pane', { active }]} role="tabpanel" aria-labelledby={`tab-btn-${kind}`}>
-  <button class="pane-title" type="button" data-tab={kind}><span class:list={['side-dot', dot]} aria-hidden="true"></span>{title}</button>
+  <button class="pane-title" type="button" data-tab={kind} aria-pressed={active ? 'true' : 'false'}><span class:list={['side-dot', dot]} aria-hidden="true"></span>{title}</button>
   <div class="ratio-wrap">
     <div class="ratio-nums">
       <span class:list={['ratio-shade-num', { lead: kind === 'shady' }]}><span class="side-dot shade" aria-hidden="true"></span>{t.label_shade} <strong id={`${kind}-shade-pct`}></strong></span>

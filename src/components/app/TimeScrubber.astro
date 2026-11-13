@@ -18,7 +18,11 @@ const t = translations[lang];
   <div id="hour-badges">
     <button id="badge-weather" class="hour-badge" type="button" data-note="weather-note" aria-expanded="false" aria-controls="hour-bubble" hidden set:html={cloudIcon} />
     <button id="badge-grazing" class="hour-badge sun" type="button" data-note="grazing-sun-note" aria-label={t.badge_grazing} aria-expanded="false" aria-controls="hour-bubble" hidden set:html={lowSunIcon} />
-    <p id="hour-bubble" hidden></p>
+    <!-- Always in the page: a live region added at the last moment is not
+         reliably read. Its bubble showing up is what gets announced. -->
+    <div id="hour-bubble-live" role="status">
+      <p id="hour-bubble" hidden></p>
+    </div>
   </div>
   <span id="scrubber-time"></span>
   <div id="scrubber-rail">

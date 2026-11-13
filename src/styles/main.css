@@ -1148,10 +1148,13 @@ body:has(#results.expanded) #hour-badges { display: none; }
 .hour-badge::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; }
 /* Inside the dark disc: the map around it is light. */
 .hour-badge:focus-visible { outline: 2px solid #f0f2a0; outline-offset: -5px; }
-#hour-bubble {
+/* Out of the badges' row, like the bubble it holds. */
+#hour-bubble-live {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
+}
+#hour-bubble {
   width: max-content;
   max-width: min(280px, calc(100vw - 24px));
   margin: 0;
@@ -1649,8 +1652,10 @@ p.opensource-badge {
     border-radius: 12px;
     transition: opacity 0.15s, border-color 0.15s, background 0.15s;
   }
-  .tab-pane:not(.active) { opacity: 0.72; }
-  .tab-pane:not(.active):hover { opacity: 0.9; }
+  /* The other card recedes through its frame, bar and dots, never its text:
+     dimmed, its smaller text fell under 4.5:1. */
+  .tab-pane:not(.active) :is(.ratio-track, .side-dot) { opacity: 0.5; }
+  .tab-pane:not(.active):hover { border-color: rgba(240,242,160,0.22); }
   #tab-sunny.active { border-color: rgba(240,242,160,0.5); background: rgba(240,242,160,0.05); }
   #tab-shady.active { border-color: rgba(232,200,240,0.5); background: rgba(232,200,240,0.05); }
   #results.single #tab-shady { display: none; }

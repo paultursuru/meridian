@@ -73,6 +73,8 @@ test('a badge opens its note, another badge, Escape or a tap elsewhere puts it a
   await expect(bubble).toBeVisible();
   await expect(bubble).toHaveText(/Ciel couvert prévu \(95 % de nuages\)/);
   await expect(page.locator('#badge-weather')).toHaveAttribute('aria-expanded', 'true');
+  // Read out as it opens: focus stays on the badge.
+  await expect(page.getByRole('status').filter({ has: bubble })).toHaveText(/Ciel couvert prévu/);
 
   await page.click('#badge-grazing');
   await expect(bubble).toHaveText(/Le soleil est très bas/);

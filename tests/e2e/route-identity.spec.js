@@ -59,11 +59,12 @@ test('each route is labelled, and the selected one is the selected tab', async (
   await search(page);
   await expectSelected(page, await activeTab(page));
 
-  // The label repeats the figure its tab leads with.
+  // The label repeats the figure its tab leads with, and names it: the two
+  // figures count different things, and the colours alone don't tell.
   await expect(page.locator('.route-label-pill.sunny'))
-    .toContainText(await page.locator('#sunny-sun-pct').textContent());
+    .toContainText(`Soleil ${await page.locator('#sunny-sun-pct').textContent()}`);
   await expect(page.locator('.route-label-pill.shady'))
-    .toContainText(await page.locator('#shady-shade-pct').textContent());
+    .toContainText(`Ombre ${await page.locator('#shady-shade-pct').textContent()}`);
 });
 
 test('tapping the other label selects that route, without the pick menu', async ({ page }) => {
