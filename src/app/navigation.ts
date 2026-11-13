@@ -58,7 +58,7 @@ export function startOnboarding(via: DemoEntry = 'button') {
 export function resetSearch() {
   // A search still in flight, and any vegetation pass, is now stale.
   state.searchGeneration++;
-  state.searchShown = false;
+  state.shown = null;
   // Out of the demo too: its note and date go, the button comes back.
   state.onboarding = false;
   hideAppDescription();
@@ -103,7 +103,7 @@ export function leaveOnboarding() {
 // and the other field goes too. A suggestion or a locate button corrects one
 // end: the other stays, pinned, and so does the time.
 export function leaveSearch({ keepOther }: { keepOther: boolean }) {
-  if (!state.searchShown) return;
+  if (!state.shown) return;
   const kept = keepOther
     ? { fields: fieldStates(), date: input('inp-date').value, time: input('inp-time').value }
     : null;
@@ -135,13 +135,13 @@ export function initNavigation() {
       return;
     }
     const inUrl = urlHasSearch();
-    if (!inUrl && state.searchShown) {
+    if (!inUrl && state.shown) {
       // loading: a search runs (read before the reset frees the button) and
       // nothing is drawn yet.
       const loading = button('search-btn').disabled && !el('results').classList.contains('on');
       track('back_reset', { loading });
       resetSearch();
-    } else if (inUrl && !state.searchShown && !state.restoring) {
+    } else if (inUrl && !state.shown && !state.restoring) {
       restoreFromUrl();
     }
   });

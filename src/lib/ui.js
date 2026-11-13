@@ -539,3 +539,9 @@ export function setScrubberLabel(label) {
 export function hideScrubber() {
   document.getElementById('time-scrubber').classList.remove('on');
 }
+
+// As it was left: same bounds, same instant, same callback.
+export function reshowScrubber() {
+  document.getElementById('time-scrubber').classList.add('on');
+  updateScrubberPosition();
+}

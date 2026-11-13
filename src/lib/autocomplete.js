@@ -132,7 +132,13 @@ export function initAutocomplete(inputEl, { onSelect, getAnchor } = {}) {
   });
 
   inputEl.addEventListener('keydown', e => {
-    if (!isOpen()) return; // no suggestions on screen — let other handlers (e.g. search-on-Enter) run
+    if (!isOpen()) {
+      // Suggestions still on their way: the user is done with them, and they
+      // must not open later over the form or a running search.
+      if (e.key === 'Escape' || e.key === 'Enter') hide();
+      // Let other handlers (search-on-Enter, the form's Escape) run.
+      return;
+    }
 
     switch (e.key) {
       case 'ArrowDown':

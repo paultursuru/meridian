@@ -36,12 +36,16 @@ test.use({
 
 const hitFor = q => (/ouchy/i.test(q) ? END : START);
 
-// Returns `held`: set held.ors, held.weather or held.overpass to a promise and
-// requests to that upstream wait on it, to catch a search mid-flight.
+// Returns `held`: set held.geocode, held.ors, held.weather or held.overpass to
+// a promise and requests to that upstream wait on it, to catch a search
+// mid-flight. held.orsStatus can change between searches; held.orsCalls and
+// held.geocodeCalls count what reached the router and the geocoder.
 async function mockUpstreams(page, { orsStatus = 200 } = {}) {
-  const held = { ors: null, weather: null, overpass: null };
+  const held = { geocode: null, ors: null, weather: null, overpass: null, orsStatus, orsCalls: 0, geocodeCalls: 0 };
   await page.route(`**${BEFORE}`, route => route.fulfill({ contentType: 'text/html', body: '<title>before</title>' }));
-  await page.route('https://nominatim.openstreetmap.org/search**', route => {
+  await page.route('https://nominatim.openstreetmap.org/search**', async route => {
+    held.geocodeCalls++;
+    await held.geocode;
     const q = new URL(route.request().url()).searchParams.get('q') || '';
     const hit = hitFor(q);
     return route.fulfill({
@@ -64,9 +68,10 @@ async function mockUpstreams(page, { orsStatus = 200 } = {}) {
     return route.fulfill({ json: { hourly: { time: [], cloud_cover: [], temperature_2m: [] } } });
   });
   await page.route('**/api/route**', async route => {
+    held.orsCalls++;
     await held.ors;
-    if (orsStatus !== 200) {
-      return route.fulfill({ status: orsStatus, json: { error: { code: 2099, message: 'refused' } } });
+    if (held.orsStatus !== 200) {
+      return route.fulfill({ status: held.orsStatus, json: { error: { code: 2099, message: 'refused' } } });
     }
     return route.fulfill({ json: { features: [
       {
@@ -345,6 +350,23 @@ test.describe('no entry leaks', () => {
     await expect(page).toHaveURL(LEFT_THE_APP);
   });
 
+  test('two searches then a suggestion: one Back leaves', async ({ page }) => {
+    await mockUpstreams(page);
+    await openApp(page);
+    await typeAddresses(page);
+    await searchAt(page, '10:00');
+    await searchAt(page, '15:30');
+
+    // A suggestion over the routes starts over from the empty app, off the
+    // searches' one entry.
+    await openForm(page);
+    await pickSuggestion(page, '#inp-start', START_Q);
+    await expect.poll(() => new URL(page.url()).search).toBe('');
+
+    await page.goBack();
+    await expect(page).toHaveURL(LEFT_THE_APP);
+  });
+
   test('search then Back, three times over, keeps the stack where it was', async ({ page }) => {
     await mockUpstreams(page);
     await openApp(page);
@@ -457,7 +479,90 @@ test.describe('the about panel', () => {
   });
 });
 
+test.describe('a search that fails over a result', () => {
+  test('puts the result back: drawer, scrubber, time field and URL agree', async ({ page }) => {
+    const held = await mockUpstreams(page);
+    await openApp(page);
+    await typeAddresses(page);
+    await searchAt(page, '14:00');
+    await expect(page.locator('#time-scrubber')).toHaveClass(/\bon\b/, { timeout: 20_000 });
+    const length = await historyLength(page);
+
+    held.orsStatus = 500;
+    await openForm(page);
+    await page.click('#depart-toggle');
+    await page.fill('#inp-time', '16:30');
+    await page.click('#depart-confirm');
+    await expect(page.locator('#toast')).toHaveClass(/\bon\b/, { timeout: 20_000 });
+
+    await expect(page.locator('#results')).toHaveClass(/\bon\b/);
+    await expect(page.locator('#time-scrubber')).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`dt=${DAY}T14%3A00`));
+    await expect(page.locator('#inp-time')).toHaveValue('14:00');
+    await expect(page.locator('#search-btn')).toBeEnabled();
+    expect(await historyLength(page)).toBe(length);
+  });
+});
+
 test.describe('a search still in flight', () => {
+  test('Enter while it runs starts no second one', async ({ page }) => {
+    const held = await mockUpstreams(page);
+    await openApp(page);
+    await typeAddresses(page);
+
+    const release = hold(held, 'geocode');
+    await page.press('#inp-end', 'Enter');
+    await expect(page.locator('#search-btn')).toBeDisabled();
+    await page.press('#inp-end', 'Enter');
+    release();
+
+    await expectSearchShown(page);
+    await expect(page.locator('#search-btn')).toBeEnabled({ timeout: 20_000 });
+    // Both ends, once.
+    expect(held.geocodeCalls).toBe(2);
+  });
+
+  test('suggestions due after Enter never open over it', async ({ page }) => {
+    const held = await mockUpstreams(page);
+    await openApp(page);
+    await page.fill('#inp-start', START_Q);
+    await page.keyboard.press('Escape');
+    const release = hold(held, 'ors');
+    await page.fill('#inp-end', END_Q);
+    await page.keyboard.press('Enter');
+
+    // Suggestions are asked for 300 ms after the last key.
+    await page.waitForTimeout(600);
+    await expect(page.locator('.ac-dropdown:visible')).toHaveCount(0);
+    release();
+    await expectSearchShown(page);
+  });
+
+  test('Back while a second search geocodes: the router is never asked', async ({ page }) => {
+    const held = await mockUpstreams(page);
+    await openApp(page);
+    await typeAddresses(page);
+    await searchAt(page, '10:00');
+    const routerCalls = held.orsCalls;
+
+    const release = hold(held, 'geocode');
+    const asked = page.waitForRequest(/nominatim\.openstreetmap\.org\/search/);
+    await openForm(page);
+    await page.click('#depart-toggle');
+    await page.fill('#inp-time', '16:00');
+    await page.click('#depart-confirm');
+    await asked;
+
+    await page.goBack();
+    await expectEmptyApp(page);
+
+    const answered = page.waitForResponse(/nominatim\.openstreetmap\.org\/search/);
+    release();
+    await answered;
+    await page.waitForTimeout(500);
+    expect(held.orsCalls).toBe(routerCalls);
+  });
+
   test('Back during a second search: that search never lands', async ({ page }) => {
     const held = await mockUpstreams(page);
     await collectEvents(page);
