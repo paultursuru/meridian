@@ -120,7 +120,10 @@ async function expectRouteFramed(page) {
 }
 
 // In French the banner wraps to two lines at this width: 68 px of map lost.
+// A search typed after sunset is a night search, with no scrubber to frame
+// above: the page's clock is set to a summer afternoon.
 async function searchOnMobile(page) {
+  await page.clock.setFixedTime(new Date('2026-07-15T14:00:00+02:00'));
   await page.setViewportSize(MOBILE);
   await mockUpstreams(page);
   await collectEvents(page);
