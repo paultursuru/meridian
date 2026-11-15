@@ -83,6 +83,8 @@ export default defineConfig({
     // A .md copy of each page, and /llms.txt with the rule for linking
     // straight to a route.
     markDon({
+      // Not a page anyone should be sent to.
+      exclude: /^404\/?$/,
       // The app pages keep their intro, demo link and about text.
       remove: [
         'button', '#header', '#search-panel', '#map-splash', '#map-sun-info-row',

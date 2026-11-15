@@ -59,8 +59,7 @@ export function createSearchSession(ctx: SearchContext) {
   const { startC, endC, startQ, endQ, demo, searchStart, midLat, midLng, destTz, tDate, sun, night, switzerland, routes, shade, route } = ctx;
 
   const sunTimes = getSunTimes(tDate, midLat, midLng);
-  // Fixed per search (the scrubber stays in the day). Gates the marker and
-  // is the denominator for eclipse_jump.
+  // Fixed per search (the scrubber stays in the day). Gates the marker.
   const eclipseDay = switzerland && dateValueInZone(tDate, destTz) === ECLIPSE_2026.date;
   const single = night || routes.length === 1;
   const buildings = shade?.buildings ?? [];
@@ -210,11 +209,8 @@ export function createSearchSession(ctx: SearchContext) {
       return;
     }
     const initialMinutes = minutesInZone(tDate, destTz);
-    // One 'scrub' per search, on the first move.
+    // One 'scrub' per search, on the first drag: a marker click isn't one.
     let scrubbed = false;
-    // Kept apart from 'scrub': dragging and the eclipse shortcut are two
-    // separate questions.
-    let jumped = false;
     showScrubber({
       min: minutesInZone(sunTimes.sunrise, destTz),
       max: minutesInZone(sunTimes.sunset, destTz),
@@ -224,12 +220,7 @@ export function createSearchSession(ctx: SearchContext) {
         ? { minutes: ECLIPSE_2026.maxMin, label: tr('eclipse_max_label', { time: fmtHm(ECLIPSE_2026.maxMin) }) }
         : null,
     }, (minutes: number, source?: string) => {
-      if (source === 'mark') {
-        if (!jumped) {
-          jumped = true;
-          track('eclipse_jump');
-        }
-      } else if (!scrubbed) {
+      if (source !== 'mark' && !scrubbed) {
         scrubbed = true;
         track('scrub');
       }
@@ -279,7 +270,6 @@ export function createSearchSession(ctx: SearchContext) {
       ms: msToFirstRender,
       night, single,
       delta,
-      eclipse: eclipseDay,
       ...(vegUpstream ? { upstream: vegUpstream } : {}),
       // A blocked network, an HTTP status or our deadline: only on failure.
       ...(buildingsCause ? { cause: buildingsCause } : {}),
