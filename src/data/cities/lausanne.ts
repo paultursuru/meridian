@@ -75,7 +75,7 @@ export const lausanne: CityPage = {
       markets: {
         anchor: 'bo-noel',
         heading: 'Le soleil sur les marchés de Bô Noël',
-        intro: 'Bô Noël a lieu du 20 novembre au 31 décembre 2026. Heures de soleil par jour et par ciel dégagé, en moyenne sur chaque place.',
+        intro: 'Bô Noël, le marché de Noël de Lausanne, a lieu du 20 novembre au 31 décembre 2026. Heures de soleil par jour et par ciel dégagé, en moyenne sur chaque place.',
         items: [
           { name: 'Esplanade de la Cathédrale', where: 'Village des Enfants', hours: '2 h' },
           { name: 'Place de la Riponne', where: 'Place des Lumières, avec la grande roue', hours: 'de 1 h 30 à 2 h' },
@@ -90,7 +90,7 @@ export const lausanne: CityPage = {
       faq: [
         {
           q: 'Où trouver le soleil à Lausanne en hiver ?',
-          a: 'Au bord du lac : le quai de Belgique et la place de la Navigation, à Ouchy, ont le soleil de 9 h à 16 h le 21 décembre, et dans le centre, la promenade Derrière-Bourg en garde environ 6 h.',
+          a: 'Pour une balade au soleil, au bord du lac : le quai de Belgique et la place de la Navigation, à Ouchy, ont le soleil de 9 h à 16 h le 21 décembre, et dans le centre, la promenade Derrière-Bourg en garde environ 6 h.',
         },
         {
           q: 'À quelle heure les rues de Lausanne sont-elles le plus au soleil en hiver ?',
