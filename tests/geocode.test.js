@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { geocode, reverseGeocode, suggest } from '../src/lib/geocode.js';
 
 // getLang() reads document.documentElement.lang; the vitest environment is 'node'.
@@ -121,6 +121,47 @@ describe('geocode', () => {
     ]);
     await expect(geocode('Ouchy', { near: LAUSANNE })).resolves.toMatchObject({
       lat: 46.5063,
+    });
+  });
+
+  describe('a Nominatim that never answers', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    // Node's AbortSignal.timeout runs on a timer fake timers don't reach.
+    function hangUntilAborted() {
+      vi.useFakeTimers();
+      vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(new DOMException('signal timed out', 'TimeoutError')), ms);
+        return controller.signal;
+      });
+      globalThis.fetch = (_url, init) =>
+        new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason)));
+    }
+
+    it('gives up after 10 s with GEOCODE_TIMEOUT', async () => {
+      hangUntilAborted();
+      const outcome = geocode('Rue de Bourg 1', { role: 'start', near: LAUSANNE }).catch(err => err);
+      let settled = false;
+      outcome.then(() => { settled = true; });
+
+      await vi.advanceTimersByTimeAsync(9999);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(await outcome).toMatchObject({ code: 'GEOCODE_TIMEOUT' });
+    });
+
+    it('blames neither field, and keeps the typed address out of the message', async () => {
+      hangUntilAborted();
+      const p = geocode('Rue de Bourg 1', { role: 'start' });
+      const caught = p.catch(err => err);
+      await vi.advanceTimersByTimeAsync(10000);
+      const err = await caught;
+      expect(err.role).toBeUndefined();
+      expect(err.message).not.toContain('Bourg');
     });
   });
 });
