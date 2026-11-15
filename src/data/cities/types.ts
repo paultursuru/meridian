@@ -46,7 +46,8 @@ export interface SeasonContent {
     note: string;
     link: { label: string; href: string };
   };
-  faq: { q: string; a: string }[];
+  // `link`: shown under the answer, kept out of the JSON-LD answer text.
+  faq: { q: string; a: string; link?: { label: string; href: string } }[];
   method: string;
 }
 

@@ -156,6 +156,7 @@ const sunFirst = c.defaultMode === 'sun';
       <>
         <h3>{frTypo(f.q)}</h3>
         <p>{frTypo(f.a)}</p>
+        {f.link && <p class="muted"><a href={f.link.href} target="_blank" rel="noopener">{f.link.label}</a></p>}
       </>
     ))}
   </section>
