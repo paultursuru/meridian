@@ -31,6 +31,11 @@ const appLink = (r: CityRoute) => `${langPath(city.lang)}?${buildShareQuery({
   start: r.from, end: r.to, date: nextDay(r.when.monthDay), time: r.when.time, route: 'sunny',
 })}`;
 
+// On the page as the method's heading, and in the FAQPage: it is the most
+// citable answer on the page.
+const METHOD_Q = 'D\'où viennent ces chiffres ?';
+const faq = [...c.faq, { q: METHOD_Q, a: c.method }];
+
 const structuredData = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -44,9 +49,12 @@ const structuredData = {
       dateModified: city.computedOn,
       about: { '@type': 'City', name: city.name, containedInPlace: { '@type': 'Country', name: 'Suisse' } },
       isPartOf: { '@type': 'WebSite', name: 'MeridianWay', url: `${SITE_URL}/` },
+      breadcrumb: { '@id': `${url}#breadcrumb` },
+      hasPart: { '@id': `${url}#faq` },
     },
     {
       '@type': 'BreadcrumbList',
+      '@id': `${url}#breadcrumb`,
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'MeridianWay', item: `${SITE_URL}/` },
         { '@type': 'ListItem', position: 2, name: city.name, item: url },
@@ -54,7 +62,8 @@ const structuredData = {
     },
     {
       '@type': 'FAQPage',
-      mainEntity: c.faq.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+      '@id': `${url}#faq`,
+      mainEntity: faq.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
     },
   ],
 };
@@ -152,7 +161,7 @@ const sunFirst = c.defaultMode === 'sun';
   </section>
 
   <section class="method">
-    <h2>{frTypo('D\'où viennent ces chiffres ?')}</h2>
+    <h2>{frTypo(METHOD_Q)}</h2>
     <p>{frTypo(c.method)}</p>
     <p><a href="/comment-ca-marche/">{frTypo('Comment ça marche ?')}</a> · <a href={langPath(city.lang)} data-app-link="method">Ouvrir MeridianWay</a></p>
   </section>

@@ -1,11 +1,12 @@
 // Links to the city pages from the French footer (Footer.astro).
 // The label follows the page's `season`, so switching it updates every link.
 import { lausanne } from './lausanne';
+import { geneve } from './geneve';
 import type { Season } from './types';
 
 const IN_SEASON: Record<Season, string> = { hiver: 'en hiver', ete: 'en été' };
 
-export const cityLinks = [lausanne].map(city => ({
+export const cityLinks = [lausanne, geneve].map(city => ({
   href: `/${city.slug}/`,
   label: `${city.name} ${IN_SEASON[city.season]}`,
 }));
