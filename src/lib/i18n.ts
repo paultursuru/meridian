@@ -17,6 +17,9 @@ export const translations = {
   fr: {
     title: 'MeridianWay : Navigation solaire',
     meta_description: 'Choisissez votre itinéraire selon l\'ensoleillement : deux chemins proposés, l\'un au soleil, l\'autre à l\'ombre.',
+    feature_routes: 'Calcul d\'itinéraire piéton au soleil ou à l\'ombre',
+    feature_shadows: 'Analyse de la position du soleil et des ombres portées par les bâtiments',
+    feature_data: 'Données swisstopo en Suisse, OpenStreetMap ailleurs',
     og_image_alt: 'Le logo MeridianWay et un téléphone qui affiche l\'app : deux itinéraires à pied de la gare de Lausanne au Musée Olympique, l\'un au soleil, l\'autre à l\'ombre.',
     app_description: 'Choisissez votre itinéraire selon l\'ensoleillement :\ndeux chemins proposés, l\'un au <span class="meri bold">soleil</span>, l\'autre à l\'<span class="way bold">ombre</span>.',
     onboarding_btn: 'Je dois faire quoi ?',
@@ -147,6 +150,9 @@ export const translations = {
   de: {
     title: 'MeridianWay : Sonnennavigation',
     meta_description: 'Wählen Sie Ihre Route je nach Sonneneinstrahlung: Es stehen zwei Wege zur Auswahl, einer in der Sonne, der andere im Schatten.',
+    feature_routes: 'Berechnung von Fussgängerrouten in der Sonne oder im Schatten',
+    feature_shadows: 'Analyse des Sonnenstands und des Schattenwurfs der Gebäude',
+    feature_data: 'swisstopo-Daten in der Schweiz, OpenStreetMap anderswo',
     og_image_alt: 'Das MeridianWay-Logo und ein Smartphone mit der App: zwei Fusswege vom Bahnhof Lausanne zum Olympischen Museum, einer in der Sonne, der andere im Schatten.',
     app_description: 'Wählen Sie Ihre Route je nach Sonneneinstrahlung:\nEs stehen zwei Wege zur Auswahl, einer in der <span class="meri bold">Sonne</span>, der andere im <span class="way bold">Schatten</span>.',
     onboarding_btn: 'Was muss ich tun?',
@@ -277,6 +283,9 @@ export const translations = {
   it: {
     title: 'MeridianWay : Navigazione solare',
     meta_description: 'Scegliete il vostro percorso in base all\'esposizione al sole: sono disponibili due sentieri, uno al sole e l\'altro all\'ombra.',
+    feature_routes: 'Calcolo di percorsi pedonali al sole o all\'ombra',
+    feature_shadows: 'Analisi della posizione del sole e delle ombre proiettate dagli edifici',
+    feature_data: 'Dati swisstopo in Svizzera, OpenStreetMap altrove',
     og_image_alt: 'Il logo MeridianWay e uno smartphone con l\'app: due percorsi a piedi dalla stazione di Losanna al Museo Olimpico, uno al sole e l\'altro all\'ombra.',
     app_description: 'Scegliete il vostro percorso in base all\'esposizione al sole:\nsono disponibili due sentieri, uno al <span class="meri bold">sole</span> e l\'altro all\'<span class="way bold">ombra</span>.',
     onboarding_btn: 'Cosa devo fare?',
@@ -407,6 +416,9 @@ export const translations = {
   en: {
     title: 'MeridianWay : Solar navigation',
     meta_description: 'Choose your route based on the amount of sunlight: there are two paths to choose from, one in the sun and the other in the shade.',
+    feature_routes: 'Walking route planning in the sun or in the shade',
+    feature_shadows: 'Analysis of the sun\'s position and the shadows cast by buildings',
+    feature_data: 'swisstopo data in Switzerland, OpenStreetMap elsewhere',
     og_image_alt: 'The MeridianWay logo and a phone showing the app: two walking routes from Lausanne train station to the Olympic Museum, one in the sun, the other in the shade.',
     app_description: 'Choose your route based on the amount of sunlight:\nthere are two paths to choose from, one in the <span class="meri bold">sun</span> and the other in the <span class="way bold">shade</span>.',
     onboarding_btn: 'What do I do?',
@@ -537,6 +549,9 @@ export const translations = {
   rm: {
     title: 'MeridianWay: navigaziun solara',
     meta_description: 'Tscherni tia ruta tut tenor la glisch dal sulegl: duas vias proponidas, ina en il sulegl e l’autra en la sumbriva.',
+    feature_routes: 'Calculaziun da rutas a pe en il sulegl u en la sumbriva',
+    feature_shadows: 'Analisa da la posiziun dal sulegl e da la sumbriva dals edifizis',
+    feature_data: 'Datas da swisstopo en Svizra, OpenStreetMap autrnua',
     og_image_alt: 'Il logo da MeridianWay ed in telefonin che mussa l’app: duas vias a pe da la staziun da Losanna al Museum olimpic, ina en il sulegl e l’autra en la sumbriva.',
     app_description: 'Tscherni tia ruta tut tenor la glisch dal sulegl:\nduas vias proponidas, ina en il <span class="meri bold">sulegl</span> e l\'autra en la <span class="way bold">sumbriva</span>.',
     onboarding_btn: 'Tge stoss jau far?',

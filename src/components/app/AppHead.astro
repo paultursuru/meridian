@@ -46,20 +46,17 @@ const t = translations[lang];
   "alternateName": ["Meridian Way", "meridian-way.ch"],
   "url": "https://meridian-way.ch/"
 })} />
+{/* Each language's page describes the app in that language; inLanguage lists all five */}
 <script is:inline type="application/ld+json" set:html={JSON.stringify({
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "MeridianWay",
-  "url": "https://meridian-way.ch/",
-  "description": "Choisissez votre itinéraire selon l'ensoleillement : deux chemins proposés, l'un au soleil, l'autre à l'ombre.",
+  "url": langUrl(lang),
+  "description": t.meta_description,
   "applicationCategory": "TravelApplication",
   "operatingSystem": "Web",
-  "inLanguage": ["fr", "de", "it", "rm", "en"],
-  "featureList": [
-    "Calcul d'itinéraire piéton au soleil ou à l'ombre",
-    "Analyse de la position du soleil et des ombres portées par les bâtiments",
-    "Données swisstopo en Suisse, OpenStreetMap ailleurs"
-  ],
+  "inLanguage": LANGS,
+  "featureList": [t.feature_routes, t.feature_shadows, t.feature_data],
   "screenshot": "https://meridian-way.ch/meridian-way-og-img.jpg",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
   "creator": { "@type": "Person", "name": "Paul Tursuru", "url": "https://github.com/paultursuru" },
