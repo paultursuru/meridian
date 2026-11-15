@@ -533,12 +533,6 @@ body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; height: 1
   box-shadow: 0 10px 30px rgba(0,0,0,0.45);
 }
 .depart-popover.open { display: block; }
-.depart-popover-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: rgba(216,219,200,0.7);
-  margin-bottom: 10px;
-}
 .depart-popover-fields { display: flex; gap: 8px; margin-bottom: 10px; }
 .depart-popover-fields input[type="date"],
 .depart-popover-fields input[type="time"] { flex: 1; min-width: 0; }

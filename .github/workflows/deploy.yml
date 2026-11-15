@@ -21,6 +21,9 @@ jobs:
 
       - run: npm ci
 
+      # Type errors in .astro and .ts files, which eslint doesn't report.
+      - run: npx astro check
+
       - run: npm run lint
 
       - run: npm test

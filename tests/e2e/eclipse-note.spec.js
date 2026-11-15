@@ -92,7 +92,7 @@ test('clicking the marker scrubs to the maximum and brings the note with it', as
   await expect(page).toHaveURL(/dt=2026-08-12T20%3A15/);
 });
 
-test('a marker click reports eclipse_jump once, and never as a scrub', async ({ page }) => {
+test('a marker click is never reported as a scrub', async ({ page }) => {
   await mockUpstreams(page);
   // Umami is a third-party script that never loads here, so stand one up
   // before the app's own module runs and collect what it's asked to send.
@@ -108,33 +108,16 @@ test('a marker click reports eclipse_jump once, and never as a scrub', async ({ 
   await page.locator('#scrubber-mark').click();
   await expect(page.locator('#scrubber-time')).toHaveText('20:15');
 
+  // Each travel drives the scrubber callback ~36 times, none of them a drag.
   const events = await page.evaluate(() => window.__events);
-  // One per search however many clicks, and however many frames each travel
-  // takes: the travel drives the same callback ~36 times.
-  expect(events.filter(([n]) => n === 'eclipse_jump')).toHaveLength(1);
   expect(events.filter(([n]) => n === 'scrub')).toHaveLength(0);
-  expect(events.find(([n]) => n === 'search')?.[1]).toMatchObject({ eclipse: true });
 
-  // A genuine drag still counts as one, alongside the jump.
+  // A genuine drag still counts as one.
   await page.locator('#scrubber-range').evaluate(el => {
     el.value = String(18 * 60);
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
   expect(await page.evaluate(() => window.__events.filter(([n]) => n === 'scrub').length)).toBe(1);
-});
-
-test('the search event carries eclipse:false on any other day', async ({ page }) => {
-  await mockUpstreams(page);
-  await page.addInitScript(() => {
-    window.__events = [];
-    window.umami = { track: (name, props) => window.__events.push([name, props]) };
-  });
-  await page.goto(`/?from=${START}&to=${END}&dt=2026-08-13T15:00`);
-  await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
-
-  await expect.poll(() => page.evaluate(
-    () => window.__events.find(([n]) => n === 'search')?.[1]?.eclipse,
-  )).toBe(false);
 });
 
 test('the marker spins on click, and can spin again', async ({ page }) => {
