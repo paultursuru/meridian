@@ -8,6 +8,7 @@ const TECHNICAL = {
   ROUTING_UNAVAILABLE: 'error_routing_unavailable',
   // Not answering at all reads the same to the user: the addresses were fine.
   ROUTING_TIMEOUT: 'error_routing_unavailable',
+  GEOCODE_TIMEOUT: 'error_geocode_timeout',
   NETWORK: 'error_network',
 };
 

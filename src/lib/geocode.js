@@ -97,6 +97,17 @@ function addressNotFoundError(q, role) {
   return err;
 }
 
+// Nominatim usually answers fast, even to refuse. Unbounded, a typed search
+// would sit on its geocoding status for good the day it stopped answering.
+const GEOCODE_TIMEOUT_MS = 10000;
+
+// No role: the address may well be right, neither field is to blame.
+function geocodeTimeoutError() {
+  const err = new Error(`Nominatim gave no answer within ${GEOCODE_TIMEOUT_MS} ms`);
+  err.code = 'GEOCODE_TIMEOUT';
+  return err;
+}
+
 function positionUnknownError() {
   const err = new Error(tr('error_position_unknown'));
   err.code = 'POSITION_UNKNOWN';
@@ -159,8 +170,15 @@ export async function geocode(q, { role, near } = {}) {
   const limit = near ? NEAR_LIMIT : 1;
   let url = `${NOM_BASE}/search?q=${encodeURIComponent(q)}&format=json&limit=${limit}&addressdetails=1&accept-language=${getLang()}`;
   if (near) url += `&viewbox=${viewboxAround(near, NEAR_BOX_KM)}`;
-  const r = await fetchOrNetworkError(url);
-  const d = await r.json();
+  let d;
+  try {
+    // The signal also bounds reading the body.
+    const r = await fetchOrNetworkError(url, { signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS) });
+    d = await r.json();
+  } catch (err) {
+    if (err?.name === 'TimeoutError') throw geocodeTimeoutError();
+    throw err;
+  }
   if (!d.length) throw addressNotFoundError(q, role);
   const best = near
     ? d.reduce((a, b) => (candidateScore(b, near) > candidateScore(a, near) ? b : a))

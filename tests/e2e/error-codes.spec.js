@@ -156,6 +156,35 @@ test('a route that never answers ends on the routing-unavailable message', async
   expect(ev.data).toMatchObject({ status: 'error', code: 'ROUTING_TIMEOUT', step: 'route' });
 });
 
+// Same for the geocoder, which only an address typed without picking a
+// suggestion reaches.
+test('a geocoder that never answers ends on the address-service message', async ({ page }) => {
+  // The browser's own timer: no fake clock reaches AbortSignal.timeout.
+  test.setTimeout(40_000);
+  await captureEvents(page);
+  await mockUpstreams(page);
+  // Registered last, so it wins over the geocoder mock above. Never fulfilled.
+  await page.route('https://nominatim.openstreetmap.org/search**', () => {});
+  await page.goto('/en/');
+  await waitForApp(page);
+
+  await page.fill('#inp-start', 'lausanne gare');
+  await page.keyboard.press('Escape');
+  await page.fill('#inp-end', 'renens');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#status')).toHaveClass(/\bon\b/);
+
+  const toast = page.locator('#toast');
+  await expect(toast).toHaveClass(/\bon\b/, { timeout: 20_000 });
+  await expect(toast).toHaveText(/address service is not responding/i);
+  await expect(page.locator('#status')).not.toHaveClass(/\bon\b/);
+  await expect(page.locator('#search-btn')).toBeEnabled();
+  const [ev] = await eventsOfType(page, 'search');
+  expect(ev.data).toMatchObject({ status: 'error', code: 'GEOCODE_TIMEOUT', step: 'geocode' });
+  expect(ev.data.field).toBeUndefined();
+});
+
 // A network that refuses a host, as a corporate filter does: the request gets
 // no response at all, and fetch rejects instead of returning a status.
 test.describe('a request that never gets an answer', () => {
