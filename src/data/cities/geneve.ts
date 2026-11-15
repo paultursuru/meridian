@@ -12,7 +12,7 @@ export const geneve: CityPage = {
   slug: 'geneve',
   name: 'Genève',
   lang: 'fr',
-  computedOn: '2026-10-29',
+  computedOn: '2026-11-15',
   season: 'hiver',
   seasons: {
     hiver: {
@@ -97,8 +97,14 @@ export const geneve: CityPage = {
           q: 'Le parc des Bastions et la promenade de la Treille sont-ils au soleil en hiver ?',
           a: 'Le parc des Bastions n\'a qu\'environ 3 h 30 de soleil le 21 décembre. La promenade de la Treille, en terrasse juste au-dessus, en a plus de 4 h 30. Même au bord du lac, le Jardin anglais en a moins de 3 h : les immeubles du quai Général-Guisan se dressent entre lui et le soleil.',
         },
+        // Noël au Quai: remove this entry and the method's last but one sentence after 24 December 2026.
+        {
+          q: 'Le marché de Noël de Genève, Noël au Quai, est-il au soleil ?',
+          a: 'Oui, par ciel dégagé. Noël au Quai a lieu du 19 novembre au 24 décembre 2026 sur le quai du Mont-Blanc, au bord du lac : la promenade y a environ 7 h de soleil le 21 décembre, de 9 h à 15 h 45. C\'est le jour le plus court, donc le pire cas sur toute la durée du marché. Calcul de MeridianWay, sans lien avec l\'organisation de Noël au Quai : les nuages et les chalets ne sont pas comptés.',
+          link: { label: 'Programme et horaires de Noël au Quai', href: 'https://www.geneve.com/fr/evenements/noel-au-quai-7799477' },
+        },
       ],
-      method: 'Calculés le 29 octobre 2026 par le moteur de MeridianWay sur 142 km de rues du centre de Genève, de Cornavin à Plainpalais et des Pâquis aux Eaux-Vives, toutes les 15 minutes le 21 décembre. Chaque bâtiment compte pour la hauteur de son toit au-dessus de la rue (swissBUILDINGS3D et swissALTI3D de swisstopo), les crêtes comptent jusqu\'à 40 km (Copernicus côté France), et les arbres viennent d\'OpenStreetMap, sans leurs feuilles en hiver. Le soleil compte à partir de 5° au-dessus de l\'horizon. Le modèle de swisstopo représente souvent un îlot entier comme un seul bâtiment, à la hauteur de sa partie la plus haute : les chiffres sont donc plutôt du côté de l\'ombre. Chiffres arrondis.',
+      method: 'Calculés le 29 octobre 2026 par le moteur de MeridianWay sur 142 km de rues du centre de Genève, de Cornavin à Plainpalais et des Pâquis aux Eaux-Vives, toutes les 15 minutes le 21 décembre. Chaque bâtiment compte pour la hauteur de son toit au-dessus de la rue (swissBUILDINGS3D et swissALTI3D de swisstopo), les crêtes comptent jusqu\'à 40 km (Copernicus côté France), et les arbres viennent d\'OpenStreetMap, sans leurs feuilles en hiver. Le soleil compte à partir de 5° au-dessus de l\'horizon. Le modèle de swisstopo représente souvent un îlot entier comme un seul bâtiment, à la hauteur de sa partie la plus haute : les chiffres sont donc plutôt du côté de l\'ombre. La promenade du quai du Mont-Blanc, où se tient Noël au Quai, a été calculée le 15 novembre 2026 avec les mêmes réglages. Chiffres arrondis.',
     },
   },
 };
