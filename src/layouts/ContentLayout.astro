@@ -3,7 +3,7 @@
 // pages, "Comment ça marche ?", 404) and the translated about and privacy
 // pages. Head, a nav back to the app, and the shared footer. A page can put
 // its own structured data in the "head" slot.
-import '../styles/main.css';
+import '../styles/base.css';
 import MarkdownAlternate from '../components/MarkdownAlternate.astro';
 import { translations, LANGS, langUrl, langPath, type Lang } from '../lib/i18n';
 import Footer from '../components/Footer.astro';
@@ -99,9 +99,6 @@ const url = langUrl(lang, path);
     --logo-w: #e8c8f0;
     background: var(--bg);
     color: var(--fg);
-    height: max-content;
-    min-height: 100vh;
-    overflow: auto;
     padding: 1.5rem 1rem 4rem;
     line-height: 1.5;
   }

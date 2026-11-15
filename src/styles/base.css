@@ -1,0 +1,109 @@
+/* What the app and the pages outside it share: the reset, the font, the
+   wordmark colours, the about text (the app's drawer and the about page),
+   the footer and the press feedback. The app's own layout is in main.css. */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-tap-highlight-color: transparent; }
+
+body { font-family: 'BricolageGrotesqueMedium', system-ui, sans-serif; }
+
+/* ── Fonts ── */
+/* ── Bricolage Grotesque - https://ateliertriay.github.io/bricolage/ ── */
+@font-face {
+  font-family: 'BricolageGrotesqueMedium';
+  src: url('/fonts/BricolageGrotesque-Medium.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.meri { color: #f0f2a0; }
+.way { color: #e8c8f0; }
+
+/* ── About text ── */
+.about-pane { display: none; }
+.about-pane.active { display: block; }
+
+.about-pane :is(h1, h2) {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.about-pane :is(h1, h2) .meri { color: #f0f2a0; }
+.about-pane :is(h1, h2) .way  { color: #e8c8f0; font-style: italic; }
+
+.about-tagline {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #d8dbc8;
+  margin-bottom: 18px;
+}
+
+.about-pane p {
+  font-size: 0.88rem;
+  color: rgba(216,219,200,0.8);
+  line-height: 1.65;
+  margin-bottom: 14px;
+}
+
+.about-opensource {
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: #161b12;
+  border: 1px solid rgba(240,242,160,0.1);
+  border-left: 3px solid #f0f2a0;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: rgba(216,219,200,0.75);
+  line-height: 1.6;
+}
+.about-opensource a { color: #e8c8f0; text-underline-offset: 3px; }
+.about-opensource a:hover { color: #f0deff; }
+p.opensource-badge {
+  background: rgba(240,242,160,0.15);
+  color: #f0f2a0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  width: fit-content;
+}
+
+.about-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(240,242,160,0.2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: #d8dbc8;
+  transition: border-color 0.2s, background 0.2s;
+}
+.about-link:hover { border-color: rgba(240,242,160,0.4); background: rgba(240,242,160,0.05); }
+.github-link { color: #f0f2a0; border-color: rgba(240,242,160,0.3); background: rgba(240,242,160,0.05); }
+.github-link:hover { border-color: rgba(240,242,160,0.6); background: rgba(240,242,160,0.1); }
+
+/* Under the about, privacy and content pages (Footer.astro) */
+.page-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line, rgba(240,242,160,0.13));
+}
+
+/* ── Touch press feedback ── */
+/* Not on the buttons that open and close something: opening is their feedback,
+   and a browser that holds :active after the tap (Firefox's touch simulation)
+   left the sun badge faded once closed. */
+@media (hover: none) {
+  button:not([aria-expanded]):active,
+  .lang-btn:active,
+  .about-link:active { opacity: 0.6; }
+}
