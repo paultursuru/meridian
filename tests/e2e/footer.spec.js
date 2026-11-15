@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 // content pages: the same links in the same order, the page you're on named
 // rather than linked, and llms.txt kept apart from the human pages.
 
-const FR_LINKS = ['À propos', 'Confidentialité', 'Comment ça marche ?', 'Lausanne en hiver'];
+const FR_LINKS = ['À propos', 'Confidentialité', 'Comment ça marche ?', 'Lausanne en hiver', 'Genève en hiver'];
 
 async function stubUpstreams(page) {
   await page.route(/nominatim|photon|open-meteo|workers\.dev|stadiamaps|openfreemap/, route => route.abort());
@@ -17,6 +17,7 @@ for (const [path, current] of [
   ['/privacy/', 'Confidentialité'],
   ['/comment-ca-marche/', 'Comment ça marche ?'],
   ['/lausanne/', 'Lausanne en hiver'],
+  ['/geneve/', 'Genève en hiver'],
 ]) {
   test(`${path} shows the shared footer, naming itself instead of linking to itself`, async ({ page }) => {
     await stubUpstreams(page);

@@ -18,6 +18,7 @@ const LINKS = [
   ['/lausanne/', '.route-link', 'route'],
   ['/lausanne/', '.method a[data-app-link]', 'method'],
   ['/lausanne/', '.content-nav .open-app', 'nav'],
+  ['/geneve/', '.route-link', 'route'],
   ['/comment-ca-marche/', '.content-nav .wordmark', 'logo'],
 ];
 

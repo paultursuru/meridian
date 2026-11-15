@@ -98,7 +98,7 @@ export default defineConfig({
         title: 'MeridianWay',
         description: 'Walking directions with two routes between the same points: one in the sun, one in the shade, at a chosen date and time. Building heights are measured ones in Switzerland (swisstopo swissBUILDINGS3D), from OpenStreetMap elsewhere. Free web app, no account.',
         content: readFileSync(new URL('./src/llms.md', import.meta.url), 'utf-8'),
-        pages: /(^|\/)(about|comment-ca-marche|lausanne)\/$/,
+        pages: /(^|\/)(about|comment-ca-marche|lausanne|geneve)\/$/,
       },
     }),
   ],
