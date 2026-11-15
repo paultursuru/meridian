@@ -1,5 +1,5 @@
 ---
-import { translations, LANGS, langUrl, SITE_URL, type Lang } from '../../lib/i18n';
+import { translations, LANGS, langUrl, langPath, SITE_URL, type Lang } from '../../lib/i18n';
 import MarkdownAlternate from '../MarkdownAlternate.astro';
 
 interface Props {
@@ -16,7 +16,7 @@ const t = translations[lang];
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="shortcut icon" href="/favicon.ico" />
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/site.webmanifest" />
+<link rel="manifest" href={langPath(lang, 'site.webmanifest')} />
 <link rel="preconnect" href="https://tiles.stadiamaps.com" crossorigin />
 <meta name="theme-color" content="#0e120a" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
