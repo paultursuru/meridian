@@ -199,7 +199,7 @@ export async function handleSearch(
     const hourlyWeather = await weatherP;
     if (stale()) return;
     session.applyWeather(hourlyWeather);
-    searchStatus(null);
+    session.announceResult();
     session.startScrubber();
 
     if (vegP) {

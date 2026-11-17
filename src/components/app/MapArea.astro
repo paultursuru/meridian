@@ -30,7 +30,8 @@ const onboardingHref = `${langPath(lang)}?${onboardingQuery({ from: t.onboarding
     <span class="sr-only">{t.map_loading}</span>
   </div>
   <a id="onboarding-btn" href={onboardingHref}>{t.onboarding_btn}</a>
-  <button id="map-sun-info" type="button" aria-expanded="false" aria-label={t.aria_sun_info}>
+  <!-- Named by its own text: a voice command says what it sees. -->
+  <button id="map-sun-info" type="button" aria-expanded="false">
     <div id="map-sun-info-row">
       <span id="map-sun-info-human"></span>
       <span id="map-sun-info-chevron" aria-hidden="true"></span>

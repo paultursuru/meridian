@@ -13,7 +13,9 @@ interface Props {
 const { lang } = Astro.props;
 const t = translations[lang];
 ---
-<div id="results" role="status" aria-live="polite">
+<!-- Not a live region: the scrubber rewrites it on every step. A search
+     announces one sentence through #status instead. -->
+<div id="results">
   <div id="drawer-handle" aria-label={t.aria_drawer_toggle} role="button" tabindex="0">
     <div id="drawer-bar"></div>
   </div>
@@ -27,9 +29,11 @@ const t = translations[lang];
   </div>
   <div id="eclipse-note">{t.eclipse_note}</div>
   <div id="single-route-note">{t.single_route_note}</div>
-  <div id="tabs" role="tablist">
-    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" role="tab" aria-selected="false" aria-controls="tab-shady"><span class="side-dot shade" aria-hidden="true"></span>{t.tab_shady}</button>
-    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" role="tab" aria-selected="true"  aria-controls="tab-sunny"><span class="side-dot sun" aria-hidden="true"></span>{t.tab_sunny}</button>
+  <!-- Toggle buttons, not ARIA tabs: tabs promise arrow keys, and wrap each
+       route in a panel that a screen reader may have to step into. -->
+  <div id="tabs">
+    <button class="tab-btn shady"  id="tab-btn-shady" data-tab="shady" type="button" aria-pressed="false" aria-controls="tab-shady"><span class="side-dot shade" aria-hidden="true"></span>{t.tab_shady}</button>
+    <button class="tab-btn active" id="tab-btn-sunny" data-tab="sunny" type="button" aria-pressed="true"  aria-controls="tab-sunny"><span class="side-dot sun" aria-hidden="true"></span>{t.tab_sunny}</button>
   </div>
   <!-- Expanded on mobile, only this part scrolls: the tabs and Share stay in
        view above it. The side panel scrolls as a whole (display: contents). -->

@@ -4,10 +4,29 @@ import { tr } from './i18n.js';
 import { track } from './analytics.js';
 import { getLang } from './i18n.js';
 
+// The status strings open on an emoji, which a screen reader reads by name.
+const LEAD_EMOJI = /^(\p{Extended_Pictographic}\uFE0F?)\s*/u;
+
 export function setStatus(msg) {
   const el = document.getElementById('status');
-  el.textContent = msg || '';
+  const m = msg ? LEAD_EMOJI.exec(msg) : null;
+  if (m) {
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = `${m[1]} `;
+    el.replaceChildren(icon, msg.slice(m[0].length));
+  } else {
+    el.textContent = msg || '';
+  }
   el.classList.toggle('on', !!msg);
+}
+
+// For screen readers only, in the same live region: the result it describes
+// is already on screen.
+export function announce(msg) {
+  const el = document.getElementById('status');
+  el.textContent = msg.replace(LEAD_EMOJI, '');
+  el.classList.remove('on');
 }
 
 let toastTimer = null;
@@ -130,7 +149,7 @@ export function setActiveTab(type) {
   document.querySelectorAll('.tab-btn').forEach(b => {
     const active = b.dataset.tab === type;
     b.classList.toggle('active', active);
-    b.setAttribute('aria-selected', String(active));
+    b.setAttribute('aria-pressed', String(active));
   });
   document.querySelectorAll('.tab-pane').forEach(p =>
     p.classList.toggle('active', p.id === 'tab-' + type)
@@ -243,6 +262,16 @@ function initDrawer() {
       e.preventDefault();
       toggleDrawer('key');
     }
+  });
+
+  // Tab into the folded sheet's routes can land below the screen: open it.
+  // Not a drawer_open, which counts what people choose to do.
+  drawer.addEventListener('focusin', e => {
+    if (sidePanel() || drawer.classList.contains('expanded')) return;
+    if (!e.target.closest('#drawer-body')) return;
+    if (e.target.getBoundingClientRect().bottom <= window.innerHeight) return;
+    expandDrawer();
+    e.target.scrollIntoView({ block: 'nearest' });
   });
 }
 
