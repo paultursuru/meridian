@@ -263,7 +263,9 @@ function firstView() {
 export function initMap() {
   insertMapCss(leafletCss);
   const { center, zoom } = firstView();
-  _map = L.map('map').setView(center, zoom);
+  // Leaflet's own zoom buttons are named in English.
+  _map = L.map('map', { zoomControl: false }).setView(center, zoom);
+  L.control.zoom({ zoomInTitle: tr('zoom_in'), zoomOutTitle: tr('zoom_out') }).addTo(_map);
   initBasemap();
 
   new LocateControl().addTo(_map);

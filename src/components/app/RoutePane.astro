@@ -12,7 +12,7 @@ const t = translations[lang];
 const title = kind === 'sunny' ? t.tab_sunny : t.tab_shady;
 const dot = kind === 'sunny' ? 'sun' : 'shade';
 ---
-<div id={`tab-${kind}`} class:list={['tab-pane', { active }]} role="tabpanel" aria-labelledby={`tab-btn-${kind}`}>
+<div id={`tab-${kind}`} class:list={['tab-pane', { active }]}>
   <button class="pane-title" type="button" data-tab={kind} aria-pressed={active ? 'true' : 'false'}><span class:list={['side-dot', dot]} aria-hidden="true"></span>{title}</button>
   <div class="ratio-wrap">
     <div class="ratio-nums">

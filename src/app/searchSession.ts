@@ -7,10 +7,10 @@ import { deciduousLeafFrac } from '../lib/season.js';
 import { dateValueInZone, formatTimeInZone, minutesInZone } from '../lib/timezone.js';
 import { weatherAt, type fetchWeather } from '../lib/weather.js';
 import { preselectTab } from '../lib/preselect.js';
-import { showResults, showQualityNote, showScrubber, hideScrubber, reshowScrubber, setScrubberLabel } from '../lib/ui.js';
+import { showResults, showQualityNote, showScrubber, hideScrubber, reshowScrubber, setScrubberLabel, announce } from '../lib/ui.js';
 import { buildShareQuery } from '../lib/share.js';
 import { notifySearchSucceeded } from '../lib/pwa.js';
-import { fmtHm } from '../lib/helpers.js';
+import { fmtHm, fmtDur } from '../lib/helpers.js';
 import { tr } from '../lib/i18n.js';
 import { track } from '../lib/analytics.js';
 import { map, selectRoute, reselectActiveRoute, activeRoute } from './mapApi';
@@ -78,6 +78,8 @@ export function createSearchSession(ctx: SearchContext) {
   let heightState: ReturnType<typeof heightNote>['state'] = 'ok';
   // Sunny minus shady score, set by renderAt.
   let delta = 0;
+  // The routes as last ranked by renderAt.
+  let ranked: ReturnType<typeof rankRoutes> | null = null;
   let currentInstant = tDate;
   let msToFirstRender = 0;
   // The scrubber comes with the weather, and not at night.
@@ -145,7 +147,7 @@ export function createSearchSession(ctx: SearchContext) {
       rt.sunScore = score;
       rt.segShade = segShade;
     });
-    const ranked = rankRoutes(routes, night);
+    ranked = rankRoutes(routes, night);
     delta = ranked.delta;
 
     map.displayRoutes(startC, endC, ranked.sunny, single ? null : ranked.shady, { fit });
@@ -199,6 +201,23 @@ export function createSearchSession(ctx: SearchContext) {
       month: tDate.getUTCMonth(),
       lat: midLat,
     }));
+  }
+
+  // One sentence for screen readers, once per search: each route's share and
+  // duration, as the panel shows them.
+  function announceResult() {
+    if (!ranked) return;
+    const { sunny, shady } = ranked;
+    const sunPct = Math.round(sunny.sunScore * 100);
+    if (night) {
+      announce(`${tr('night_note')} ${fmtDur(sunny.duration)}.`);
+    } else if (single) {
+      announce(`${tr('single_route_note')} ${tr('label_sun')} ${sunPct}\u00a0%, ${fmtDur(sunny.duration)}.`);
+    } else {
+      const shadePct = 100 - Math.round(shady.sunScore * 100);
+      announce(`${tr('tab_sunny')}, ${tr('label_sun')} ${sunPct}\u00a0%, ${fmtDur(sunny.duration)}. `
+        + `${tr('tab_shady')}, ${tr('label_shade')} ${shadePct}\u00a0%, ${fmtDur(shady.duration)}.`);
+    }
   }
 
   // Sunrise to sunset. Minutes are offsets from the searched time, which
@@ -278,5 +297,5 @@ export function createSearchSession(ctx: SearchContext) {
     });
   }
 
-  return { showFirst, applyWeather, startScrubber, applyVegetation, reportSearch };
+  return { showFirst, applyWeather, announceResult, startScrubber, applyVegetation, reportSearch };
 }

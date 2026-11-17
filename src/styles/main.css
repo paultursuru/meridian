@@ -50,9 +50,16 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
   font-size: 0.85rem;
   color: #d8dbc8;
   line-height: 1.3;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, visibility 0s;
 }
-#app-description.hidden { opacity: 0; pointer-events: none; }
+/* visibility too, once faded: an invisible link and close button would
+   still take Tab stops and be read out. */
+#app-description.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0s 0.2s;
+}
 #app-description-arrow { flex-shrink: 0; width: 32px; }
 #app-description-arrow svg { display: block; width: 100%; height: 100%; }
 #app-description-content { flex: 1; min-width: 0; }
@@ -434,7 +441,8 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
   right: 34px;
   bottom: -5px;
   transform: translateY(-50%);
-  width: 22px; height: 22px;
+  /* The WCAG AA floor for a target this close to the field's own. */
+  width: 24px; height: 24px;
   border: none;
   background: none;
   padding: 0;
@@ -469,7 +477,8 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
   padding: 8px 20px;
   background: #f0f2a0;
   color: #0e120a;
-  border: none;
+  /* Transparent, not none: forced colours draw it, and drop the background. */
+  border: 1px solid transparent;
   border-radius: 8px 0 0 8px;
   font-size: 0.9rem;
   font-weight: 700;
@@ -516,7 +525,10 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
   box-shadow: 0 10px 30px rgba(0,0,0,0.45);
 }
 .depart-popover.open { display: block; }
-.depart-popover-fields { display: flex; gap: 8px; margin-bottom: 10px; }
+/* The time goes under the date when both don't fit, at 320 px with a 12-hour
+   clock for one. */
+.depart-popover-fields { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.depart-popover-fields label { display: block; }
 .depart-popover-fields input[type="date"],
 .depart-popover-fields input[type="time"] { flex: 1; min-width: 0; }
 /* The demo's note (SearchPanel.astro): same card as the popover above it. */
@@ -557,7 +569,7 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
   padding: 8px;
   background: #f0f2a0;
   color: #0e120a;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 700;
@@ -785,11 +797,21 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
   border-radius: 20px;
   font-size: 0.84rem;
   z-index: 3000;
-  display: none;
   backdrop-filter: blur(4px);
   white-space: nowrap;
 }
-#status.on { display: block; }
+/* Hidden off screen, not with display: none. A live region outside the
+   accessibility tree misses the message it appears with. */
+#status:not(.on) {
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  pointer-events: none;
+}
 
 /* ── Error toast (non-blocking, replaces alert()) ── */
 .toast {
