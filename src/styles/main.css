@@ -593,8 +593,31 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
 /* ── Map ── */
 #map { flex: 1; min-height: 160px; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
-#map .leaflet-bottom { margin-bottom: var(--safe-bottom); }
+#map .leaflet-bottom { margin-bottom: var(--credits-h); }
 #map .route-casing { filter: blur(2px); }
+
+/* Map credits. Under the drawer layout, the drawer covers the bottom of the
+   map, so map.js moves Leaflet's attribution into this band at the bottom of
+   the screen. The drawer and the map's bottom controls sit above it:
+   --credits-h is its height, measured by ui.js. */
+:root { --credits-h: var(--safe-bottom); }
+#map-credits {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 2001;
+  padding: 3px calc(12px + var(--safe-right)) calc(3px + var(--safe-bottom)) calc(12px + var(--safe-left));
+  background: #0e120a;
+  border-top: 1px solid rgba(240,242,160,0.13);
+  color: rgba(216,219,200,0.62);
+  font-size: 0.75rem;
+  line-height: 16px;
+  text-align: center;
+}
+#map-credits:empty { display: none; }
+/* One line even while a basemap swap leaves it empty: the drawer stays put. */
+#map-credits .leaflet-control-attribution { float: none; min-height: 16px; padding: 0; color: inherit; line-height: inherit; }
+#map-credits a { color: #d8dbc8; text-decoration: underline; }
+#map-credits a:focus-visible { outline: 2px solid #f0f2a0; outline-offset: 2px; border-radius: 2px; }
 
 /* Start and end pins (map.js pinIcon). The marker element is the pin itself;
    the negative margins put its centre on the point. */
@@ -896,10 +919,10 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
 }
 
 #results {
-  --drawer-peek: calc(168px + var(--safe-bottom));
+  --drawer-peek: calc(168px + var(--credits-h));
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  padding-bottom: var(--safe-bottom);
+  padding-bottom: var(--credits-h);
   background: #0e120a;
   border-radius: 16px 16px 0 0;
   border-top: 1px solid rgba(240,242,160,0.13);
@@ -1295,7 +1318,7 @@ body:has(#results.expanded) #hour-badges { display: none; }
 .ratio-delta:empty { display: none; }
 
 @media (max-height: 700px) {
-  #results { --drawer-peek: calc(142px + var(--safe-bottom)); }
+  #results { --drawer-peek: calc(142px + var(--credits-h)); }
   #drawer-handle { padding: 6px 0 7px; }
   /* No room for the label above the tabs here: icon only. */
   #share-btn { top: 4px; padding: 0 6px; }
@@ -1528,6 +1551,10 @@ body:has(#results.expanded) #hour-badges { display: none; }
 /* ── Desktop: the results dock as a side panel ── */
 @media (min-width: 900px) {
   :root { --side-panel-w: 380px; }
+
+  /* The credits are back in the map's corner (map.js placeCredits). */
+  #map-credits { display: none; }
+  #map .leaflet-bottom { margin-bottom: var(--safe-bottom); }
 
   #results {
     top: var(--map-top, 96px);

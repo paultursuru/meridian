@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import leafletCss from 'leaflet/dist/leaflet.css?inline';
-import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx, syncMapTop } from './ui.js';
+import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx, syncMapTop, SIDE_PANEL_MQ } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
@@ -270,6 +270,7 @@ export function initMap() {
 
   new LocateControl().addTo(_map);
   new OnboardingControl().addTo(_map);
+  placeCredits();
 
   _map.on('click', () => collapseDrawer());
   _map.on('click', openPickPopup);
@@ -284,6 +285,26 @@ export function initMap() {
     const el = document.getElementById(id);
     if (el) L.DomEvent.disableClickPropagation(el);
   }
+}
+
+// Under the drawer layout, the results drawer covers the bottom of the map and
+// the attribution corner with it. The attribution then moves to a band at the
+// bottom of the screen that the drawer docks above, and drops the "Leaflet"
+// prefix to fit on one line. Moved rather than copied: the basemap swaps keep
+// updating the same element.
+function placeCredits() {
+  const band = document.getElementById('map-credits');
+  if (!band) return;
+  const control = _map.attributionControl;
+  const corner = _map.getContainer().querySelector('.leaflet-bottom.leaflet-right');
+  const prefix = control.options.prefix;
+  const sidePanel = matchMedia(SIDE_PANEL_MQ);
+  const place = () => {
+    control.setPrefix(sidePanel.matches ? prefix : false);
+    (sidePanel.matches ? corner : band).append(control.getContainer());
+  };
+  place();
+  sidePanel.addEventListener('change', place);
 }
 
 // Brings in the vector basemap, once. Whatever needs MapLibre awaits this.

@@ -84,7 +84,7 @@ export function showQualityNote(note) {
 // instead of sliding up from the bottom, both routes on screen at once.
 // Read on demand rather than cached — the breakpoint can be crossed by a window
 // resize at any time.
-const SIDE_PANEL_MQ = '(min-width: 900px)';
+export const SIDE_PANEL_MQ = '(min-width: 900px)';
 function sidePanel() {
   return window.matchMedia?.(SIDE_PANEL_MQ).matches ?? false;
 }
@@ -137,6 +137,18 @@ export function initLayout(onTopMoved) {
   syncLayout();
   if (typeof ResizeObserver === 'function') new ResizeObserver(syncLayout).observe(map);
   window.addEventListener('resize', syncLayout);
+
+  // The credits band under the drawer layout: the drawer's peek and the map's
+  // bottom controls sit on its height (--credits-h in main.css). It can wrap
+  // or vanish when the window crosses the side panel's breakpoint. Rounded up:
+  // the © falls back to a font with a taller line, a fraction of a pixel.
+  const credits = document.getElementById('map-credits');
+  if (credits && typeof ResizeObserver === 'function') {
+    new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--credits-h', `${Math.ceil(credits.getBoundingClientRect().height)}px`);
+      updateScrubberPosition();
+    }).observe(credits);
+  }
 }
 
 // The observer reports at the end of the frame. A fit in the same task as the

@@ -119,7 +119,9 @@ test('expanded, only the part under the tabs scrolls, and the badges step aside'
 
   const tabsBefore = await page.locator('#tabs').boundingBox();
   await body.evaluate(el => { el.scrollTop = el.scrollHeight; });
-  await expect(page.locator('#hour-notes-title')).toBeInViewport();
+  // The notes section, not its title: on a short screen the title can scroll
+  // up past the tabs while the notes under it are what is left in view.
+  await expect(page.locator('#hour-notes')).toBeInViewport();
   expect(await page.locator('#tabs').boundingBox()).toEqual(tabsBefore);
   await expect(page.locator('#share-btn')).toBeInViewport();
   // Under the folded form, with the scrubber still clear of it.

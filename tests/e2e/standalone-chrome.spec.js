@@ -208,9 +208,16 @@ test.describe('safe-area insets, simulated', () => {
     await expect(page.locator('#time-scrubber')).toHaveClass(/on/, { timeout: 20_000 });
     await page.waitForTimeout(500);
 
-    const peek = await page.evaluate(() => parseFloat(
-      getComputedStyle(document.getElementById('results')).getPropertyValue('--drawer-peek')));
-    expect(peek).toBe(168 + 34);
+    // The peek sits on the map credits band, which clears the indicator itself.
+    const { peek, band, credits } = await page.evaluate(() => ({
+      peek: parseFloat(getComputedStyle(document.getElementById('results')).getPropertyValue('--drawer-peek')),
+      band: document.getElementById('map-credits').getBoundingClientRect().height,
+      credits: innerHeight - document.querySelector('#map-credits .leaflet-control-attribution').getBoundingClientRect().bottom,
+    }));
+    expect(band).toBeGreaterThanOrEqual(34);
+    // The credits themselves stay above the indicator.
+    expect(credits).toBeGreaterThanOrEqual(34);
+    expect(peek).toBeCloseTo(168 + band, 1);
 
     const gap = await page.evaluate(() => {
       const s = document.getElementById('time-scrubber').getBoundingClientRect();
@@ -230,9 +237,10 @@ test.describe('safe-area insets, simulated', () => {
     await expect(page.locator('#results')).toHaveClass(/expanded/);
     await page.waitForTimeout(500);
 
-    // Expanded, the drawer sits flush on the bottom edge, so the indicator is
-    // over its content rather than over the strip below the peek: a padding
-    // problem rather than a peek problem, and a separate declaration.
+    // Expanded, the drawer sits flush on the bottom edge, so the indicator and
+    // the map credits band over it are over its content rather than over the
+    // strip below the peek: a padding problem rather than a peek problem, and
+    // a separate declaration.
     const bottom = await page.evaluate(() => {
       const el = document.getElementById('results');
       // Only the part under the tabs scrolls, and nothing in it draws past
@@ -242,13 +250,15 @@ test.describe('safe-area insets, simulated', () => {
       const last = [...body.children].reverse().find(c => c.getBoundingClientRect().height > 0);
       return {
         padding: parseFloat(getComputedStyle(el).paddingBottom),
+        band: document.getElementById('map-credits').getBoundingClientRect().height,
         edge: Math.round(body.getBoundingClientRect().bottom),
         content: last.getBoundingClientRect().bottom,
         window: window.innerHeight,
       };
     });
-    expect(bottom.padding).toBe(34);
-    expect(bottom.edge).toBeLessThanOrEqual(bottom.window - 34);
+    expect(bottom.band).toBeGreaterThanOrEqual(34);
+    expect(bottom.padding).toBeCloseTo(bottom.band, 1);
+    expect(bottom.edge).toBeLessThanOrEqual(bottom.window - bottom.band);
     // And the last line scrolls up to that edge. The scroll offset is in whole
     // pixels and the layout is not: up to a pixel can stay clipped under it
     // (811 against 810 on the Linux runner).
