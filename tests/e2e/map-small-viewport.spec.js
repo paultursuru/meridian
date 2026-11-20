@@ -74,9 +74,11 @@ test.describe('fitBounds on a container smaller than its padding', () => {
     await page.goto(`/en/?from=${PARIS_START}&to=${PARIS_END}&dt=2026-07-28T14:00`);
     await expect(page.locator('#results')).toHaveClass(/on/, { timeout: 20_000 });
 
-    // #map really is shorter than the 230px of padding here — if this stops
-    // holding (layout change), the test below would pass vacuously.
-    const mapHeight = await page.locator('#map').evaluate(el => el.getBoundingClientRect().height);
+    // The map in view really is shorter than the 230px of padding here — if
+    // this stops holding (layout change), the test below would pass vacuously.
+    // On phones the map runs under the form, which adds its height on top.
+    const mapHeight = await page.locator('#map').evaluate(el =>
+      el.getBoundingClientRect().bottom - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--map-top')));
     expect(mapHeight).toBeLessThan(230);
 
     const paths = await routePathData(page);

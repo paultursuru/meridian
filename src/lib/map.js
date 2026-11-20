@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import leafletCss from 'leaflet/dist/leaflet.css?inline';
-import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx, syncMapTop, SIDE_PANEL_MQ } from './ui.js';
+import { collapseDrawer, bottomOverlayPx, leftOverlayPx, topOverlayPx, syncMapTop, mapInsetTopPx, SIDE_PANEL_MQ } from './ui.js';
 import { FIT_MAX_ZOOM, FIT_PADDING, clampFitPadding } from './mapFit.js';
 import { labelAnchors } from './routeLabels.js';
 import { tr } from './i18n.js';
@@ -440,7 +440,14 @@ function openPickPopup(e) {
   // the map is impossible, because that click just opens another menu one
   // spot further along. Escape closes it too, but that is no help on a phone
   // and invisible everywhere else.
-  const popup = L.popup({ className: 'pick-popup', closeButton: true, offset: [0, 4] })
+  // Leaflet pans the menu into the map's box, which on phones runs under the
+  // header and the form: it pans it clear of them too.
+  const popup = L.popup({
+    className: 'pick-popup',
+    closeButton: true,
+    offset: [0, 4],
+    autoPanPaddingTopLeft: [5, mapInsetTopPx() + 5],
+  })
     .setLatLng(e.latlng)
     .setContent(box)
     .openOn(_map);
@@ -587,8 +594,9 @@ function fitWithChrome(bounds, options = {}) {
     topLeft: [
       FIT_PADDING.topLeft[0] + leftOverlayPx(),
       // The demo keeps its bubble over the results: fit below it when it
-      // reaches lower than the sun badge the default already clears.
-      Math.max(FIT_PADDING.topLeft[1], topOverlayPx() + FIT_TOP_GAP),
+      // reaches lower than the sun badge the default already clears. On
+      // phones the badge sits under the chrome floating over the map.
+      Math.max(FIT_PADDING.topLeft[1] + mapInsetTopPx(), topOverlayPx() + FIT_TOP_GAP),
     ],
     bottomRight: [FIT_PADDING.bottomRight[0], bottomOverlayPx()],
   };

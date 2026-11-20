@@ -95,9 +95,9 @@ async function pickOnMap(page, role) {
   // map then moves away from: wait for the view to settle.
   await page.waitForFunction(() => !document.querySelector('#map .leaflet-zoom-anim'));
   await page.waitForTimeout(300);
-  // Top left, clear of the controls and of the route, which runs south-west
-  // to north-east.
-  await page.mouse.click(150, 280);
+  // Top left, right of the zoom buttons: clear of the controls and of the
+  // route, which runs south-west to north-east, and of its labels.
+  await page.mouse.click(60, 260);
   await page.click(`.pick-btn[data-role="${role}"]`);
 }
 
