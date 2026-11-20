@@ -12,6 +12,7 @@ import { initGeoButtons, initLocateMe, prefillFromRelaunch, initInitialMapCenter
 import { initShareButton } from './shareButton';
 import { initFormSummary } from './formSummary';
 import { initAboutDrawer } from './aboutDrawer';
+import { initLangMenu } from './langMenu';
 import { initSearch, handleSearch } from './search';
 import { initNavigation, restoreFromUrl, startOnboarding, leaveOnboarding, leaveSearch } from './navigation';
 
@@ -61,6 +62,7 @@ initFormSummary();
 // must answer meanwhile.
 initLocateMe();
 initAboutDrawer();
+initLangMenu();
 initNavigation();
 
 // A link with a search is about to show results: no demo button over them,

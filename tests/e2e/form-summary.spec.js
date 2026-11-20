@@ -46,7 +46,11 @@ async function openLink(page, viewport, dt = '2026-07-28T14:00') {
   await expect(page.locator('#results')).toHaveClass(/\bon\b/, { timeout: 20_000 });
 }
 
-const mapTop = page => page.locator('#map').evaluate(el => el.getBoundingClientRect().top);
+// The top of the part of the map in view: on phones the map runs under the
+// form, and folding the form uncovers more of it.
+const mapTop = page => page.evaluate(() => Math.max(
+  document.getElementById('map').getBoundingClientRect().top,
+  document.getElementById('search-panel').getBoundingClientRect().bottom));
 
 // Where the start pin rests. A zoom animation already shows the pin where it
 // ends, so two agreeing reads aren't enough: the animation must be over too.
@@ -164,9 +168,9 @@ test('a point picked on the map opens the form on it', async ({ page }) => {
 
   // Until the basemap's first load the splash covers the map.
   await expect(page.locator('#map-splash')).toHaveClass(/hidden/, { timeout: 20_000 });
-  // Top left, clear of the controls and of the route, which runs south-west
-  // to north-east.
-  await page.mouse.click(150, 280);
+  // Top left, right of the zoom buttons: clear of the controls and of the
+  // route, which runs south-west to north-east, and of its labels.
+  await page.mouse.click(60, 260);
   await page.click('.pick-btn[data-role="start"]');
   await expect(page.locator('#inp-start')).toBeVisible();
   await expect(page.locator('#form-summary')).toBeHidden();

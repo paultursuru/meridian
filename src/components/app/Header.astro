@@ -1,5 +1,5 @@
 ---
-import { translations, langPath, type Lang } from '../../lib/i18n';
+import { translations, LANGS, langPath, type Lang } from '../../lib/i18n';
 
 interface Props {
   lang: Lang;
@@ -15,7 +15,18 @@ const t = translations[lang];
     </a>
   </h1>
   <div id="header-right">
-    <div id="sun-info">{t.navbar_tagline}</div>
+    <!-- The other languages open to the left of the button, over the space
+         between it and the logo (langMenu.ts). -->
+    <div id="lang-picker">
+      <button id="lang-btn" type="button" aria-expanded="false" aria-controls="lang-menu">
+        <span class="sr-only">{t.lang_menu} </span>{lang.toUpperCase()}
+      </button>
+      <ul id="lang-menu" hidden>
+        {LANGS.filter(l => l !== lang).map(l => (
+          <li><a class="lang-btn" href={langPath(l)} lang={l} hreflang={l}>{l.toUpperCase()}</a></li>
+        ))}
+      </ul>
+    </div>
     <button id="about-btn" aria-label={t.aria_about}>i</button>
   </div>
 </div>

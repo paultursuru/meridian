@@ -33,7 +33,7 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
 
 #app-description {
   position: absolute;
-  top: 12px;
+  top: calc(12px + var(--map-inset-top, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 1300;
@@ -92,30 +92,17 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
   transition: color 0.2s, background 0.2s;
 }
 #app-description-close:hover { color: #d8dbc8; background: rgba(240,242,160,0.08); }
-#sun-info {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(216,219,200,0.6);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  max-width: 50vw;
-}
 @media (max-width: 600px) {
   #header h1 { font-size: 1rem; }
-  #header-right {
-    justify-content: end;
-    gap: 4px;
-  }
-  #sun-info { font-size: 0.7rem; }
+  /* The two buttons' 44px tap squares side by side, with a pixel to spare. */
+  #header-right { gap: 14px; }
   #app-description-arrow { width: 24px; }
 }
 
 #map-sun-info {
   display: none;
   position: absolute;
-  top: 12px;
+  top: calc(12px + var(--map-inset-top, 0px));
   right: 12px;
   z-index: 1000;
   width: fit-content;
@@ -178,7 +165,7 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
 }
 @media (max-width: 600px) {
   #map-sun-info {
-    top: 8px;
+    top: calc(8px + var(--map-inset-top, 0px));
     right: 8px;
     padding: 6px 10px;
   }
@@ -593,6 +580,7 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
 /* ── Map ── */
 #map { flex: 1; min-height: 160px; z-index: 1; position: relative; }
 #map .leaflet-interactive { cursor: pointer; }
+#map .leaflet-top { top: var(--map-inset-top, 0px); }
 #map .leaflet-bottom { margin-bottom: var(--credits-h); }
 #map .route-casing { filter: blur(2px); }
 
@@ -762,6 +750,8 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
 #map-splash {
   position: absolute;
   inset: 0;
+  /* The logo centred in the part of the map left in view. */
+  padding-top: var(--map-inset-top, 0px);
   /* Over Leaflet's own controls and attribution, which sit at 1000: during
      the intro they would otherwise float on top of the logo. */
   z-index: 1200;
@@ -1379,16 +1369,16 @@ body:has(#results.expanded) #hour-badges { display: none; }
 .elev-loading { animation: elev-pulse 1.2s ease-in-out infinite; }
 @keyframes elev-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.7; } }
 
-/* ── About button in header ── */
+/* ── Language and about buttons in header ── */
+#lang-btn,
 #about-btn {
-  margin-left: 8px;
-  width: 28px; height: 28px;
-  border-radius: 50%;
+  width: 32px; height: 32px;
+  padding: 0;
+  border-radius: 8px;
   border: 1.5px solid rgba(240,242,160,0.2);
   background: transparent;
   color: rgba(216,219,200,0.54);
   font-size: 0.85rem;
-  font-style: italic;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -1397,7 +1387,65 @@ body:has(#results.expanded) #hour-badges { display: none; }
   transition: border-color 0.2s, color 0.2s;
   flex-shrink: 0;
 }
+#about-btn { font-style: italic; }
+#lang-btn { font-size: 0.72rem; letter-spacing: 0.04em; }
+#lang-btn:hover,
+#lang-btn[aria-expanded="true"],
 #about-btn:hover { border-color: #f0f2a0; color: #f0f2a0; }
+
+/* The other languages, in a row to the left of the button. On a narrow
+   screen the row runs over the logo, on a fill of its own. */
+#lang-picker { position: relative; display: flex; }
+#lang-menu {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 0 8px;
+  list-style: none;
+  isolation: isolate;
+}
+#lang-menu[hidden] { display: none; }
+#lang-menu::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #0e120a;
+  transform-origin: right;
+  animation: lang-unwrap-fill 0.24s cubic-bezier(0.2, 0, 0, 1) both;
+}
+#lang-menu .lang-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  padding: 0;
+  border-radius: 8px;
+}
+/* Opening, each language slides out from under the button to its place, the
+   farthest one furthest: --n counts the steps of 36px (a button and its gap)
+   back to the button, which sits over them on a fill of its own. The row's
+   fill unrolls with them, so the logo goes under it as they arrive. */
+#lang-btn { position: relative; z-index: 1; background: #0e120a; }
+#lang-menu li { animation: lang-unwrap 0.24s cubic-bezier(0.2, 0, 0, 1) both; }
+#lang-menu li:nth-last-child(1) { --n: 1; }
+#lang-menu li:nth-last-child(2) { --n: 2; }
+#lang-menu li:nth-last-child(3) { --n: 3; }
+#lang-menu li:nth-last-child(4) { --n: 4; }
+@keyframes lang-unwrap {
+  from { opacity: 0; transform: translateX(calc(var(--n) * 36px + 8px)); }
+}
+@keyframes lang-unwrap-fill {
+  from { transform: scaleX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #lang-menu li,
+  #lang-menu::before { animation: none; }
+}
 
 /* ── About overlay ── */
 #about-overlay {
@@ -1508,7 +1556,6 @@ body:has(#results.expanded) #hour-badges { display: none; }
   .split-btn { width: 100%; }
   /* A result on screen: the form folds into its summary line, and opens
      again in its place, with the arrow that folds it. */
-  #search-panel.folded { padding-top: 8px; }
   #search-panel.folded #form-summary { display: grid; }
   #search-panel.folded .route-inputs,
   #search-panel.folded .depart-row { display: none; }
@@ -1522,10 +1569,12 @@ body:has(#results.expanded) #hour-badges { display: none; }
      by side, and the text stops before both. */
   #search-panel input[type="text"] { padding-right: 90px; }
   .clear-btn { right: 54px; }
+  #lang-btn,
   #about-btn { position: relative; }
   .clear-btn::after,
   .geo-btn::after,
   #swap-btn::after,
+  #lang-btn::after,
   #about-btn::after,
   #app-description-close::after,
   #onboarding-note-close::after {
@@ -1546,6 +1595,34 @@ body:has(#results.expanded) #hour-badges { display: none; }
   #share-btn::before { inset: -8px -6px -4px; }
   .depart-overlays { left: 0; right: 0; width: auto; }
   #about-drawer { width: 100vw; }
+
+  /* The map runs under the header and the search panel. The form floats over
+     it as a block: around it the map shows, and takes the touches. ui.js
+     keeps --map-top at the panel's bottom edge. */
+  #app { position: relative; }
+  #map { position: absolute; inset: 0; }
+  /* Until ui.js measures it: the unfolded form's bottom edge, the only state
+     before the script runs. The intro bubble would flash under the header. */
+  :root { --map-inset-top: calc(243px + var(--safe-top)); }
+  #install-banner { position: relative; z-index: 1000; }
+  #search-panel {
+    margin: 8px calc(12px + var(--safe-right)) 0 calc(12px + var(--safe-left));
+    padding: 4px 12px 12px;
+    border: 1.5px solid rgba(240,242,160,0.2);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  /* Folded, the summary is the block: nothing of the panel around it. */
+  #search-panel.folded {
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    pointer-events: none;
+  }
+  #search-panel.folded #form-summary { pointer-events: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+  /* The demo's note stays over the results, folded or not. */
+  #search-panel.folded .depart-overlays { pointer-events: auto; }
 }
 
 /* ── Desktop: the results dock as a side panel ── */

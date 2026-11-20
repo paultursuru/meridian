@@ -112,16 +112,22 @@ export function initTabs(onTabChange) {
 }
 
 let syncLayout = () => {};
+let mapInsetTop = 0;
 
 // The map's top edge moves with whatever sits above it: the install banner,
-// the search form folding onto its line, that line wrapping. #map is the
-// flex:1 item in that column, so it resizes whenever the chrome above it does:
-// one observer on it covers them all. It keeps --map-top honest for the side
-// panel, which docks there, and calls onTopMoved(prevTop) for Leaflet, which
-// only watches the window.
+// the search form folding onto its line, that line wrapping. It keeps
+// --map-top honest for the side panel, which docks there, and calls
+// onTopMoved(prevTop) for Leaflet, which only watches the window.
+//
+// On phones the map runs under the header and the search panel instead, which
+// float over it (main.css): its edge stays at the top of the screen, and what
+// moves is the panel's bottom edge. --map-top is the top of the part of the
+// map left in view either way, and --map-inset-top how far that is below the
+// map's own edge, for what sits inside the map: its controls, the sun badge.
 export function initLayout(onTopMoved) {
   const map = document.getElementById('map');
   if (!map) return;
+  const panel = document.getElementById('search-panel');
   // getBoundingClientRect, not offsetTop: the chrome above the map does not
   // land on whole pixels (the search panel's 1px border, a wrapped row), and
   // offsetTop rounds — which left a hairline of map showing above the panel.
@@ -131,11 +137,22 @@ export function initLayout(onTopMoved) {
   syncLayout = () => {
     const prevTop = top;
     top = map.getBoundingClientRect().top;
-    document.documentElement.style.setProperty('--map-top', `${top}px`);
+    const inView = Math.max(top, panel?.getBoundingClientRect().bottom ?? top);
+    mapInsetTop = inView - top;
+    document.documentElement.style.setProperty('--map-top', `${inView}px`);
+    document.documentElement.style.setProperty('--map-inset-top', `${mapInsetTop}px`);
     if (top !== prevTop) onTopMoved(prevTop);
   };
   syncLayout();
-  if (typeof ResizeObserver === 'function') new ResizeObserver(syncLayout).observe(map);
+  // #map, the flex:1 item of the column, resizes with the chrome above it. On
+  // phones it doesn't, so the floating chrome is watched too.
+  if (typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(syncLayout);
+    for (const id of ['map', 'header', 'install-banner', 'search-panel']) {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    }
+  }
   window.addEventListener('resize', syncLayout);
 
   // The credits band under the drawer layout: the drawer's peek and the map's
@@ -155,6 +172,12 @@ export function initLayout(onTopMoved) {
 // change would frame the route in the map's old box: it calls this first.
 export function syncMapTop() {
   syncLayout();
+}
+
+// How far down into the map the chrome floating over it reaches (see
+// initLayout): the header and the search panel on phones, 0 elsewhere.
+export function mapInsetTopPx() {
+  return mapInsetTop;
 }
 
 export function setActiveTab(type) {
