@@ -21,11 +21,14 @@ export const FALLBACK_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 // WebGL. `{r}` is Leaflet's retina marker.
 export const RASTER_TILES = 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png';
 
-// Word for word what the vector style credits, so the bar never changes.
+// Word for word the `attribution` of Stadia's openmaptiles.json, which the
+// vector style credits. Leaflet counts identical strings as one, so the bar
+// keeps one line while one basemap fades into the other. One character off
+// and both lines show for the length of the fade.
 export const RASTER_ATTRIBUTION =
-  '&copy; <a href="https://www.stadiamaps.com/">Stadia Maps</a> ' +
-  '&copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> ' +
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+  '<a href="https://stadiamaps.com/attribution/" target="_blank">&copy; Stadia Maps</a> ' +
+  '<a href="https://openmaptiles.org/" target="_blank" rel="nofollow noopener noreferrer">&copy; OpenMapTiles</a> ' +
+  '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap</a>';
 
 const STADIA = /^https:\/\/tiles\.stadiamaps\.com\//;
 
