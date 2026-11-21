@@ -247,6 +247,13 @@ function setPanelCollapsed(collapsed) {
 
 let drawerInited = false;
 
+// Past this many px a press on the drawer is a drag, not a tap.
+const DRAG_SLOP = 6;
+// The release speed is read over the drag's last 100 ms, and the sheet coasts
+// at that speed for 200 ms to pick the state it settles on.
+const VELOCITY_WINDOW_MS = 100;
+const FLING_MS = 200;
+
 function initDrawer() {
   if (drawerInited) return;
   drawerInited = true;
@@ -271,26 +278,133 @@ function initDrawer() {
   toggle?.addEventListener('click', () =>
     setPanelCollapsed(!drawer.classList.contains('collapsed')));
 
-  let startY = 0, isDragging = false, moved = false;
+  // The sheet follows the finger, then settles on the nearer state. Everything
+  // above the routes (handle, notes, tabs, Share) drags it, and folded, so does
+  // the rest. Expanded, the routes scroll: a pull down only moves the sheet when
+  // they are already at the top. A gesture becomes a drag past DRAG_SLOP, so
+  // buttons keep their tap. Only a tap on the handle toggles.
+  const body = document.getElementById('drawer-body');
+  const scrubber = document.getElementById('time-scrubber');
+  let g = null;
 
-  function dragStart(y) { startY = y; isDragging = true; moved = false; }
-  function dragMove(y)  { if (isDragging && Math.abs(y - startY) > 8) moved = true; }
-  function dragEnd(y) {
-    if (!isDragging) return;
-    isDragging = false;
-    const dy = startY - y;
-    if (!moved) toggleDrawer('tap');
-    else if (dy > 40) expandDrawer('drag');
-    else if (dy < -40) collapseDrawer();
-    else updateScrubberPosition();
+  // pull: which way a vertical move belongs to the sheet rather than to the
+  // routes' own scroll ('any', 'down' or 'none').
+  function gestureStart(x, y, target) {
+    g = null;
+    if (sidePanel() || !drawer.classList.contains('on')) return;
+    const scrolls = drawer.classList.contains('expanded') || drawer.classList.contains('night');
+    const pull = !body.contains(target) || !scrolls ? 'any'
+      : body.scrollTop <= 0 ? 'down' : 'none';
+    g = { x0: x, y0: y, pull, onHandle: handle.contains(target), dragging: false, y, samples: [] };
   }
 
-  handle.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), { passive: true });
-  handle.addEventListener('touchmove',  e => dragMove(e.touches[0].clientY),  { passive: true });
-  handle.addEventListener('touchend',   e => dragEnd(e.changedTouches[0].clientY));
-  handle.addEventListener('mousedown',  e => { dragStart(e.clientY); e.preventDefault(); });
-  document.addEventListener('mousemove', e => dragMove(e.clientY));
-  document.addEventListener('mouseup',   e => dragEnd(e.clientY));
+  // Returns true once the sheet owns the gesture, so touch can stop the scroll.
+  function gestureMove(x, y, time) {
+    if (!g) return false;
+    const dx = x - g.x0, dy = y - g.y0;
+    if (!g.dragging) {
+      if (Math.abs(dx) <= DRAG_SLOP && Math.abs(dy) <= DRAG_SLOP) return false;
+      const takes = g.pull === 'any' || (g.pull === 'down' && dy > 0);
+      if (Math.abs(dx) > Math.abs(dy) || !takes) { g = null; return false; }
+      startFollow(y);
+    }
+    g.y = y;
+    g.samples.push([time, y]);
+    while (g.samples.length > 2 && time - g.samples[0][0] > VELOCITY_WINDOW_MS) g.samples.shift();
+    if (g.follow) moveSheet(g.t0 + (y - g.yFollow));
+    return true;
+  }
+
+  function startFollow(y) {
+    g.dragging = true;
+    g.yFollow = y;
+    // At night the sheet is shown whole in both states: nothing to follow.
+    g.follow = !drawer.classList.contains('night');
+    if (!g.follow) return;
+    const before = drawer.offsetHeight;
+    const shown = new DOMMatrixReadOnly(getComputedStyle(drawer).transform).m42;
+    drawer.classList.remove('settling');
+    drawer.classList.add('dragging');
+    // The route details now take their place, which can make the sheet taller.
+    // Keep its top edge where the finger found it.
+    g.h = drawer.offsetHeight;
+    g.travel = Math.max(0, g.h - drawerPeekPx(drawer));
+    g.t0 = shown + (g.h - before);
+    moveSheet(g.t0);
+  }
+
+  // t: how far the sheet is pushed down, 0 = expanded, g.travel = folded.
+  function moveSheet(t) {
+    g.t = Math.min(g.travel, Math.max(0, t));
+    drawer.style.transform = `translateY(${g.t}px)`;
+    if (scrubber.classList.contains('on')) scrubber.style.bottom = `${g.h - g.t + SCRUBBER_GAP}px`;
+  }
+
+  function gestureEnd(tap) {
+    if (!g) return;
+    const ended = g;
+    g = null;
+    if (!ended.dragging) {
+      if (tap && ended.onHandle) toggleDrawer('tap');
+      return;
+    }
+    swallowNextClick();
+    if (!ended.follow) {
+      const dy = ended.y0 - ended.y;
+      if (dy > 40) expandDrawer('drag');
+      else if (dy < -40) collapseDrawer();
+      return;
+    }
+    // Where the sheet would coast to: a flick opens or closes it from anywhere.
+    const [first, last] = [ended.samples[0], ended.samples[ended.samples.length - 1]];
+    const speed = last[0] > first[0] ? (last[1] - first[1]) / (last[0] - first[0]) : 0;
+    const open = ended.t + speed * FLING_MS < ended.travel / 2;
+    drawer.style.transform = '';
+    // Folding, the details stay laid out until the slide ends (transitionend).
+    // The inline px give way to a percentage, so a slide starts even from the
+    // folded position itself.
+    if (!open) drawer.classList.add('settling');
+    drawer.classList.remove('dragging');
+    if (open) expandDrawer('drag');
+    else collapseDrawer();
+    updateScrubberPosition();
+  }
+
+  // A mouse drag that starts and ends on a tab would also click it.
+  function swallowNextClick() {
+    const swallow = e => { e.stopPropagation(); e.preventDefault(); };
+    drawer.addEventListener('click', swallow, { capture: true, once: true });
+    setTimeout(() => drawer.removeEventListener('click', swallow, { capture: true }), 0);
+  }
+
+  drawer.addEventListener('transitionend', e => {
+    if (e.target === drawer && e.propertyName === 'transform') drawer.classList.remove('settling');
+  });
+
+  let lastTouch = -Infinity;
+  // A second finger is a pinch, not a drag: let it go.
+  drawer.addEventListener('touchstart', e => {
+    lastTouch = e.timeStamp;
+    if (e.touches.length === 1) gestureStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+    else gestureEnd(false);
+  }, { passive: true });
+  drawer.addEventListener('touchmove', e => {
+    if (e.touches.length !== 1) return gestureEnd(false);
+    const p = e.touches[0];
+    if (gestureMove(p.clientX, p.clientY, e.timeStamp) && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  drawer.addEventListener('touchend', e => { lastTouch = e.timeStamp; gestureEnd(true); });
+  drawer.addEventListener('touchcancel', () => gestureEnd(false));
+
+  // The mouse drags the part above the routes only: below, it selects text.
+  // A tap fires mouse events of its own afterwards, ignored here.
+  drawer.addEventListener('mousedown', e => {
+    if (e.button !== 0 || body.contains(e.target) || e.timeStamp - lastTouch < 800) return;
+    if (!e.target.closest('button')) e.preventDefault();
+    gestureStart(e.clientX, e.clientY, e.target);
+  });
+  document.addEventListener('mousemove', e => gestureMove(e.clientX, e.clientY, e.timeStamp));
+  document.addEventListener('mouseup', () => gestureEnd(true));
 
   handle.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -311,7 +425,7 @@ function initDrawer() {
 }
 
 // The drawer's full-height state as one open and one close, shared by every
-// path that flips it (handle tap and drag, keyboard, the map-click collapse in
+// path that flips it (handle tap, drag, keyboard, the map-click collapse in
 // map.js). Deliberately not a history entry: the sheet already has its own
 // vertical gesture, and Back undoes the search instead (see src/app/navigation.ts).
 // via: 'tap' | 'drag' | 'key', reported as drawer_open. The collapsed drawer
@@ -468,6 +582,8 @@ function updateScrubberPosition() {
   }
   if (!scrubber.classList.contains('on')) return;
   const drawer = document.getElementById('results');
+  // Mid-drag, the gesture places it (initDrawer).
+  if (drawer.classList.contains('dragging')) return;
   const visibleH = drawer.classList.contains('expanded') ? drawer.offsetHeight : drawerPeekPx(drawer);
   scrubber.style.bottom = `${visibleH + SCRUBBER_GAP}px`;
 }

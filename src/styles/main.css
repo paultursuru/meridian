@@ -935,6 +935,13 @@ body { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: non
 #results.on       { transform: translateY(calc(100% - var(--drawer-peek))); visibility: visible; transition-delay: 0s; }
 #results.expanded { transform: translateY(0); }
 #results.night.on { transform: translateY(0); }
+/* Under the finger, no easing, and the route details are laid out so the sheet
+   has its expanded height as it moves. Settling keeps them until the sheet has
+   folded back, or it would shrink mid-slide. */
+#results.dragging { transition: none; }
+#results.dragging .route-details,
+#results.settling .route-details { display: block; }
+body:has(#results.dragging) #time-scrubber { transition: none; }
 #results > :not(#drawer-body) { flex: none; }
 /* The tabs and Share stay put, the routes and notes under them scroll. */
 #drawer-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
